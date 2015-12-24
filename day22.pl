@@ -59,38 +59,51 @@ play( 0 );
 say $cheapest_win;
 say $report_count;
 
+$report_count = 0;
+@stack        = ( dclone( \%initial_state ) );
+$cheapest_win = INFINITY;
+play( 1 );
+say $cheapest_win;
+say $report_count;
+
 
 
 sub play {
-    my $dificulty = shift;
+    my $difficulty = shift;
 
     while ( @stack ) {
         # Work with top of stack, move to state for convenience.
         %state = %{ dclone( $stack[-1] ) };
         report( "Stack depth ", scalar( @stack ) );
 
-        implement_effects();
-        if ( players_move() ) {
-            if ( $state{spent} < $cheapest_win ) {
-                implement_effects();
+        if ( $difficulty > 0 and --$state{hp} <= 0 ) {
+            report( "Player loses." );
+            pop @stack;                     # no way to win at this level.
 
-                if ( $state{boss_hp} <= 0 ) {
-                    report( "Player wins." );
-                    $cheapest_win = $state{spent};
-                    say $state{spent};
+        } else {
+            implement_effects();
+            if ( players_move() ) {
+                if ( $state{spent} < $cheapest_win ) {
+                    implement_effects();
 
-                } else {
-                    # Boss action here.
-                    $state{hp} -= max( $boss_damage - $state{armor}, 1 );
-
-                    if ( $state{hp} <= 0 ) {
-                        report( "Player loses." );
+                    if ( $state{boss_hp} <= 0 ) {
+                        report( "Player wins." );
+                        $cheapest_win = $state{spent};
+                        say $state{spent};
 
                     } else {
-                        # Take this path one more step down the tree.
-                        push @stack, dclone( \%state );
-                        $stack[-1]{spells} = [ map { $_->{name} } @spells ];
-                        next;
+                        # Boss action here.
+                        $state{hp} -= max( $boss_damage - $state{armor}, 1 );
+
+                        if ( $state{hp} <= 0 ) {
+                            report( "Player loses." );
+
+                        } else {
+                            # Take this path one more step down the tree.
+                            push @stack, dclone( \%state );
+                            $stack[-1]{spells} = [ map { $_->{name} } @spells ];
+                            next;
+                        }
                     }
                 }
             }
