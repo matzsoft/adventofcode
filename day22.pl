@@ -48,7 +48,6 @@ my %state       = (
 );
 my @stack = ( dclone( \%state ) );
 my $cheapest_win = 2000000000;              # Approximate infinity.
-my $dearest_loss = 0;
 my ( $report_count, $report_limit ) = ( 0, 300 );
 
 while ( @stack ) {
@@ -58,28 +57,27 @@ while ( @stack ) {
 
     implement_effects();
     if ( players_move() ) {
-        implement_effects();
+        if ( $state{spent} < $cheapest_win ) {
+            implement_effects();
 
-        if ( $state{boss_hp} <= 0 ) {
-            report( "Player wins." );
-            if ( $state{spent} < $cheapest_win ) {
+            if ( $state{boss_hp} <= 0 ) {
+                report( "Player wins." );
                 $cheapest_win = $state{spent};
                 say $state{spent};
-            }
-
-        } else {
-            # Boss action here.
-            $state{hp} -= max( $boss_damage - $state{armor}, 1 );
-
-            if ( $state{hp} <= 0 ) {
-                report( "Player loses." );
-                $dearest_loss = max( $dearest_loss, $state{spent} );
 
             } else {
-                # Take this path one more step down the tree.
-                push @stack, dclone( \%state );
-                $stack[-1]{spells} = [ map { $_->{name} } @spells ];
-                next;
+                # Boss action here.
+                $state{hp} -= max( $boss_damage - $state{armor}, 1 );
+
+                if ( $state{hp} <= 0 ) {
+                    report( "Player loses." );
+
+                } else {
+                    # Take this path one more step down the tree.
+                    push @stack, dclone( \%state );
+                    $stack[-1]{spells} = [ map { $_->{name} } @spells ];
+                    next;
+                }
             }
         }
     }
@@ -92,7 +90,6 @@ while ( @stack ) {
 }
 
 say $cheapest_win;
-say $dearest_loss;
 say $report_count;
 
 
