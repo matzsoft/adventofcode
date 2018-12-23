@@ -56,9 +56,9 @@ class Directions {
                     alternatives.append( [ "" ] )
                     
                 case ")":
-                    if alternatives.contains(where: { $0.count == 1 && $0[0] == "" } ) { return [ "" ] }
+//                    if alternatives.contains(where: { $0.count == 1 && $0[0] == "" } ) { return [ "" ] }
                     return alternatives.flatMap { $0 }
-
+                    
                 default:
                     print( "Invalid character '\(input[index])' in input" )
                     exit(1)
@@ -67,10 +67,10 @@ class Directions {
                 index = input.index(after: index)
             }
             
-            if alternatives.contains(where: { $0.count == 1 && $0[0] == "" } ) { return [ "" ] }
+//            if alternatives.contains(where: { $0.count == 1 && $0[0] == "" } ) { return [ "" ] }
             return alternatives.flatMap { $0 }
         }
-
+        
         guard input.first! == "^" else {
             print( "Input should start with '^'" )
             exit(1)
@@ -91,9 +91,197 @@ class Directions {
     }
 }
 
+struct Position {
+    var x: Int
+    var y: Int
+}
+
+enum Cell: String {
+    case wall = "#", room = ".", ewDoor = "|", nsDoor = "-", unknown = "?"
+}
+
+class Map {
+    var map: [[Cell]]
+    var xMin: Int
+    var xMax: Int
+    var yMin: Int
+    var yMax: Int
+    
+    init() {
+        map = Array( repeating: Array( repeating: Cell.unknown, count: 3 ), count: 3 )
+        xMin = -1
+        xMax = 1
+        yMin = -1
+        yMax = 1
+        set( pos: Position( x: 0, y: 0 ), value: .room )
+    }
+    
+    func get( pos: Position ) -> Cell {
+        guard xMin <= pos.x && pos.x <= xMax else { return .unknown }
+        guard yMin <= pos.y && pos.y <= yMax else { return .unknown }
+        
+        return map[ pos.y - yMin ][ pos.x - xMin ]
+    }
+    
+    func set( pos: Position, value: Cell ) -> Void {
+        while pos.y < yMin {
+            map.insert( Array( repeating: Cell.unknown, count: xMax - xMin + 1 ), at: 0 )
+            yMin -= 1
+        }
+        
+        while pos.y > yMax {
+            map.append( Array( repeating: Cell.unknown, count: xMax - xMin + 1 ) )
+            yMax += 1
+        }
+        
+        while pos.x < xMin {
+            for y in yMin ... yMax {
+                map[ y - yMin ].insert( .unknown, at: 0 )
+            }
+            xMin -= 1
+        }
+        
+        while pos.x > xMax {
+            for y in yMin ... yMax {
+                map[ y - yMin ].append( .unknown )
+            }
+            xMax += 1
+        }
+        
+        map[ pos.y - yMin ][ pos.x - xMin ] = value
+    }
+    
+    func newRoomMaybe( pos: Position ) -> Void {
+        var newPos = pos
+        
+        set(pos: pos, value: .room)
+        
+        newPos = Position(x: pos.x, y: pos.y - 1 )
+        if case Cell.unknown = get( pos: newPos ) {
+            set(pos: newPos, value: .unknown)
+        }
+        
+        newPos = Position(x: pos.x, y: pos.y + 1 )
+        if case Cell.unknown = get( pos: newPos ) {
+            set(pos: newPos, value: .unknown)
+        }
+        
+        newPos = Position(x: pos.x - 1, y: pos.y )
+        if case Cell.unknown = get( pos: newPos ) {
+            set(pos: newPos, value: .unknown)
+        }
+        
+        newPos = Position(x: pos.x + 1, y: pos.y )
+        if case Cell.unknown = get( pos: newPos ) {
+            set(pos: newPos, value: .unknown)
+        }
+    }
+
+    func walkAndDraw( path: String ) -> Void {
+        var current = Position(x: 0, y: 0)
+        
+        for direction in path {
+            switch direction {
+            case "N":
+                current.y -= 1
+                set(pos: current, value: .nsDoor)
+                current.y -= 1
+                newRoomMaybe(pos: current)
+            case "S":
+                current.y += 1
+                set(pos: current, value: .nsDoor)
+                current.y += 1
+                newRoomMaybe(pos: current)
+            case "E":
+                current.x += 1
+                set(pos: current, value: .ewDoor)
+                current.x += 1
+                newRoomMaybe(pos: current)
+            case "W":
+                current.x -= 1
+                set(pos: current, value: .ewDoor)
+                current.x -= 1
+                newRoomMaybe(pos: current)
+            default:
+                print( "Argh, how did '\(direction)' get in here" )
+            }
+        }
+    }
+    
+    func possibleMoves( position: Position ) -> [Position] {
+        let x = position.x
+        let y = position.y
+        var moves: [Position] = []
+
+        if case Cell.nsDoor = get( pos: Position(x: x, y: y-1) ) {
+            moves.append( Position(x: x, y: y-2) )
+        }
+
+        if case Cell.ewDoor = get( pos: Position(x: x-1, y: y) ) {
+            moves.append( Position(x: x-2, y: y) )
+        }
+
+        if case Cell.ewDoor = get( pos: Position(x: x+1, y: y) ) {
+            moves.append( Position(x: x+2, y: y) )
+        }
+
+        if case Cell.nsDoor = get( pos: Position(x: x, y: y+1) ) {
+            moves.append( Position(x: x, y: y+2) )
+        }
+        
+        return moves
+    }
+    
+    func allDistances() -> [[Int]] {
+        var distances = Array( repeating: Array(repeating: -1, count: map[0].count), count: map.count )
+        let position = Position(x: 0, y: 0)
+        var queue = [ position ]
+        
+        distances[ position.y - yMin ][ position.x - xMin ] = 0
+        while queue.count > 0 {
+            let current = queue.removeFirst()
+            let distance = distances[ current.y - yMin ][ current.x - xMin ] + 1
+            let moves = possibleMoves(position: current)
+            
+            for move in moves {
+                if distances[ move.y - yMin ][ move.x - xMin ] == -1 {
+                    distances[ move.y - yMin ][ move.x - xMin ] = distance
+                    queue.append(move)
+                }
+            }
+        }
+        
+        return distances
+    }
+    
+    func printMap() -> Void {
+        for y in yMin ... yMax {
+            var line = map[ y - yMin ].map { $0.rawValue }.joined()
+            
+            if y == 0 {
+                let index = line.index( line.startIndex, offsetBy: -xMin )
+                
+                line = line.replacingCharacters( in: index ... index, with: "X" )
+            }
+            
+            print( line )
+        }
+        print()
+    }
+}
+
 
 let directions = Directions()
-let results = directions.parse(input: test1)
+let results = directions.parse(input: input)
+let map = Map()
 
 print(results.count)
 print( "Part1:", directions.maxLength() )
+
+map.printMap()
+directions.paths.forEach { map.walkAndDraw( path: $0 ) }
+//map.printMap()
+
+let distances = map.allDistances()
+
+print( "Part1:", distances.flatMap { $0 }.max()! )
