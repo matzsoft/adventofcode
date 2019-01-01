@@ -1,0 +1,92 @@
+//
+//  main.swift
+//  day02
+//
+//  Created by Mark Johnson on 11/27/18.
+//  Copyright © 2018 matzsoft. All rights reserved.
+//
+
+import Foundation
+
+let size = 2
+var x = 1
+var y = 1
+var current: Character = "5"
+
+let movement: [ Character : () -> Void ] = [
+    "U" : { () -> Void in y = max( 0, y - 1 ) },
+    "D" : { () -> Void in y = min( size, y + 1 ) },
+    "L" : { () -> Void in x = max( 0, x - 1 ) },
+    "R" : { () -> Void in x = min( size, x + 1 ) }
+]
+let mapping: [ Character : [ Character : () -> Void ] ] = [
+    "1" : [
+        "D" : { () -> Void in current = "3" } ],
+    "2" : [
+        "R" : { () -> Void in current = "3" },
+        "D" : { () -> Void in current = "6" } ],
+    "3" : [
+        "U" : { () -> Void in current = "1" },
+        "L" : { () -> Void in current = "2" },
+        "R" : { () -> Void in current = "4" },
+        "D" : { () -> Void in current = "7" }, ],
+    "4" : [
+        "L" : { () -> Void in current = "3" },
+        "D" : { () -> Void in current = "8" }, ],
+    "5" : [
+        "R" : { () -> Void in current = "6" }, ],
+    "6" : [
+        "U" : { () -> Void in current = "2" },
+        "L" : { () -> Void in current = "5" },
+        "R" : { () -> Void in current = "7" },
+        "D" : { () -> Void in current = "A" }, ],
+    "7" : [
+        "U" : { () -> Void in current = "3" },
+        "L" : { () -> Void in current = "6" },
+        "R" : { () -> Void in current = "8" },
+        "D" : { () -> Void in current = "B" }, ],
+    "8" : [
+        "U" : { () -> Void in current = "4" },
+        "L" : { () -> Void in current = "7" },
+        "R" : { () -> Void in current = "9" },
+        "D" : { () -> Void in current = "C" }, ],
+    "9" : [
+        "L" : { () -> Void in current = "8" }, ],
+    "A" : [
+        "U" : { () -> Void in current = "6" },
+        "R" : { () -> Void in current = "B" }, ],
+    "B" : [
+        "U" : { () -> Void in current = "7" },
+        "L" : { () -> Void in current = "A" },
+        "R" : { () -> Void in current = "C" },
+        "D" : { () -> Void in current = "D" }, ],
+    "C" : [
+        "U" : { () -> Void in current = "8" },
+        "L" : { () -> Void in current = "B" }, ],
+    "D" : [
+        "U" : { () -> Void in current = "B" }, ]
+]
+
+let input = """
+DUURRDRRURUUUDLRUDDLLLURULRRLDULDRDUULULLUUUDRDUDDURRULDRDDDUDDURLDLLDDRRURRUUUDDRUDDLLDDDURLRDDDULRDUDDRDRLRDUULDLDRDLUDDDLRDRLDLUUUDLRDLRUUUDDLUURRLLLUUUUDDLDRRDRDRLDRLUUDUDLDRUDDUDLLUUURUUDLULRDRULURURDLDLLDLLDUDLDRDULLDUDDURRDDLLRLLLLDLDRLDDUULRDRURUDRRRDDDUULRULDDLRLLLLRLLLLRLURRRLRLRDLULRRLDRULDRRLRURDDLDDRLRDLDRLULLRRUDUURRULLLRLRLRRUDLRDDLLRRUDUDUURRRDRDLDRUDLDRDLUUULDLRLLDRULRULLRLRDRRLRLULLRURUULRLLRRRDRLULUDDUUULDULDUDDDUDLRLLRDRDLUDLRLRRDDDURUUUDULDLDDLDRDDDLURLDRLDURUDRURDDDDDDULLDLDLU
+LURLRUURDDLDDDLDDLULRLUUUDRDUUDDUDLDLDDLLUDURDRDRULULLRLDDUDRRDRUDLRLDDDURDUURLUURRLLDRURDRLDURUDLRLLDDLLRDRRLURLRRUULLLDRLULURULRRDLLLDLDLRDRRURUUUDUDRUULDLUDLURLRDRRLDRUDRUDURLDLDDRUULDURDUURLLUDRUUUUUURRLRULUDRDUDRLLDUDUDUULURUURURULLUUURDRLDDRLUURDLRULDRRRRLRULRDLURRUULURDRRLDLRUURUDRRRDRURRLDDURLUDLDRRLDRLLLLRDUDLULUDRLLLDULUDUULLULLRLURURURDRRDRUURDULRDDLRULLLLLLDLLURLRLLRDLLRLUDLRUDDRLLLDDUDRLDLRLDUDU
+RRDDLDLRRUULRDLLURLRURDLUURLLLUUDDULLDRURDUDRLRDRDDUUUULDLUDDLRDULDDRDDDDDLRRDDDRUULDLUDUDRRLUUDDRUDLUUDUDLUDURDURDLLLLDUUUUURUUURDURUUUUDDURULLDDLDLDLULUDRULULULLLDRLRRLLDLURULRDLULRLDRRLDDLULDDRDDRURLDLUULULRDRDRDRRLLLURLLDUUUDRRUUURDLLLRUUDDDULRDRRUUDDUUUDLRRURUDDLUDDDUDLRUDRRDLLLURRRURDRLLULDUULLURRULDLURRUURURRLRDULRLULUDUULRRULLLDDDDURLRRRDUDULLRRDURUURUUULUDLDULLUURDRDRRDURDLUDLULRULRLLURULDRUURRRRDUDULLLLLRRLRUDDUDLLURLRDDLLDLLLDDUDDDDRDURRL
+LLRURUDUULRURRUDURRDLUUUDDDDURUUDLLDLRULRUUDUURRLRRUDLLUDLDURURRDDLLRUDDUDLDUUDDLUUULUUURRURDDLUDDLULRRRUURLDLURDULULRULRLDUDLLLLDLLLLRLDLRLDLUULLDDLDRRRURDDRRDURUURLRLRDUDLLURRLDUULDRURDRRURDDDDUUUDDRDLLDDUDURDLUUDRLRDUDLLDDDDDRRDRDUULDDLLDLRUDULLRRLLDUDRRLRURRRRLRDUDDRRDDUUUDLULLRRRDDRUUUDUUURUULUDURUDLDRDRLDLRLLRLRDRDRULRURLDDULRURLRLDUURLDDLUDRLRUDDURLUDLLULDLDDULDUDDDUDRLRDRUUURDUULLDULUUULLLDLRULDULUDLRRURDLULUDUDLDDRDRUUULDLRURLRUURDLULUDLULLRD
+UURUDRRDDLRRRLULLDDDRRLDUDLRRULUUDULLDUDURRDLDRRRDLRDUUUDRDRRLLDULRLUDUUULRULULRUDURDRDDLDRULULULLDURULDRUDDDURLLDUDUUUULRUULURDDDUUUURDLDUUURUDDLDRDLLUDDDDULRDLRUDRLRUDDURDLDRLLLLRLULRDDUDLLDRURDDUDRRLRRDLDDUDRRLDLUURLRLLRRRDRLRLLLLLLURULUURRDDRRLRLRUURDLULRUUDRRRLRLRULLLLUDRULLRDDRDDLDLDRRRURLURDDURRLUDDULRRDULRURRRURLUURDDDUDLDUURRRLUDUULULURLRDDRULDLRLLUULRLLRLUUURUUDUURULRRRUULUULRULDDURLDRRULLRDURRDDDLLUDLDRRRRUULDDD
+"""
+let lines = input.split(separator: "\n")
+
+var part1 = ""
+var part2 = ""
+
+for line in lines {
+    for move in line {
+        movement[move]?()
+        mapping[current]?[move]?()
+    }
+    part1.append( Character( String( y * ( size + 1 ) + x + 1 ) ) )
+    part2.append(current)
+}
+
+print( "Part1:", part1 )
+print( "Part2:", part2 )
