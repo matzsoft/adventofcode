@@ -101,40 +101,26 @@ struct Component: Hashable {
     }
 }
 
-let set = Set<Component>( input.split(separator: "\n").map { Component( input: $0 ) } )
-
-
-func findStrongest( startsWith: Int, available: Set<Component> ) -> Int {
-    var strengths = [ 0 ]
-    let list = available.filter { $0.matches( port: startsWith ) }
-    
-    for component in list {
-        let remaining = available.subtracting( [ component ] )
-        let strength = findStrongest( startsWith: component.other( port: startsWith ), available: remaining )
-        
-        strengths.append( strength + component.strength )
-    }
-    
-    return strengths.max()!
-}
-
-print( "Part1:", findStrongest( startsWith: 0, available: set ) )
-
-
-
-func findLongest( startsWith: Int, available: Set<Component> ) -> ( Int, Int ) {
+func findBest( starts: Int, available: Set<Component>, by: ( (Int,Int), (Int,Int) ) -> Bool ) -> (Int,Int) {
     var strengths = [ ( 0, 0 ) ]
-    let list = available.filter { $0.matches( port: startsWith ) }
+    let list = available.filter { $0.matches( port: starts ) }
     
     for component in list {
         let remaining = available.subtracting( [ component ] )
-        let start = component.other( port: startsWith )
-        let strength = findLongest( startsWith: start, available: remaining )
+        let start = component.other( port: starts )
+        let strength = findBest( starts: start, available: remaining, by: by )
         
         strengths.append( ( strength.0 + 1, strength.1 + component.strength ) )
     }
     
-    return strengths.max { $0.0 < $1.0 ? true : $0.0 == $1.0 && $0.1 < $1.1 }!
+    return strengths.max( by: by )!
 }
 
-print( "Part2:", findLongest( startsWith: 0, available: set ) )
+
+
+let set = Set<Component>( input.split(separator: "\n").map { Component( input: $0 ) } )
+
+print( "Part1:", findBest( starts: 0, available: set, by: { $0.1 < $1.1 } ) )
+print( "Part2:", findBest( starts: 0, available: set, by: {
+    $0.0 < $1.0 ? true : $0.0 == $1.0 && $0.1 < $1.1
+} ) )
