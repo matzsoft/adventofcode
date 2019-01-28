@@ -101,16 +101,18 @@ struct Component: Hashable {
     }
 }
 
-func findBest( starts: Int, available: Set<Component>, by: ( (Int,Int), (Int,Int) ) -> Bool ) -> (Int,Int) {
+typealias Bridge = ( length: Int, strength: Int )
+
+func findBest( starts: Int, available: Set<Component>, by: ( Bridge, Bridge ) -> Bool ) -> Bridge {
     var strengths = [ ( 0, 0 ) ]
     let list = available.filter { $0.matches( port: starts ) }
     
     for component in list {
         let remaining = available.subtracting( [ component ] )
         let start = component.other( port: starts )
-        let strength = findBest( starts: start, available: remaining, by: by )
+        let best = findBest( starts: start, available: remaining, by: by )
         
-        strengths.append( ( strength.0 + 1, strength.1 + component.strength ) )
+        strengths.append( ( length: best.length + 1, strength: best.strength + component.strength ) )
     }
     
     return strengths.max( by: by )!
@@ -120,7 +122,7 @@ func findBest( starts: Int, available: Set<Component>, by: ( (Int,Int), (Int,Int
 
 let set = Set<Component>( input.split(separator: "\n").map { Component( input: $0 ) } )
 
-print( "Part1:", findBest( starts: 0, available: set, by: { $0.1 < $1.1 } ) )
+print( "Part1:", findBest( starts: 0, available: set, by: { $0.strength < $1.strength } ) )
 print( "Part2:", findBest( starts: 0, available: set, by: {
-    $0.0 < $1.0 ? true : $0.0 == $1.0 && $0.1 < $1.1
+    $0.length < $1.length ? true : $0.length == $1.length && $0.strength < $1.strength
 } ) )
