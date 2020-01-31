@@ -268,7 +268,6 @@ struct ArcadeCabinet {
         guard let value = computer.grind() else { return nil }
         
         if x == -1 {
-            print( "Got score \(value)" )
             score = value
             return nil
         }
@@ -298,23 +297,39 @@ struct ArcadeCabinet {
         while !computer.halted {
             while let ( position, type ) = move() {
                 map[position.y][position.x] = type
+                Terminal.move( to: position )
                 switch type {
                 case .ball:
-                    print( "Ball at \(position)" )
-                    print( asString )
-                    
+                    print( type.asString(), separator: "", terminator: "" )
                     computer.inputs = [ ( ballPos.x - paddlePos.x ).signum() ]
+                    usleep( 25000 )
+                    fflush(stdout)
                 case .paddle:
-                    print( "Paddle at \(position)" )
+                    print( type.asString(), separator: "", terminator: "" )
                 case .empty:
-                    print( "Tile erased at \(position)" )
+                    print( type.asString(), separator: "", terminator: "" )
                 default:
+                    Terminal.move( to: Point( x: 0, y: height + 2 ) )
                     print( "Unexpected \(type) at \(position)" )
                 }
             }
+            Terminal.move(to: Point( x: 0, y: height ) )
+            print( "Score: \(score)" )
         }
         
         return score
+    }
+}
+
+class Terminal {
+    static let escape = Character( UnicodeScalar( 27 ) )
+    
+    static func clearScreen() -> Void {
+        print( escape, "[2J", separator: "", terminator: "" )
+    }
+    
+    static func move( to position: Point ) -> Void {
+        print( escape, "[\(position.y+1);\(position.x+1)H", separator: "", terminator: "" )
     }
 }
 
@@ -328,7 +343,13 @@ let input = try String( contentsOfFile: CommandLine.arguments[1] ).dropLast( 1 )
 let initialMemory = input.split( separator: "," ).map { Int($0)! }
 var cabinet = ArcadeCabinet( initialMemory: initialMemory )
 
-print( "Part 1: \( cabinet.countOf( type: .block ) )" )
+Terminal.clearScreen()
+Terminal.move( to: Point(x: 0, y: 0 ) )
 print( cabinet.asString )
+print( "Score: \(cabinet.score)" )
+print( "Part 1: \( cabinet.countOf( type: .block ) )" )
 
-print("Part 2: \( cabinet.play() )")
+let part2 = cabinet.play()
+
+Terminal.move(to: Point( x: 0, y: cabinet.height + 2 ) )
+print( "Part 2: \(part2)" )
