@@ -302,10 +302,19 @@ struct Donut {
         let network = getNetwork()
         var queue = [ Candidate( point: enter, distance: 0, level: 0 ) ]
         var seen = BeenThere()
+        var loopDetector: Set<[Point]> = []
         
         //print( networkAsString( network: network ) )
         while !queue.isEmpty {
             queue.sort { $0.distance < $1.distance }
+            let queuePoints = queue.map { $0.point }
+            
+            guard !loopDetector.contains( queuePoints ) else {
+                print( "Part 2: No solution" )
+                exit( 1 )
+            }
+            loopDetector.insert( queuePoints )
+            
             let candidate = queue.removeFirst()
             
             if candidate.point == leave {
