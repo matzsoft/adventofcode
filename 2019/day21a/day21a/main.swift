@@ -386,207 +386,221 @@ try! contents.write( toFile: filename, atomically: true, encoding: String.Encodi
 
 // MARK: - Quine–McCluskey
 
-func makeTruthTable( inputs: Int ) -> [Int?] {
-    let secondHalf = 1 << ( inputs - 1 ) ... ( 1 << inputs ) - 1
-    
-    return Array( repeating: 1, count: 1 << ( inputs - 1 ) ) + secondHalf.map {
-        let char = walkOrJump( scan: $0, range: inputs )
-        return char == "J" ? 1 : 0
+typealias Term = Int
+typealias Implicant = Set<Term>
+
+struct Bazinga {
+    let inputs: Int
+    let truthTable: [Bool?]
+    let neighborsTable: [Implicant]
+    let halfTerm: Term
+    let lastTerm: Term
+
+    init( inputs: Int ) {
+        self.inputs = inputs
+        halfTerm = Term( 1 << ( inputs - 1 ) )
+        lastTerm = Term( ( 1 << inputs ) - 1 )
+        
+        let truthTable = Array( repeating: true, count: halfTerm ) + ( halfTerm ... lastTerm ).map {
+            walkOrJump( scan: $0, range: inputs ) == "J"
+        }
+        
+        self.truthTable = truthTable
+        neighborsTable = truthTable.indices.map { index in
+               Set( ( 0 ..< inputs ).map { index ^ ( 1 << $0 ) }.filter { truthTable[$0] != false } )
+        }
     }
-}
 
-func makeNeighborsTable( inputs: Int ) -> [Set<Int>] {
-    return truthTable.indices.map { index in
-        Set( ( 0 ..< inputs ).map { index ^ ( 1 << $0 ) }.filter { truthTable[$0] != 0 } )
+    func shape( implicant: Implicant ) -> [Int] {
+        assert( inputs.isMultiple( of: 2 ), "The shape function can't handle odd inputs" )
+        let masks = stride( from: 2, through: inputs, by: 2 ).map { 0b11 << ( inputs - $0 ) }
+
+        return masks.map { mask in implicant.reduce( Implicant(), { $0.union( [ $1 & mask ] ) } ).count }
     }
-}
 
-let truthTable = makeTruthTable( inputs: 4 )
-//let truthTable = [ 0, 0, 0, 0, 1, 0, 0, 0, 1, nil, 1, 1, 1, 0, nil, 1 ]
-let neighborsTable = makeNeighborsTable( inputs: 4 )
-let minterms = truthTable.indices.filter { truthTable[$0] == 1 }
+    func combine( implicant1: Implicant, implicant2: Implicant ) -> Implicant? {
+        guard implicant1.isDisjoint( with: implicant2 ) else { return nil }
+        
+        let oldShape = shape( implicant: implicant1 )
+        let neighbors = implicant1.reduce( Implicant(), {
+            $0.union( neighborsTable[$1] )
+        } ).subtracting( implicant1 )
 
+        guard !neighbors.isDisjoint( with: implicant2 ) else { return nil }
+        guard oldShape == shape( implicant: implicant2 ) else { return nil }
+        
+        let combination = implicant1.union( implicant2 )
+        let newShape = shape( implicant: combination )
+        let indices = oldShape.indices.filter { oldShape[$0] != newShape[$0] }
+        
+        guard indices.count == 1 else { return nil }
+        
+        return newShape[indices[0]] == 2 * oldShape[indices[0]] ? combination : nil
+    }
 
-func shape( implicant: Set<Int>, inputs: Int ) -> [Int] {
-    assert( inputs.isMultiple( of: 2 ), "The shape function can't handle odd inputs" )
-    let masks = stride( from: 2, through: inputs, by: 2 ).map { 0b11 << ( inputs - $0 ) }
+    func makePrimeImplicants() -> Set<Implicant> {
+        var current = Set( truthTable.indices.filter { truthTable[$0] != false }.map { Set( [ $0 ] ) } )
+        var primeImplicants: Set<Implicant> = Set()
 
-    return masks.map { mask in implicant.reduce( Set<Int>(), { $0.union( [ $1 & mask ] ) } ).count }
-}
+        while !current.isEmpty {
+            var candidates: Set<Implicant> = Set()
 
-func combine( implicant1: Set<Int>, implicant2: Set<Int>, inputs: Int ) -> Set<Int>? {
-    guard implicant1.isDisjoint( with: implicant2 ) else { return nil }
-    
-    let oldShape = shape( implicant: implicant1, inputs: inputs )
-    let neighbors = implicant1.reduce( Set<Int>(), {
-        $0.union( neighborsTable[$1] )
-    } ).subtracting( implicant1 )
+            for implicant in current {
+                let possibles = current.compactMap { combine( implicant1: implicant, implicant2: $0 ) }
+                
+                if possibles.isEmpty {
+                    primeImplicants.insert( implicant )
+                } else {
+                    for possible in possibles {
+                        candidates.insert( implicant.union( possible ) )
+                    }
+                }
+            }
+            print( primeImplicants.count, candidates.count )
+            current = candidates
+        }
+        
+        return primeImplicants
+    }
 
-    guard !neighbors.isDisjoint( with: implicant2 ) else { return nil }
-    guard oldShape == shape( implicant: implicant2, inputs: inputs ) else { return nil }
-    
-    let combination = implicant1.union( implicant2 )
-    let newShape = shape( implicant: combination, inputs: inputs )
-    let indices = oldShape.indices.filter { oldShape[$0] != newShape[$0] }
-    
-    guard indices.count == 1 else { return nil }
-    
-    return newShape[indices[0]] == 2 * oldShape[indices[0]] ? combination : nil
-}
-
-func makePrimeImplicants( inputs: Int ) -> Set<Set<Int>> {
-    var current = Set( truthTable.indices.filter { truthTable[$0] != 0 }.map { Set( [ $0 ] ) } )
-    var primeImplicants: Set<Set<Int>> = Set()
-
-    while !current.isEmpty {
-        var candidates: Set<Set<Int>> = Set()
-
-        for implicant in current {
-            let possibles = current.compactMap { combine( implicant1: implicant, implicant2: $0, inputs: inputs ) }
-            
-            if possibles.isEmpty {
-                primeImplicants.insert( implicant )
-            } else {
-                for possible in possibles {
-                    candidates.insert( implicant.union( possible ) )
+    func implicantMask( implicant: Implicant ) -> Int {
+        var result = lastTerm
+        
+        for mask in ( 1 ... inputs ).map( { 1 << ( inputs - $0 ) } ) {
+            for term in implicant {
+                if ( implicant.first! & mask ) != ( term & mask ) {
+                    result ^= mask
+                    break
                 }
             }
         }
-        print( primeImplicants.count, candidates.count )
-        current = candidates
+        
+        return result
+    }
+
+    func implicantTerm( implicant: Implicant ) -> String {
+        let usedMask = implicantMask( implicant: implicant )
+        let term = implicant.first! & usedMask
+        let labels = Array( "ABCDEFGHI" )
+        let sentinal = 1 << inputs
+
+        return ( 1 ... inputs ).compactMap {
+            let mask = sentinal >> $0
+            return usedMask & mask == 0 ? String?( nil ) : term & mask == 0 ? "!\(labels[$0-1])" : "\(labels[$0-1])"
+        }.joined(separator: " * " )
+    }
+
+    func implicantNegatives( implicant: Implicant ) -> [String] {
+        let usedMask = implicantMask( implicant: implicant )
+        let labels = Array( "ABCDEFGHI" )
+
+        return ( 1 ... inputs ).compactMap {
+            let mask = 1 << ( inputs - $0 )
+            return usedMask & mask == 0 || implicant.first! & mask != 0 ? String?( nil ) : "\(labels[$0-1])"
+        }
+    }
+
+    func implicantPositives( implicant: Implicant ) -> [String] {
+        let usedMask = implicantMask( implicant: implicant )
+        let labels = Array( "ABCDEFGHI" )
+
+        return ( 1 ... inputs ).compactMap {
+            let mask = 1 << ( inputs - $0 )
+            return usedMask & mask == 0 || implicant.first! & mask == 0 ? String?( nil ) : "\(labels[$0-1])"
+        }
     }
     
-    return primeImplicants
-}
-
-func implicantMask( implicant: Set<Int>, inputs: Int ) -> Int {
-    var result = ( 1 << inputs ) - 1
-    
-    for mask in ( 1 ... inputs ).map( { 1 << ( inputs - $0 ) } ) {
-        for term in implicant {
-            if ( implicant.first! & mask ) != ( term & mask ) {
-                result ^= mask
+    func makeEssentialImplicants() -> Set<Implicant> {
+        var remainingTerms = truthTable.indices.filter { truthTable[$0] == true }
+        var remainingImplicants = makePrimeImplicants()
+        var essentialImplicants = Set<Implicant>()
+        
+        for minterm in remainingTerms {
+            let coverage = remainingImplicants.filter { $0.contains( minterm ) }
+            
+            if coverage.count == 1 {
+                let implicant = coverage.first!
+                
+                remainingTerms.removeAll { implicant.contains( $0 ) }
+                remainingImplicants.remove( implicant )
+                essentialImplicants.insert( implicant )
+            }
+        }
+        
+        for implicant in remainingImplicants {
+            if implicant.isSuperset( of: remainingTerms ) {
+                remainingTerms = []
+                essentialImplicants.insert( implicant )
+                remainingImplicants.remove( implicant )
                 break
             }
         }
-    }
-    
-    return result
-}
-
-func implicantTerm( implicant: Set<Int>, inputs: Int ) -> String {
-    let usedMask = implicantMask( implicant: implicant, inputs: inputs )
-    let term = implicant.first! & usedMask
-    let labels = Array( "ABCDEFGHI" )
-    let sentinal = 1 << inputs
-
-    return ( 1 ... inputs ).compactMap {
-        let mask = sentinal >> $0
-        return usedMask & mask == 0 ? String?( nil ) : term & mask == 0 ? "!\(labels[$0-1])" : "\(labels[$0-1])"
-    }.joined(separator: " * " )
-}
-
-func implicantNegatives( implicant: Set<Int>, inputs: Int ) -> [String] {
-    let usedMask = implicantMask( implicant: implicant, inputs: inputs )
-    let labels = Array( "ABCDEFGHI" )
-
-    return ( 1 ... inputs ).compactMap {
-        let mask = 1 << ( inputs - $0 )
-        return usedMask & mask == 0 || implicant.first! & mask != 0 ? String?( nil ) : "\(labels[$0-1])"
-    }
-}
-
-func implicantPositives( implicant: Set<Int>, inputs: Int ) -> [String] {
-    let usedMask = implicantMask( implicant: implicant, inputs: inputs )
-    let labels = Array( "ABCDEFGHI" )
-
-    return ( 1 ... inputs ).compactMap {
-        let mask = 1 << ( inputs - $0 )
-        return usedMask & mask == 0 || implicant.first! & mask == 0 ? String?( nil ) : "\(labels[$0-1])"
-    }
-}
-
-func springdroidCommands( implicants: Set<Set<Int>>, inputs: Int, final: String ) -> String {
-    var result: [String] = []
-    
-    for implicant in implicants {
-        let destination = implicant == implicants.first ? "J" : "T"
-        let negatives = implicantNegatives( implicant: implicant, inputs: inputs )
-        let positives = implicantPositives( implicant: implicant, inputs: inputs )
         
-        if negatives.isEmpty {
-            result.append( "NOT \(positives.first!) \(destination)" )
-            result.append( "NOT \(destination) \(destination)" )
-            for positive in positives {
-                if positive != positives.first {
+        print( "Remaining Terms" )
+        print( remainingTerms )
+        print( "Remaining Implicants" )
+        print( remainingImplicants )
+        print( "Essential Implicants" )
+        print( essentialImplicants )
+        print( essentialImplicants.map { implicantTerm( implicant: $0 ) }.joined( separator: " + ") )
+        
+        return essentialImplicants
+    }
+
+    func springdroidCommands( final: String ) -> String {
+        var result: [String] = []
+        let implicants = makeEssentialImplicants()
+        
+        for implicant in implicants {
+            let destination = implicant == implicants.first ? "J" : "T"
+            let negatives = implicantNegatives( implicant: implicant )
+            let positives = implicantPositives( implicant: implicant )
+            
+            if negatives.isEmpty {
+                result.append( "NOT \(positives.first!) \(destination)" )
+                result.append( "NOT \(destination) \(destination)" )
+                for positive in positives {
+                    if positive != positives.first {
+                        result.append( "AND \(positive) \(destination)" )
+                    }
+                }
+            } else {
+                result.append("NOT \(negatives.first!) \(destination)" )
+                if negatives.count > 1 {
+                    result.append( "NOT \(destination) \(destination)" )
+                    for negative in negatives {
+                        if negative != negatives.first {
+                            result.append( "OR  \(negative) \(destination)" )
+                        }
+                    }
+                    result.append( "NOT \(destination) \(destination)" )
+                }
+                for positive in positives {
                     result.append( "AND \(positive) \(destination)" )
                 }
             }
-        } else {
-            result.append("NOT \(negatives.first!) \(destination)" )
-            if negatives.count > 1 {
-                result.append( "NOT \(destination) \(destination)" )
-                for negative in negatives {
-                    if negative != negatives.first {
-                        result.append( "OR  \(negative) \(destination)" )
-                    }
-                }
-                result.append( "NOT \(destination) \(destination)" )
-            }
-            for positive in positives {
-                result.append( "AND \(positive) \(destination)" )
+            if implicant != implicants.first {
+                result.append("OR  T J" )
             }
         }
-        if implicant != implicants.first {
-            result.append("OR  T J" )
-        }
+        
+        result.append( final )
+        return result.joined( separator: "\n" )
     }
-    
-    result.append( final )
-    return result.joined( separator: "\n" )
 }
 
-
-let primeImplicants = makePrimeImplicants( inputs: 4 )
-
-print( primeImplicants )
+print( "----------------------" )
 
 do {
-    var remainingTerms = minterms
-    var remainingImplicants = primeImplicants
-    var essentialImplicants = Set<Set<Int>>()
-    
-    for minterm in remainingTerms {
-        let coverage = primeImplicants.filter { $0.contains( minterm ) }
-        
-        if coverage.count == 1 {
-            let implicant = coverage.first!
-            
-            remainingTerms.removeAll { implicant.contains( $0 ) }
-            remainingImplicants.remove( implicant )
-            essentialImplicants.insert( implicant )
-        }
-    }
-    
-    for implicant in remainingImplicants {
-        if implicant.isSuperset( of: remainingTerms ) {
-            remainingTerms = []
-            essentialImplicants.insert( implicant )
-            remainingImplicants.remove( implicant )
-            break
-        }
-    }
-    
-    print( "Remaining Terms" )
-    print( remainingTerms )
-    print( "Remaining Implicants" )
-    print( remainingImplicants )
-    print( "Essential Implicants" )
-    print( essentialImplicants )
-    print( essentialImplicants.map { implicantTerm( implicant: $0, inputs: 4 ) }.joined( separator: " + ") )
-    
-    let part1Commands = springdroidCommands( implicants: essentialImplicants, inputs: 4, final: "WALK" )
+    let bazinga1 = Bazinga( inputs: 4 )
+    let part1Commands = bazinga1.springdroidCommands( final: "WALK" )
     let part1Controller = Controller( memory: initialMemory, commands: part1Commands )
-
+    
     print( "Part 1: \( part1Controller.trial( quietly: false ) )" )
+    
+    let bazinga2 = Bazinga( inputs: 8 )
+    let part2Commands = bazinga2.springdroidCommands( final: "RUN" )
+    let part2Controller = Controller( memory: initialMemory, commands: part2Commands )
+    
+    print("Part 2: \( part2Controller.trial( quietly: false ) )" )
 }
