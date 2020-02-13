@@ -410,10 +410,21 @@ struct Bazinga {
                Set( ( 0 ..< inputs ).map { index ^ ( 1 << $0 ) }.filter { truthTable[$0] != false } )
         }
     }
+    
+    init( inputs: Int, truthTable: [Bool?] ) {
+        self.inputs = inputs
+        halfTerm = Term( 1 << ( inputs - 1 ) )
+        lastTerm = Term( ( 1 << inputs ) - 1 )
+        
+        self.truthTable = truthTable
+        neighborsTable = truthTable.indices.map { index in
+               Set( ( 0 ..< inputs ).map { index ^ ( 1 << $0 ) }.filter { truthTable[$0] != false } )
+        }
+    }
 
     func shape( implicant: Implicant ) -> [Int] {
-        assert( inputs.isMultiple( of: 2 ), "The shape function can't handle odd inputs" )
-        let masks = stride( from: 2, through: inputs, by: 2 ).map { 0b11 << ( inputs - $0 ) }
+//        assert( inputs.isMultiple( of: 2 ), "The shape function can't handle odd inputs" )
+        let masks = stride( from: 2, through: inputs + 1, by: 2 ).map { 0b11 << ( inputs - $0 ) }
 
         return masks.map { mask in implicant.reduce( Implicant(), { $0.union( [ $1 & mask ] ) } ).count }
     }
@@ -464,30 +475,30 @@ struct Bazinga {
     }
 
     func implicantMask( implicant: Implicant ) -> Int {
-        var result = lastTerm
-        
-        for mask in ( 1 ... inputs ).map( { 1 << ( inputs - $0 ) } ) {
-            for term in implicant {
-                if ( implicant.first! & mask ) != ( term & mask ) {
-                    result ^= mask
-                    break
-                }
-            }
-        }
-        
-        return result
+        return lastTerm ^ implicant.reduce( 0, { $0 | ( $1 ^ implicant.first! ) } )
     }
 
     func implicantTerm( implicant: Implicant ) -> String {
         let usedMask = implicantMask( implicant: implicant )
-        let term = implicant.first! & usedMask
         let labels = Array( "ABCDEFGHI" )
         let sentinal = 1 << inputs
 
         return ( 1 ... inputs ).compactMap {
             let mask = sentinal >> $0
-            return usedMask & mask == 0 ? String?( nil ) : term & mask == 0 ? "!\(labels[$0-1])" : "\(labels[$0-1])"
+            guard usedMask & mask == mask else { return String?( nil ) }
+            return implicant.first! & mask == 0 ? "!\(labels[$0-1])" : "\(labels[$0-1])"
         }.joined(separator: " * " )
+    }
+    
+    func asBinary( implicant: Implicant ) -> String {
+        let usedMask = implicantMask( implicant: implicant )
+        
+        return ( 1 ... inputs ).map {
+            let shiftCount = inputs - $0
+            let mask = 1 << shiftCount
+            guard usedMask & mask == mask else { return "-" }
+            return String( ( implicant.first! & mask ) >> shiftCount )
+        }.joined()
     }
 
     func implicantNegatives( implicant: Implicant ) -> [String] {
@@ -537,11 +548,11 @@ struct Bazinga {
         }
         
         print( "Remaining Terms" )
-        print( remainingTerms )
+        remainingTerms.forEach { print( "    ", $0.asBinary( bits: inputs ) ) }
         print( "Remaining Implicants" )
-        print( remainingImplicants )
+        remainingImplicants.forEach { print( "    ", asBinary( implicant: $0 ) ) }
         print( "Essential Implicants" )
-        print( essentialImplicants )
+        essentialImplicants.forEach { print( "    ", asBinary( implicant: $0 ) ) }
         print( essentialImplicants.map { implicantTerm( implicant: $0 ) }.joined( separator: " + ") )
         
         return essentialImplicants
@@ -591,16 +602,107 @@ struct Bazinga {
 
 print( "----------------------" )
 
+
+func toTruthTable( expression: String, inputs: Int ) -> [Bool?] {
+    let labels = "ABCDEFGHI"
+    let expression = expression.replacingOccurrences( of: " ", with: "" )
+    let terms = expression.split( separator: "+" )
+    var truthTable = Array( repeating: Bool?( false ), count: 1 << inputs )
+    
+    print( expression )
+    print( terms )
+    
+    for term in terms {
+        let variables = term.split( separator: "*" )
+        var mask = 0
+        var value = 0
+
+        for variable in variables {
+            let not = variable.first == "!"
+            let name = not ? variable.last! : variable.first!
+            let index = labels.distance( from: labels.startIndex, to: labels.firstIndex( of: name )! )
+            let bit = 1 << ( inputs - index - 1 )
+            
+            mask |= bit
+            if !not { value |= bit }
+        }
+        
+        for index in truthTable.indices {
+            if index & mask == value {
+                truthTable[index] = true
+            }
+        }
+    }
+    
+    return truthTable
+}
+
+func makeTruthTable( index: Int, inputs: Int ) -> Bool? {
+    let call = walkOrJump( scan: index, range: inputs )
+    let masks = [
+        ( 0b110100000, 0b100100000 ),
+        ( 0b111111110, 0b110101110 ),
+        ( 0b111110000, 0b110110000 )
+    ]
+    
+    if call == "J" { return true }
+    if index < ( 1 << ( inputs - 1 ) ) { return true }
+    
+    for mask in masks {
+        if index & mask.0 == mask.1 { return true }
+    }
+    
+    return false
+}
+
+
 do {
     let bazinga1 = Bazinga( inputs: 4 )
     let part1Commands = bazinga1.springdroidCommands( final: "WALK" )
     let part1Controller = Controller( memory: initialMemory, commands: part1Commands )
-    
+
     print( "Part 1: \( part1Controller.trial( quietly: false ) )" )
-    
-    let bazinga2 = Bazinga( inputs: 8 )
-    let part2Commands = bazinga2.springdroidCommands( final: "RUN" )
+
+    let bazinga2 = Bazinga( inputs: 9 )
+    let truthTable = bazinga2.truthTable.indices.map { makeTruthTable( index: $0, inputs: bazinga2.inputs ) }
+    let bazinga3 = Bazinga( inputs: bazinga2.inputs, truthTable: truthTable )
+    let part2Commands = bazinga3.springdroidCommands( final: "RUN" )
     let part2Controller = Controller( memory: initialMemory, commands: part2Commands )
-    
-    print("Part 2: \( part2Controller.trial( quietly: false ) )" )
+
+    print( "Part 2: \( part2Controller.trial( quietly: false ) )" )
+}
+
+
+do {
+//    let inputs = 9
+//    let test1 = "!A + !B * D + B * !C * D * E + B * !C * D * !E * H"
+//    let test2 = "!A + D * !B + D * E * !C + D * H * !C"
+//    let test = "!B * D * !E * H + !B * D * !G * H + !C * D * !F * H + !C * D * !G * H + !A + !B * D * !F * H"
+//    let tt1 = toTruthTable( expression: test1, inputs: inputs )
+//    let tt2 = toTruthTable( expression: test2, inputs: inputs )
+//    let truthTable = toTruthTable( expression: test, inputs: inputs )
+//    let bazinga2 = Bazinga( inputs: inputs )
+//    let newTT = bazinga2.truthTable.indices.map { makeTruthTable( index: $0, inputs: inputs ) }
+//
+//    print( truthTable == bazinga2.truthTable )
+//    print( tt1 == tt2 )
+//    print( tt2 == bazinga2.truthTable )
+//    print( tt2 == newTT )
+//    print( "------------------" )
+//    var count = 0
+//    for index in bazinga2.truthTable.indices {
+//        let call = walkOrJump( scan: index, range: inputs )
+//
+//        if ( call == "K" || call == "X" ) && index & 0x90 == 0x90 { count += 1 }
+//        if index >= bazinga2.halfTerm {
+//            print( index.asBinary( bits: inputs ), tt2[index]!, bazinga2.truthTable[index]!, call )
+//        }
+//    }
+//    print( count )
+//    
+//    let bazinga1 = Bazinga( inputs: inputs, truthTable: newTT )
+//    let part2Commands = bazinga1.springdroidCommands( final: "RUN" )
+//    let part2Controller = Controller( memory: initialMemory, commands: part2Commands )
+//    
+//    print("Part 2: \( part2Controller.trial( quietly: false ) )" )
 }
