@@ -8,13 +8,17 @@
 
 import Foundation
 
-extension Array {
+extension Collection {
     var pairs: [ ( Element, Element ) ] {
         get {
             var result: [ ( Element, Element ) ] = []
-            for index1 in 0 ..< count - 1 {
-                for index2 in index1 + 1 ..< count {
-                    result.append( (self[index1], self[index2] ) )
+            for index1 in indices {
+                if index1 < endIndex {
+                    var index2 = index( after: index1 )
+                    while index2 < endIndex {
+                        result.append( (self[index1], self[index2] ) )
+                        index2 = index( after: index2 )
+                    }
                 }
             }
             return result
@@ -23,40 +27,42 @@ extension Array {
 }
 
 
+func findSequence( input: [Int], invalid: Int ) -> Int {
+    var sum = 0
+    var lastIndex = 0
+    let firstIndex = input.indices.first( where: { index1 in
+        sum = input[index1]
+        
+        if sum < invalid {
+            for index2 in index1 + 1 ..< input.count {
+                sum += input[index2]
+                lastIndex = index2
+                if sum >= invalid { break }
+            }
+        }
+        return sum == invalid
+    } )!
+
+    let sequence = input[ firstIndex ... lastIndex ]
+        
+    return sequence.min()! + sequence.max()!
+}
+
+
 let preambleLength = 25
 let inputFile = "/Users/markj/Development/adventofcode/2020/input/day09.txt"
 let input = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map { Int($0)! }
-var preamble = Array( input[ 0 ..< preambleLength ] )
-let remaining = input[ preambleLength ..< input.count ]
+var preambleStart = 0
+let invalid = input[ preambleLength ..< input.count ].first( where: { candidate in
+    if input[ preambleStart ..< preambleStart + preambleLength ].pairs.first( where: { pair in
+        return pair.0 + pair.1 == candidate
+    } ) == nil {
+        return true
+    }
+    
+    preambleStart += 1
+    return false
+} )!
 
-FINDINVALID:
-for next in remaining {
-    for ( value1, value2 ) in preamble.pairs {
-        if value1 + value2 == next {
-            preamble.removeFirst()
-            preamble.append( next )
-            continue FINDINVALID
-        }
-    }
-    print( "Part 1: \(next)" )
-    
-    FINDSEQUENCE:
-    for firstIndex in 0 ..< input.count - 1 {
-        if input[firstIndex] < next {
-            var sum = input[firstIndex]
-            
-            for lastIndex in firstIndex + 1 ..< input.count {
-                sum += input[lastIndex]
-                if sum > next { continue FINDSEQUENCE }
-                if sum == next {
-                    let inOrder = input[ firstIndex ... lastIndex ].sorted()
-                    
-                    print( "Part 2: \(inOrder.min()! + inOrder.max()!)" )
-                    break FINDSEQUENCE
-                }
-            }
-        }
-    }
-    
-    break
-}
+print( "Part 1: \(invalid)" )
+print( "Part 2: \(findSequence( input: input, invalid: invalid ))" )
