@@ -294,102 +294,12 @@ struct Controller {
 }
 
 
-// MARK: - Part 1 starts here
-
-( 0b1000 ... 0b1111 ).forEach { print( "\($0.asBinary(bits: 4)) \(walkOrJump(scan: $0, range: 4))" ) }
-let candidates = ( 0b1000 ... 0b1111 ).filter { walkOrJump( scan: $0, range: 4 ) == "J" }
-candidates.forEach { print( $0.asBinary( bits: 4 ) ) }
-print( "!A + " + candidates.map { "( " + $0.logicalTerm(bits: 4 ) + " )" }.joined(separator: " + " ) )
-// (! a && d) || (! b && d)
-let part1Commands = """
-    NOT A J
-
-    NOT B T
-    AND D T
-    OR  T J
-
-    NOT C T
-    AND D T
-    OR  T J
-
-    WALK
-"""
-let part1Controller = Controller( memory: initialMemory, commands: part1Commands )
-
-print( "Part 1: \( part1Controller.trial( quietly: true ) )" )
-
-
-// MARK: - Part 2 starts here
-
-//[ "0........" ].forEach { print( "Range \($0) \( check( pattern: $0 ) )" ) }
-//( 0b10000 ... 0b11111 ).map { String( $0, radix: 2 ) + "...." }.forEach {
-//    print( "Range \($0) \( check( pattern: $0 ) )" )
-//}
-//print()
-//[ "11010..0.", "11010..1." ].forEach { print( "Range \($0) \( check( pattern: $0 ) )" ) }
-
-
-// Using the information produced from check(pattern:), we can derive the following expression.
-// J = !A || !B && D || B && !C && D && E || B && !C && D && !E && H
-// That is too long to translate into 15 springdroid instructions but it simplifies to this.
-// J = !A || D && !B || D && E && !C || D && H && !C
-
-let part2Commands = """
-    NOT A J
-
-    NOT B T
-    AND D T
-    OR  T J
-
-    NOT C T
-    AND D T
-    AND E T
-    OR  T J
-
-    NOT C T
-    AND D T
-    AND H T
-    OR  T J
-
-    RUN
-"""
-let part2Controller = Controller( memory: initialMemory, commands: part2Commands )
-
-print( "Part 2: \( part2Controller.trial( quietly: true ) )" )
-
-
-
-
-func grayCode( bits: Int ) -> [Int] {
-    guard bits > 1 else { return [ 0, 1 ] }
-    
-    let prev = grayCode( bits: bits - 1 )
-    let verp = prev.reversed()
-    let extend = 1 << ( bits - 1 )
-    
-    return prev + verp.map { $0 + extend }
-}
-
-
-let codes = grayCode( bits: 2 )
-let grid = ( 0 ... 3 ).map { y in ( 0 ... 3 ).map { x in
-    walkOrJump( scan: 4 * codes[y] + codes[x], range: 4 ) }
-}
-let header = "AB|CD," + codes.map { $0.asBinary( bits: 2 ) }.joined(separator: "," )
-let rows = ( 0 ... 3 ).map { codes[$0].asBinary( bits: 2 ) + "," + grid[$0].joined( separator: "," ) }
-let filename = "/Users/markj/Development/adventofcode/2019/output/day21.txt"
-let contents = header + "\n" + rows.joined( separator: "\n" )
-
-try! contents.write( toFile: filename, atomically: true, encoding: String.Encoding.utf8 )
-
-
-
 // MARK: - Quine–McCluskey
 
 typealias Term = Int
 typealias Implicant = Set<Term>
 
-struct Bazinga {
+struct Generator {
     let inputs: Int
     let truthTable: [Bool?]
     let neighborsTable: [Implicant]
@@ -451,10 +361,12 @@ struct Bazinga {
 
     func makePrimeImplicants() -> Set<Implicant> {
         var current = Set( truthTable.indices.filter { truthTable[$0] != false }.map { Set( [ $0 ] ) } )
-        var primeImplicants: Set<Implicant> = Set()
+        var primeImplicants = Set<Implicant>()
 
         while !current.isEmpty {
-            var candidates: Set<Implicant> = Set()
+            let currentSize = current.first!.count
+            let primesCount = primeImplicants.count
+            var candidates = Set<Implicant>()
 
             for implicant in current {
                 let possibles = current.compactMap { combine( implicant1: implicant, implicant2: $0 ) }
@@ -467,7 +379,10 @@ struct Bazinga {
                     }
                 }
             }
-            print( primeImplicants.count, candidates.count )
+            print(
+                "\(current.count) size \(currentSize) implicants give",
+                "\(primeImplicants.count-primesCount) primes and \(candidates.count) candidates"
+            )
             current = candidates
         }
         
@@ -521,7 +436,7 @@ struct Bazinga {
         }
     }
     
-    func makeEssentialImplicants() -> Set<Implicant> {
+    func makeEssentialImplicants( verbose: Bool ) -> Set<Implicant> {
         var remainingTerms = truthTable.indices.filter { truthTable[$0] == true }
         var remainingImplicants = makePrimeImplicants()
         var essentialImplicants = Set<Implicant>()
@@ -547,20 +462,22 @@ struct Bazinga {
             }
         }
         
-        print( "Remaining Terms" )
-        remainingTerms.forEach { print( "    ", $0.asBinary( bits: inputs ) ) }
-        print( "Remaining Implicants" )
-        remainingImplicants.forEach { print( "    ", asBinary( implicant: $0 ) ) }
-        print( "Essential Implicants" )
-        essentialImplicants.forEach { print( "    ", asBinary( implicant: $0 ) ) }
-        print( essentialImplicants.map { implicantTerm( implicant: $0 ) }.joined( separator: " + ") )
+        if verbose {
+            print( "Remaining Terms" )
+            remainingTerms.forEach { print( "    ", $0.asBinary( bits: inputs ) ) }
+            print( "Remaining Implicants" )
+            remainingImplicants.forEach { print( "    ", asBinary( implicant: $0 ) ) }
+            print( "Essential Implicants" )
+            essentialImplicants.forEach { print( "    ", asBinary( implicant: $0 ) ) }
+            print( essentialImplicants.map { implicantTerm( implicant: $0 ) }.joined( separator: " + ") )
+        }
         
         return essentialImplicants
     }
 
-    func springdroidCommands( final: String ) -> String {
+    func springscript( final: String ) -> String {
         var result: [String] = []
-        let implicants = makeEssentialImplicants()
+        let implicants = makeEssentialImplicants( verbose: false )
         
         for implicant in implicants {
             let destination = implicant == implicants.first ? "J" : "T"
@@ -600,8 +517,6 @@ struct Bazinga {
     }
 }
 
-print( "----------------------" )
-
 
 func toTruthTable( expression: String, inputs: Int ) -> [Bool?] {
     let labels = "ABCDEFGHI"
@@ -637,12 +552,36 @@ func toTruthTable( expression: String, inputs: Int ) -> [Bool?] {
     return truthTable
 }
 
+
+#if false
+// The standard truth table created by Generator will not reduce to 15 springscript instructions for part 2.
+// Converting all the "X" and "K" entries into don't cares also will not reduce to 15 springscript
+// instructions.  So when this code is enabled it simply prints out the part 2 truth table for hand analysis.
+// It's pretty obvious that the truth table falls into groups based on the first 4 bits (A, B, C, and D).
+// Using that information I created the makeTruthTable function which selectively converts some of the "X"
+// and "K" entries into don't cares.  This them allows the truth table to reduce to less than 15 springscript
+// instructions.
+do {
+    let inputs = 9
+    let generator = Generator( inputs: inputs )
+
+    for index in generator.truthTable.indices {
+        let call = walkOrJump( scan: index, range: inputs )
+
+        if index >= generator.halfTerm {
+            print( index.asBinary( bits: inputs ), call, generator.truthTable[index]! )
+        }
+    }
+}
+#endif
+
+
 func makeTruthTable( index: Int, inputs: Int ) -> Bool? {
     let call = walkOrJump( scan: index, range: inputs )
     let masks = [
-        ( 0b110100000, 0b100100000 ),
-        ( 0b111111110, 0b110101110 ),
-        ( 0b111110000, 0b110110000 )
+        ( 0b110100000, 0b100100000 ),   // 0b10-1-----
+        ( 0b111111110, 0b110101110 ),   // 0b11010111-
+        ( 0b111110000, 0b110110000 )    // 0b11011----
     ]
     
     if call == "J" { return true }
@@ -656,53 +595,22 @@ func makeTruthTable( index: Int, inputs: Int ) -> Bool? {
 }
 
 
+#if true
 do {
-    let bazinga1 = Bazinga( inputs: 4 )
-    let part1Commands = bazinga1.springdroidCommands( final: "WALK" )
+    let generator1 = Generator( inputs: 4 )
+    let part1Commands = generator1.springscript( final: "WALK" )
     let part1Controller = Controller( memory: initialMemory, commands: part1Commands )
 
-    print( "Part 1: \( part1Controller.trial( quietly: false ) )" )
+    print( "Part 1: \( part1Controller.trial( quietly: true ) )" )
 
-    let bazinga2 = Bazinga( inputs: 9 )
-    let truthTable = bazinga2.truthTable.indices.map { makeTruthTable( index: $0, inputs: bazinga2.inputs ) }
-    let bazinga3 = Bazinga( inputs: bazinga2.inputs, truthTable: truthTable )
-    let part2Commands = bazinga3.springdroidCommands( final: "RUN" )
+    let generator2 = Generator( inputs: 9 )
+    let truthTable = generator2.truthTable.indices.map {
+        makeTruthTable( index: $0, inputs: generator2.inputs )
+    }
+    let generator3 = Generator( inputs: generator2.inputs, truthTable: truthTable )
+    let part2Commands = generator3.springscript( final: "RUN" )
     let part2Controller = Controller( memory: initialMemory, commands: part2Commands )
 
     print( "Part 2: \( part2Controller.trial( quietly: false ) )" )
 }
-
-
-do {
-//    let inputs = 9
-//    let test1 = "!A + !B * D + B * !C * D * E + B * !C * D * !E * H"
-//    let test2 = "!A + D * !B + D * E * !C + D * H * !C"
-//    let test = "!B * D * !E * H + !B * D * !G * H + !C * D * !F * H + !C * D * !G * H + !A + !B * D * !F * H"
-//    let tt1 = toTruthTable( expression: test1, inputs: inputs )
-//    let tt2 = toTruthTable( expression: test2, inputs: inputs )
-//    let truthTable = toTruthTable( expression: test, inputs: inputs )
-//    let bazinga2 = Bazinga( inputs: inputs )
-//    let newTT = bazinga2.truthTable.indices.map { makeTruthTable( index: $0, inputs: inputs ) }
-//
-//    print( truthTable == bazinga2.truthTable )
-//    print( tt1 == tt2 )
-//    print( tt2 == bazinga2.truthTable )
-//    print( tt2 == newTT )
-//    print( "------------------" )
-//    var count = 0
-//    for index in bazinga2.truthTable.indices {
-//        let call = walkOrJump( scan: index, range: inputs )
-//
-//        if ( call == "K" || call == "X" ) && index & 0x90 == 0x90 { count += 1 }
-//        if index >= bazinga2.halfTerm {
-//            print( index.asBinary( bits: inputs ), tt2[index]!, bazinga2.truthTable[index]!, call )
-//        }
-//    }
-//    print( count )
-//    
-//    let bazinga1 = Bazinga( inputs: inputs, truthTable: newTT )
-//    let part2Commands = bazinga1.springdroidCommands( final: "RUN" )
-//    let part2Controller = Controller( memory: initialMemory, commands: part2Commands )
-//    
-//    print("Part 2: \( part2Controller.trial( quietly: false ) )" )
-}
+#endif
