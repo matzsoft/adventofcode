@@ -52,14 +52,8 @@ struct Dimension3 {
                     let current = Coordinate3( x: x, y: y, z: z )
                     let neighbors = countNeighbors( coordinate: current )
                     
-                    if active.contains( current ) {
-                        if neighbors == 3 || neighbors == 4 {
-                            next.append( current )
-                        }
-                    } else {
-                        if neighbors == 3 {
-                            next.append( current )
-                        }
+                    if neighbors == 3 || active.contains( current ) && neighbors == 4 {
+                        next.append( current )
                     }
                 }
             }
@@ -111,14 +105,8 @@ struct Dimension4 {
                         let current = Coordinate4( x: x, y: y, z: z, w: w )
                         let neighbors = countNeighbors( coordinate: current )
                         
-                        if active.contains( current ) {
-                            if neighbors == 3 || neighbors == 4 {
-                                next.append( current )
-                            }
-                        } else {
-                            if neighbors == 3 {
-                                next.append( current )
-                            }
+                        if neighbors == 3 || active.contains( current ) && neighbors == 4 {
+                            next.append( current )
                         }
                     }
                 }
