@@ -34,93 +34,81 @@ struct State {
 }
 
 struct Expression {
-    let terms: [Substring]
+    let terms: [String]
     
     init( input: Substring ) {
-        terms = input.split( separator: " " )
+        terms = Array( input.replacingOccurrences( of: " ", with: "" ) ).map { String( $0 ) }
     }
 }
 
 
-func evaluate1( expression: Expression ) -> Int {
+func evaluate( expression: Expression, part2: Bool = false ) -> Int {
+    enum fsaState { case begin, digit, operation }
     var currentState = State()
     var stack = Array<State>()
-    var termIterator = expression.terms.makeIterator()
+    var fsa = fsaState.begin
     
-    while var term = termIterator.next() {
-        while term.hasPrefix( "(" ) {
-            stack.append( currentState )
-            currentState = State()
-            term = term.dropFirst()
-        }
-        
-        currentState = currentState.update( value: Int( term.filter { $0 != ")" } )! )
-        
-        while term.hasSuffix( ")" ) {
-            currentState = stack.removeLast().update( value: currentState.value )
-            term = term.dropLast()
-        }
-        
-        if let term = termIterator.next() {
-            let operation = Operation( rawValue: String( term ) )!
-            currentState = State( operation: operation, value: currentState.value )
-        }
-    }
-    
-    return currentState.value
-}
-
-
-func evaluate2( expression: Expression ) -> Int {
-    var currentState = State()
-    var stack = Array<State>()
-    var termIterator = expression.terms.makeIterator()
-    
-    while var term = termIterator.next() {
-        while term.hasPrefix( "(" ) {
-            stack.append( currentState )
-            currentState = State()
-            term = term.dropFirst()
-        }
-        
-        currentState = currentState.update( value: Int( term.filter { $0 != ")" } )! )
-        
-        if term.hasSuffix( ")" ) {
-            while !stack.isEmpty && !stack.last!.fromParen {
-                currentState = stack.removeLast().update( value: currentState.value )
-            }
-        }
-        while term.hasSuffix( ")" ) {
-            currentState = stack.removeLast().update( value: currentState.value )
-            term = term.dropLast()
-        }
-        
-        if let term = termIterator.next() {
-            let operation = Operation( rawValue: String( term ) )!
-            
-            switch operation {
-            case .add:
-                currentState = State( operation: operation, value: currentState.value )
-            case .multiply:
-                stack.append( State( operation: operation, value: currentState.value, fromParen: false ) )
+    for term in expression.terms {
+        switch fsa {
+        case .begin:
+            if term == "(" {
+                stack.append( currentState )
                 currentState = State()
+            } else if let value = Int( term ) {
+                currentState = currentState.update( value: value )
+                fsa = .digit
+            } else {
+                print( "Invalid \(term) in state \(fsa)" )
             }
-        } else {
-            while !stack.isEmpty {
+        case .digit:
+            switch term {
+            case ")":
+                while !stack.last!.fromParen {
+                    currentState = stack.removeLast().update( value: currentState.value )
+                }
                 currentState = stack.removeLast().update( value: currentState.value )
+            case "+":
+                currentState = State( operation: Operation( rawValue: term )!, value: currentState.value )
+                fsa = .operation
+            case "*":
+                let operation = Operation( rawValue: term )!
+                if !part2 {
+                    currentState = State( operation: operation, value: currentState.value )
+                } else {
+                    stack.append(
+                        State( operation: operation, value: currentState.value, fromParen: false )
+                    )
+                    currentState = State()
+                }
+                fsa = .operation
+            default:
+                print( "Invalid \(term) in state \(fsa)" )
+            }
+        case .operation:
+            if term == "(" {
+                stack.append( currentState )
+                currentState = State()
+                fsa = .begin
+            } else if let value = Int( term ) {
+                currentState = currentState.update( value: value )
+                fsa = .digit
+            } else {
+                print( "Invalid \(term) in state \(fsa)" )
             }
         }
     }
     
+    while !stack.isEmpty && !stack.last!.fromParen {
+        currentState = stack.removeLast().update( value: currentState.value )
+    }
     return currentState.value
 }
 
-let test2 = "((2 + 4 * 9) * (6 + 9 * 8 + 6) + 6) + 2 + 4 * 2"
+
 let inputFile = "/Users/markj/Development/adventofcode/2020/input/day18.txt"
 let expressions = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map {
     Expression( input: $0 )
 }
 
-print( evaluate2( expression: Expression( input: Substring( test2 ) ) ) )
-print( "Part 1: \(expressions.reduce( 0 ) { $0 + evaluate1( expression: $1 ) })" )
-print( "Part 2: \(expressions.reduce( 0 ) { $0 + evaluate2( expression: $1 ) })" )
+print( "Part 1: \(expressions.reduce( 0 ) { $0 + evaluate( expression: $1 ) })" )
+print( "Part 2: \(expressions.reduce( 0 ) { $0 + evaluate( expression: $1, part2: true ) })" )
