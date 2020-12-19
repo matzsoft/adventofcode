@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum Operation: String {
+enum Operation: Character {
     case add = "+", multiply = "*"
 }
 
@@ -34,16 +34,16 @@ struct State {
 }
 
 struct Expression {
-    let terms: [String]
+    let terms: String
     
     init( input: Substring ) {
-        terms = Array( input.replacingOccurrences( of: " ", with: "" ) ).map { String( $0 ) }
+        terms = input.replacingOccurrences( of: " ", with: "" )
     }
 }
 
 
 func evaluate( expression: Expression, part2: Bool = false ) -> Int {
-    enum fsaState { case begin, digit, operation }
+    enum fsaState { case begin, digit }
     var currentState = State()
     var stack = Array<State>()
     var fsa = fsaState.begin
@@ -54,7 +54,7 @@ func evaluate( expression: Expression, part2: Bool = false ) -> Int {
             if term == "(" {
                 stack.append( currentState )
                 currentState = State()
-            } else if let value = Int( term ) {
+            } else if let value = Int( String( term ) ) {
                 currentState = currentState.update( value: value )
                 fsa = .digit
             } else {
@@ -69,7 +69,7 @@ func evaluate( expression: Expression, part2: Bool = false ) -> Int {
                 currentState = stack.removeLast().update( value: currentState.value )
             case "+":
                 currentState = State( operation: Operation( rawValue: term )!, value: currentState.value )
-                fsa = .operation
+                fsa = .begin
             case "*":
                 let operation = Operation( rawValue: term )!
                 if !part2 {
@@ -80,19 +80,8 @@ func evaluate( expression: Expression, part2: Bool = false ) -> Int {
                     )
                     currentState = State()
                 }
-                fsa = .operation
-            default:
-                print( "Invalid \(term) in state \(fsa)" )
-            }
-        case .operation:
-            if term == "(" {
-                stack.append( currentState )
-                currentState = State()
                 fsa = .begin
-            } else if let value = Int( term ) {
-                currentState = currentState.update( value: value )
-                fsa = .digit
-            } else {
+            default:
                 print( "Invalid \(term) in state \(fsa)" )
             }
         }
