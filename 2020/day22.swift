@@ -33,21 +33,16 @@ func part1( decks: [Deck] ) -> Int {
     var decks = decks
     
     while decks.allSatisfy( { !$0.cards.isEmpty } ) {
-        let first = decks[0].cards.removeFirst()
-        let second = decks[1].cards.removeFirst()
+        let draws = [ decks[0].cards.removeFirst(), decks[1].cards.removeFirst() ]
         
-        if first > second {
-            decks[0].cards.append( contentsOf: [ first, second ] )
+        if draws[0] > draws[1] {
+            decks[0].cards.append( contentsOf: draws )
         } else {
-            decks[1].cards.append( contentsOf: [ second, first ] )
+            decks[1].cards.append( contentsOf: draws.reversed() )
         }
     }
     
-    if decks[0].cards.isEmpty {
-        return decks[1].score
-    }
-    
-    return decks[0].score
+    return decks.map { $0.score }.max()!
 }
 
 
