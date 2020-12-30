@@ -9,41 +9,36 @@
 import Foundation
 
 struct Pattern {
-    struct Element {
-        let spaces: Int
-        let hashes: Int
-        var regex: String { ".{\(spaces)}#{\(hashes)}" }
-        var string: String {
-            Array( repeating: " ", count: spaces ).joined() + Array( repeating: "#", count: hashes ).joined()
-        }
-    }
-
-    struct Line {
-        let elements: [Element]
-        var regex: String { elements.map { $0.regex }.joined() }
-        var string: String { elements.map { $0.string }.joined() }
-    }
-    
     struct Match {
         let index: Int
         let range: Range<String.Index>
     }
     
-    let lines: [Line]
-    var string: String { lines.map { $0.string }.joined( separator: "\n" ) }
+    let lines: [String]
+    let regexes: [String]
+    
+    var string: String { lines.joined( separator: "\n" ) }
+    
+    init( input: String ) {
+        let lines = input.split( separator: "\n" )
+        let length = lines.map { $0.count }.max()!
+        
+        self.lines = lines.map { $0.padding( toLength: length, withPad: " ", startingAt: 0 ) }
+        regexes = self.lines.map { $0.replacingOccurrences( of: " ", with: "." ) }
+    }
     
     func match( image: [String]) -> [Match] {
         var matches: [ Match ] = []
 
         for rowIndex in 0 ... image.count - lines.count {
             var startIndex = image[rowIndex].startIndex
-            let offset = lines[0].string.count + 1
+            let offset = lines[0].count + 1
             let limitIndex = image[rowIndex].index( image[rowIndex].endIndex, offsetBy: -offset )
             
             while startIndex < limitIndex {
                 let outerRange = startIndex ..< image[rowIndex].endIndex
                 let result = image[rowIndex].range(
-                    of: lines[0].regex,
+                    of: regexes[0],
                     options: .regularExpression,
                     range: outerRange
                 )
@@ -55,7 +50,7 @@ struct Pattern {
                     let index2 = rowIndex + index1
                     
                     if image[index2].range(
-                        of: lines[index1].regex,
+                        of: regexes[index1],
                         options: .regularExpression,
                         range: range
                     ) == nil {
@@ -75,48 +70,19 @@ struct Pattern {
     func clear( image: [String], match: Match ) -> [String] {
         var image = image
         
-        for index1 in 0 ..< lines.count {
-            var startIndex = match.range.lowerBound
+        for rowIndex in 0 ..< lines.count {
+            var colIndex = match.range.lowerBound
             
-            for element in lines[index1].elements {
-                startIndex = image[ match.index + index1 ].index( startIndex, offsetBy: element.spaces )
-                let endIndex = image[ match.index + index1 ].index( startIndex, offsetBy: element.hashes )
-                let range = startIndex ..< endIndex
-                
-                image[ match.index + index1 ].replaceSubrange( range, with: Array( repeating: "O", count: element.hashes ) )
-                startIndex = image[ match.index + index1 ].index( startIndex, offsetBy: element.hashes )
+            for patIndex in lines[rowIndex].indices {
+                if lines[rowIndex][patIndex] == "#" {
+                    image[ match.index + rowIndex ].replaceSubrange( colIndex...colIndex, with: "O" )
+                }
+                colIndex = image[ match.index + rowIndex ].index( after: colIndex )
             }
         }
         return image
     }
 }
-
-//let seaMonster = """
-//                  #
-//#    ##    ##    ###
-// #  #  #  #  #  #
-//"""
-let seaMonster = Pattern( lines: [
-    Pattern.Line( elements: [
-        Pattern.Element( spaces: 18, hashes: 1 ),
-        Pattern.Element( spaces: 1, hashes: 0 ),
-    ] ),
-    Pattern.Line(elements: [
-        Pattern.Element( spaces: 0, hashes: 1 ),
-        Pattern.Element( spaces: 4, hashes: 2 ),
-        Pattern.Element( spaces: 4, hashes: 2 ),
-        Pattern.Element( spaces: 4, hashes: 3 ),
-    ] ),
-    Pattern.Line(elements: [
-        Pattern.Element( spaces: 1, hashes: 1 ),
-        Pattern.Element( spaces: 2, hashes: 1 ),
-        Pattern.Element( spaces: 2, hashes: 1 ),
-        Pattern.Element( spaces: 2, hashes: 1 ),
-        Pattern.Element( spaces: 2, hashes: 1 ),
-        Pattern.Element( spaces: 2, hashes: 1 ),
-        Pattern.Element( spaces: 3, hashes: 0 ),
-    ] ),
-] )
 
 
 struct Orientation: Hashable {
@@ -396,7 +362,7 @@ func orient( image: [String], orientation: Orientation ) -> [String] {
 }
 
 
-func count( character: Character, in image: [String] ) -> Int {
+func countOccurances( of character: Character, in image: [String] ) -> Int {
     return image.reduce( 0 ) { $0 + $1.filter { $0 == character }.count }
 }
 
@@ -422,10 +388,16 @@ func part2( nodes: [ Int: Node ] ) -> Int {
     let clearedImage = images.1.reduce( into: images.0 ) {
         $0 = seaMonster.clear( image: $0, match: $1 )
     }
-    return count( character: "#", in: clearedImage )
+    return countOccurances( of: "#", in: clearedImage )
 }
 
 
+let seaMonsterText = """
+                  #
+#    ##    ##    ###
+ #  #  #  #  #  #
+"""
+let seaMonster = Pattern( input: seaMonsterText )
 let inputFile = "/Users/markj/Development/adventofcode/2020/input/day20.txt"
 let groups =  try String( contentsOfFile: inputFile ).components( separatedBy: "\n\n" )
 let tiles =  groups.map { Tile( input: $0 ) }
@@ -434,48 +406,3 @@ var nodes = tiles.reduce(into: [ Int : Node ](), { $0[$1.id] = Node( tile: $1, t
 print( seaMonster.string )
 print( "Part 1: \( part1( nodes: nodes ) )" )
 print( "Part 2: \( part2( nodes: nodes ) )" )
-
-
-let test = """
-.#.#..#.##...#.##..#####
-###....#.#....#..#......
-##.##.###.#.#..######...
-###.#####...#.#####.#..#
-##.#....#.##.####...#.##
-...########.#....#####.#
-....#..#...##..#.#.###..
-.####...#..#.....#......
-#..#.##..#..###.#.##....
-#.####..#.####.#.#.###..
-###.#.#...#.######.#..##
-#.####....##..########.#
-##..##.#...#...#.#.#.#..
-...#..#..#.#.##..###.###
-.#.#....#.##.#...###.##.
-###.#...#..#.##.######..
-.#.#.###.##.##.#..#.##..
-.####.###.#...###.#..#.#
-..#.#..#..#.#.#.####.###
-#..####...#.#.#.###.###.
-#####..#####...###....##
-#.##..#..#...#..####...#
-.#.###..##..##..####.##.
-...###...##...#...#..###
-""".split( separator: "\n" ).map { String( $0 ) }
-
-//print( "----------- 0 -------------" )
-//orient( image: test, orientation: Orientation( flipped: false, rotation: 0 ) ).forEach { print( $0 ) }
-//print( "----------- 1 -------------" )
-//orient( image: test, orientation: Orientation( flipped: false, rotation: 1 ) ).forEach { print( $0 ) }
-//print( "----------- 2 -------------" )
-//orient( image: test, orientation: Orientation( flipped: false, rotation: 2 ) ).forEach { print( $0 ) }
-//print( "----------- 3 -------------" )
-//orient( image: test, orientation: Orientation( flipped: false, rotation: 3 ) ).forEach { print( $0 ) }
-//print( "----------- 4 -------------" )
-//orient( image: test, orientation: Orientation( flipped: true, rotation: 0 ) ).forEach { print( $0 ) }
-//print( "----------- 5 -------------" )
-//orient( image: test, orientation: Orientation( flipped: true, rotation: 1 ) ).forEach { print( $0 ) }
-//print( "----------- 6 -------------" )
-//orient( image: test, orientation: Orientation( flipped: true, rotation: 2 ) ).forEach { print( $0 ) }
-//print( "----------- 7 -------------" )
-//orient( image: test, orientation: Orientation( flipped: true, rotation: 3 ) ).forEach { print( $0 ) }
