@@ -8,41 +8,7 @@
 
 import Foundation
 
-
 struct Circle {
-    var circle: [Int]
-    
-    init( input: String ) {
-        circle = input.map { Int( String( $0 ) )! }
-    }
-    
-    var normalized: String {
-        let index = circle.firstIndex( of: 1 )!
-        
-        return ( circle[circle.index( after: index)...] + circle[..<index] ).map { String( $0 ) }.joined()
-    }
-
-    mutating func round( roundNumber: Int ) -> Void {
-        let range = 1 ... 3
-        let removed = circle[range]
-        let set = Set( removed )
-        var destination = circle[0] == 1 ? 9 : circle[0] - 1
-        
-        while set.contains( destination ) {
-            destination = destination == 1 ? 9 : destination - 1
-        }
-        
-        circle.removeSubrange( range )
-        
-        let index = circle.index( after: circle.firstIndex( of: destination )! )
-        
-        circle.insert( contentsOf: removed, at: index )
-        circle.append( circle.removeFirst() )
-    }
-}
-
-
-struct BigCircle {
     struct Cup {
         let clockwise: Int
     }
@@ -132,7 +98,7 @@ struct BigCircle {
 }
 
 
-func part1( circle: BigCircle ) -> String {
+func part1( circle: Circle ) -> String {
     var circle = circle
     
     for roundNumber in 1 ... 100 {
@@ -142,7 +108,7 @@ func part1( circle: BigCircle ) -> String {
 }
 
 
-func part2( circle: BigCircle ) -> Int {
+func part2( circle: Circle ) -> Int {
     var circle = circle
     
     for roundNumber in 1 ... 10000000 {
@@ -159,5 +125,5 @@ let inputFile = "/Users/markj/Development/adventofcode/2020/input/day23.txt"
 let input = try String( contentsOfFile: inputFile ).replacingOccurrences( of: "\n", with: "" )
 //let input = "389125467"
 
-print( "Part 1: \( part1( circle: BigCircle( size: 9, input: input ) ) )" )
-print( "Part 2: \( part2( circle: BigCircle( size: 1000000, input: input ) ) )" )
+print( "Part 1: \( part1( circle: Circle( size: 9, input: input ) ) )" )
+print( "Part 2: \( part2( circle: Circle( size: 1000000, input: input ) ) )" )
