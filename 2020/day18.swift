@@ -9,95 +9,83 @@
 import Foundation
 
 enum Operation: Character {
-    case add = "+", multiply = "*"
+    case add = "+", multiply = "*", leftParen = "(", rightParen = ")"
 }
 
-struct State {
-    let operation: Operation
-    let value: Int
-    let fromParen: Bool
+struct Operator {
+    let type: Operation
+    let precedence: Int
+}
+
+func evaluate( expression: String, precedence: [ Operation : Operator ] ) -> Int {
+    var valueStack: [Int] = []
+    var operatorStack: [Operator] = []
     
-    init( operation: Operation = .add, value: Int = 0, fromParen: Bool = true ) {
-        self.operation = operation
-        self.value = value
-        self.fromParen = fromParen
-    }
-    
-    func update( value: Int ) -> State {
-        switch operation {
+    func apply( op: Operator ) -> Void {
+        let value2 = valueStack.removeLast()
+        let value1 = valueStack.removeLast()
+        
+        switch op.type {
         case .add:
-            return State( value: self.value + value )
+            valueStack.append( value1 + value2 )
         case .multiply:
-            return State( value: self.value * value )
+            valueStack.append( value1 * value2 )
+        default:
+            print( "Tried to apply bad operator \"\(op.type)\"." )
         }
     }
-}
-
-struct Expression {
-    let terms: String
     
-    init( input: Substring ) {
-        terms = input.replacingOccurrences( of: " ", with: "" )
-    }
-}
-
-
-func evaluate( expression: Expression, part2: Bool = false ) -> Int {
-    enum fsaState { case begin, digit }
-    var currentState = State()
-    var stack = Array<State>()
-    var fsa = fsaState.begin
-    
-    for term in expression.terms {
-        switch fsa {
-        case .begin:
-            if term == "(" {
-                stack.append( currentState )
-                currentState = State()
-            } else if let value = Int( String( term ) ) {
-                currentState = currentState.update( value: value )
-                fsa = .digit
-            } else {
-                print( "Invalid \(term) in state \(fsa)" )
-            }
-        case .digit:
-            switch term {
-            case ")":
-                while !stack.last!.fromParen {
-                    currentState = stack.removeLast().update( value: currentState.value )
+    for term in expression {
+        if let operation = Operation( rawValue: term ) {
+            switch operation {
+            case .leftParen:
+                operatorStack.append( precedence[operation]! )
+            case .rightParen:
+                while let top = operatorStack.last {
+                    operatorStack.removeLast( 1 )
+                    if top.type == .leftParen {
+                        break
+                    } else {
+                        apply( op: top )
+                    }
                 }
-                currentState = stack.removeLast().update( value: currentState.value )
-            case "+":
-                currentState = State( operation: Operation( rawValue: term )!, value: currentState.value )
-                fsa = .begin
-            case "*":
-                let operation = Operation( rawValue: term )!
-                if !part2 {
-                    currentState = State( operation: operation, value: currentState.value )
-                } else {
-                    stack.append(
-                        State( operation: operation, value: currentState.value, fromParen: false )
-                    )
-                    currentState = State()
-                }
-                fsa = .begin
             default:
-                print( "Invalid \(term) in state \(fsa)" )
+                guard let op = precedence[operation] else { print( "No precedence for \(term)" ); exit( 0 ) }
+                while let top = operatorStack.last, top.precedence >= op.precedence {
+                    apply( op: operatorStack.removeLast() )
+                }
+                operatorStack.append( op )
             }
+        } else {
+            guard let value = Int( String( term ) ) else {
+                print( "Unrecognized character: \"\(term)\"." )
+                exit( 0 )
+            }
+            valueStack.append( value )
         }
     }
     
-    while !stack.isEmpty && !stack.last!.fromParen {
-        currentState = stack.removeLast().update( value: currentState.value )
+    while let top = operatorStack.last {
+        operatorStack.removeLast( 1 )
+        apply( op: top )
     }
-    return currentState.value
+    return valueStack.first!
 }
 
-
+let part1 = [
+    Operation.add : Operator( type: Operation.add, precedence: 1 ),
+    Operation.multiply : Operator( type: Operation.multiply, precedence: 1 ),
+    Operation.leftParen : Operator( type: Operation.leftParen, precedence: Int.min )
+]
+let part2 = [
+    Operation.add : Operator( type: Operation.add, precedence: 2 ),
+    Operation.multiply : Operator( type: Operation.multiply, precedence: 1 ),
+    Operation.leftParen : Operator( type: Operation.leftParen, precedence: Int.min )
+]
 let inputFile = "/Users/markj/Development/adventofcode/2020/input/day18.txt"
 let expressions = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map {
-    Expression( input: $0 )
+    $0.replacingOccurrences( of: " ", with: "" )
 }
 
-print( "Part 1: \(expressions.reduce( 0 ) { $0 + evaluate( expression: $1 ) })" )
-print( "Part 2: \(expressions.reduce( 0 ) { $0 + evaluate( expression: $1, part2: true ) })" )
+print( "Part 1: \(expressions.reduce( 0 ) { $0 + evaluate( expression: $1, precedence: part1 ) })" )
+print( "Part 2: \(expressions.reduce( 0 ) { $0 + evaluate( expression: $1, precedence: part2 ) })" )
