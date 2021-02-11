@@ -312,13 +312,13 @@ class Fighter {
     static func allElves() -> [Fighter] {
         let cells = map.flatMap { $0 }.filter { if case Cell.elf( _ ) = $0 { return true }; return false }
         
-        return cells.map { if case let Cell.elf( elf ) = $0 { return elf }; return nil! }
+        return cells.compactMap { if case let Cell.elf( elf ) = $0 { return elf }; return nil }
     }
 
     static func allGoblins() -> [Fighter] {
         let cells = map.flatMap { $0 }.filter { if case Cell.goblin( _ ) = $0 { return true }; return false }
         
-        return cells.map { if case let Cell.goblin( goblin ) = $0 { return goblin }; return nil! }
+        return cells.compactMap { if case let Cell.goblin( goblin ) = $0 { return goblin }; return nil }
     }
 
     static func allFighters() -> [Fighter] {
@@ -407,20 +407,21 @@ func runFight( printResults: Bool, elfAttackPoints: Int ) -> ( Bool, Int ) {
     let elves = Fighter.allElves()
     
     elves.forEach { $0.attackPoints = elfAttackPoints }
+    
     THEFIGHT:
-        for tick in 1 ... Int.max {
-            let fighters = Fighter.allFighters()
-            
-            for fighter in fighters where fighter.isAlive {
-                if !fighter.turn() {
-                    if printResults {
-                        printMap(map: map, round: tick)
-                    }
-                    break THEFIGHT
+    for tick in 1 ... Int.max {
+        let fighters = Fighter.allFighters()
+        
+        for fighter in fighters where fighter.isAlive {
+            if !fighter.turn() {
+                if printResults {
+                    printMap(map: map, round: tick)
                 }
+                break THEFIGHT
             }
-            //    printMap(map: map, round: tick)
-            completed = tick
+        }
+        //    printMap(map: map, round: tick)
+        completed = tick
     }
     
     let remaining = Fighter.allFighters()
