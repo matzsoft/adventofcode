@@ -1,25 +1,5 @@
-module ManhattanBar(size) {
-    cube( [ 2 * size + 1, 1, 1 ], true );
-}
-
-module ManhattanCircle(size) {
-    ManhattanBar(size);
-    if ( size > 0 ) {
-        for( i = [1:size] ) {
-            translate([0,i,0]) ManhattanBar( size - i );
-            translate([0,-i,0]) ManhattanBar( size - i );
-        }
-    }
-}
-
 module ManhattanSphere(size) {
-    ManhattanCircle(size);
-    if ( size > 0 ) {
-        for( i = [1:size] ) {
-            translate([0,0,i]) ManhattanCircle( size - i );
-            translate([0,0,-i]) ManhattanCircle( size - i );
-        }
-    }
+    octahedron(size);
 }
 
 module octahedron(size) {
@@ -29,18 +9,7 @@ module octahedron(size) {
     );
 }
 
-/*
 intersection() {
-    offset = 3;
-
     ManhattanSphere(7);
     translate( [1,2,3] ) ManhattanSphere(5);
-}
-*/
-
-intersection() {
-    offset = 2;
-
-    octahedron(7);
-    translate( [1,2,3] ) octahedron(5);
 }
