@@ -37,28 +37,28 @@ struct AOCinput {
 }
 
 
-func getInputDirectory() throws -> String {
+func findDirectory( name: String ) throws -> String {
     let fileManager = FileManager.default
     var directory = URL( fileURLWithPath: #file ).deletingLastPathComponent().path
     
     while directory != "/" {
         var isDir : ObjCBool = false
         
-        if fileManager.fileExists(atPath: "\(directory)/input", isDirectory:&isDir) {
+        if fileManager.fileExists(atPath: "\(directory)/\(name)", isDirectory:&isDir) {
             if isDir.boolValue {
-                return "\(directory)/input"
+                return "\(directory)/\(name)"
             }
         }
         
         directory = URL( fileURLWithPath: directory ).deletingLastPathComponent().path
     }
     
-    throw RuntimeError( "Can't find input directory!" )
+    throw RuntimeError( "Can't find \(name) directory!" )
 }
 
 
 func getTests() throws -> [AOCinput] {
-    let inputDirectory = try getInputDirectory()
+    let inputDirectory = try findDirectory( name: "input" )
     let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
     let pattern = "\(inputDirectory)/\(project)T*.txt"
     
@@ -97,7 +97,7 @@ func runTests( part1: ( ( AOCinput ) -> String )?, part2: ( ( AOCinput ) -> Stri
 
 
 func getAOCinput() throws -> AOCinput {
-    let inputDirectory = try getInputDirectory()
+    let inputDirectory = try findDirectory( name: "input" )
     let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
     let filename = "\(inputDirectory)/\(project).txt"
     

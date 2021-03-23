@@ -20,26 +20,6 @@ func shell( _ args: String... ) -> Int32 {
 }
 
 
-func findDirectory( name: String ) throws -> String {
-    let fileManager = FileManager.default
-    var directory = URL( fileURLWithPath: #file ).deletingLastPathComponent().path
-    
-    while directory != "/" {
-        var isDir : ObjCBool = false
-        
-        if fileManager.fileExists(atPath: "\(directory)/\(name)", isDirectory:&isDir) {
-            if isDir.boolValue {
-                return "\(directory)/\(name)"
-            }
-        }
-        
-        directory = URL( fileURLWithPath: directory ).deletingLastPathComponent().path
-    }
-    
-    throw RuntimeError( "Can't find \(name) directory!" )
-}
-
-
 extension adventOfCode {
     struct Open: ParsableCommand {
         static var configuration = CommandConfiguration(
