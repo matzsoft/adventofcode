@@ -72,7 +72,7 @@ extension adventOfCode {
             let inputText = inputLines.joined( separator: "\n" )
             try inputText.write( toFile: inputFile, atomically: true, encoding: .utf8 )
             
-            // Call the function that does the work of the "open" subcommand.
+            try performOpen( swiftFile: swiftFile )
         }
     }
 }

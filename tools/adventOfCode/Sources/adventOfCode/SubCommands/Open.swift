@@ -36,53 +36,58 @@ extension adventOfCode {
         }
         
         func run() throws -> Void {
-            let fileManager = FileManager.default
-            let package = String( swiftFile.dropLast( 6 ) )
-            let sourcesFolder = "Sources/\(package)"
-            let mainSwift = "\(sourcesFolder)/main.swift"
-            let libraryFolder = try findDirectory( name: "Library" )
-            let pattern = "\(libraryFolder)/*.swift"
-            let libraryFiles = glob( pattern: pattern )
-
-            guard fileManager.fileExists( atPath: swiftFile ) else {
-                print( "\(swiftFile) does not exist" )
-                throw ExitCode.failure
-            }
-            
-            if fileManager.fileExists( atPath: package ) {
-                print( "\(package) already exists" )
-                throw ExitCode.failure
-            }
-            
-            try fileManager.createDirectory( atPath: package, withIntermediateDirectories: false, attributes: nil )
-            
-            guard fileManager.changeCurrentDirectoryPath( package ) else {
-                throw RuntimeError( "Can't change directory to \(package)." )
-            }
-            
-            guard shell( "swift", "package", "init", "--type", "executable" ) == 0 else {
-                throw RuntimeError( "Can't create swift package." )
-            }
-
-            try fileManager.removeItem( atPath: mainSwift )
-            try fileManager.copyItem( atPath: "../\(swiftFile)", toPath: mainSwift )
-            for file in libraryFiles {
-                let filename = URL( fileURLWithPath: file ).lastPathComponent
-                
-                try fileManager.copyItem( atPath: file, toPath: "\(sourcesFolder)/\(filename)" )
-            }
-            print( "Waiting for 5 seconds..." )
-            sleep( 5 )
-            
-            guard shell( "open", "Package.swift" ) == 0 else {
-                throw RuntimeError( "Can't open Xcode." )
-            }
-            print( "Waiting for 5 seconds..." )
-            sleep( 5 )
-            
-            guard shell( "open", mainSwift ) == 0 else {
-                throw RuntimeError( "Can't open \(mainSwift)." )
-            }
+            try performOpen( swiftFile: swiftFile )
         }
+    }
+}
+
+
+func performOpen( swiftFile: String ) throws -> Void {
+    let fileManager = FileManager.default
+    let package = String( swiftFile.dropLast( 6 ) )
+    let sourcesFolder = "Sources/\(package)"
+    let mainSwift = "\(sourcesFolder)/main.swift"
+    let libraryFolder = try findDirectory( name: "Library" )
+    let pattern = "\(libraryFolder)/*.swift"
+    let libraryFiles = glob( pattern: pattern )
+
+    guard fileManager.fileExists( atPath: swiftFile ) else {
+        print( "\(swiftFile) does not exist" )
+        throw ExitCode.failure
+    }
+    
+    if fileManager.fileExists( atPath: package ) {
+        print( "\(package) already exists" )
+        throw ExitCode.failure
+    }
+    
+    try fileManager.createDirectory( atPath: package, withIntermediateDirectories: false, attributes: nil )
+    
+    guard fileManager.changeCurrentDirectoryPath( package ) else {
+        throw RuntimeError( "Can't change directory to \(package)." )
+    }
+    
+    guard shell( "swift", "package", "init", "--type", "executable" ) == 0 else {
+        throw RuntimeError( "Can't create swift package." )
+    }
+
+    try fileManager.removeItem( atPath: mainSwift )
+    try fileManager.copyItem( atPath: "../\(swiftFile)", toPath: mainSwift )
+    for file in libraryFiles {
+        let filename = URL( fileURLWithPath: file ).lastPathComponent
+        
+        try fileManager.copyItem( atPath: file, toPath: "\(sourcesFolder)/\(filename)" )
+    }
+    print( "Waiting for 5 seconds..." )
+    sleep( 5 )
+    
+    guard shell( "open", "Package.swift" ) == 0 else {
+        throw RuntimeError( "Can't open Xcode." )
+    }
+    print( "Waiting for 5 seconds..." )
+    sleep( 5 )
+    
+    guard shell( "open", mainSwift ) == 0 else {
+        throw RuntimeError( "Can't open \(mainSwift)." )
     }
 }
