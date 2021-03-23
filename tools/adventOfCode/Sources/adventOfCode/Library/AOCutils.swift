@@ -32,7 +32,9 @@ struct AOCinput {
     }
     
     init( filename: String ) throws {
-        content = try String( contentsOfFile: filename ).split( separator: "\n" )
+        let contents = try String( contentsOfFile: filename )
+        
+        content = contents.split( separator: "\n", omittingEmptySubsequences: false )
     }
 }
 
