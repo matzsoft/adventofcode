@@ -51,7 +51,7 @@ extension adventOfCode {
             let dateFormatterFull = DateFormatter()
             let dateFormatterYear = DateFormatter()
             
-            dateFormatterFull.dateFormat = "MM/dd/yy"
+            dateFormatterFull.dateFormat = "MM/dd/yy HH:mm:ss"
             dateFormatterYear.dateFormat = "yyyy"
 
             let templateData: [String: Any] = [
