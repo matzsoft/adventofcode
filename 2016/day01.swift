@@ -46,13 +46,15 @@ func part2( input: AOCinput ) -> String {
     let path = parse( input: input )
     var seen = Set<Point2D>()
     
-    for point in path {
-        if seen.contains( point ) {
-            return "\(abs(point.x) + abs(point.y))"
-        }
-        seen.insert( point )
+    guard let point = path.first( where: {
+        if seen.contains( $0 ) { return true }
+        seen.insert( $0 )
+        return false
+    } ) else {
+        return ""
     }
-    return ""
+
+    return "\(abs(point.x) + abs(point.y))"
 }
 
 
