@@ -34,7 +34,11 @@ struct AOCinput {
     init( filename: String ) throws {
         let contents = try String( contentsOfFile: filename )
         
-        content = contents.split( separator: "\n", omittingEmptySubsequences: false )
+        if contents.last! == "\n" {
+            content = contents.dropLast().split( separator: "\n", omittingEmptySubsequences: false )
+        } else {
+            content = contents.split( separator: "\n", omittingEmptySubsequences: false )
+        }
     }
 }
 
