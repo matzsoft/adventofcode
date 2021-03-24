@@ -10,63 +10,48 @@
 
 import Foundation
 
-let size = 2
-var position = Point2D( x: 1, y: 1 )
-var current: Character = "5"
+let pad9: [ Character : [ Character : Character ] ] = [
+    "1" : [ "R" : "2", "D" : "4" ],
+    "2" : [ "L" : "1", "R" : "3", "D" : "5" ],
+    "3" : [ "L" : "2", "D" : "6", ],
+    "4" : [ "U" : "1", "R" : "5", "D" : "7", ],
+    "5" : [ "U" : "2", "L" : "4", "R" : "6", "D" : "8", ],
+    "6" : [ "U" : "3", "L" : "5", "D" : "9", ],
+    "7" : [ "U" : "4", "R" : "8", ],
+    "8" : [ "U" : "5", "L" : "7", "R" : "9", ],
+    "9" : [ "U" : "6", "L" : "8", ],
+]
 
-let movement: [ Character : () -> Void ] = [
-    "U" : { () -> Void in position = Point2D( x: position.x, y: max( 0, position.y - 1 ) ) },
-    "D" : { () -> Void in position = Point2D( x: position.x, y: min( size, position.y + 1 ) ) },
-    "L" : { () -> Void in position = Point2D( x: max( 0, position.x - 1 ), y: position.y ) },
-    "R" : { () -> Void in position = Point2D( x: min( size, position.x + 1 ), y: position.y ) }
+let pad13: [ Character : [ Character : Character ] ] = [
+    "1" : [ "D" : "3" ],
+    "2" : [ "R" : "3", "D" : "6" ],
+    "3" : [ "U" : "1", "L" : "2", "R" : "4", "D" : "7", ],
+    "4" : [ "L" : "3", "D" : "8", ],
+    "5" : [ "R" : "6", ],
+    "6" : [ "U" : "2", "L" : "5", "R" : "7", "D" : "A", ],
+    "7" : [ "U" : "3", "L" : "6", "R" : "8", "D" : "B", ],
+    "8" : [ "U" : "4", "L" : "7", "R" : "9", "D" : "C", ],
+    "9" : [ "L" : "8", ],
+    "A" : [ "U" : "6", "R" : "B", ],
+    "B" : [ "U" : "7", "L" : "A", "R" : "C", "D" : "D", ],
+    "C" : [ "U" : "8", "L" : "B", ],
+    "D" : [ "U" : "B", ]
 ]
-let mapping: [ Character : [ Character : () -> Void ] ] = [
-    "1" : [
-        "D" : { () -> Void in current = "3" } ],
-    "2" : [
-        "R" : { () -> Void in current = "3" },
-        "D" : { () -> Void in current = "6" } ],
-    "3" : [
-        "U" : { () -> Void in current = "1" },
-        "L" : { () -> Void in current = "2" },
-        "R" : { () -> Void in current = "4" },
-        "D" : { () -> Void in current = "7" }, ],
-    "4" : [
-        "L" : { () -> Void in current = "3" },
-        "D" : { () -> Void in current = "8" }, ],
-    "5" : [
-        "R" : { () -> Void in current = "6" }, ],
-    "6" : [
-        "U" : { () -> Void in current = "2" },
-        "L" : { () -> Void in current = "5" },
-        "R" : { () -> Void in current = "7" },
-        "D" : { () -> Void in current = "A" }, ],
-    "7" : [
-        "U" : { () -> Void in current = "3" },
-        "L" : { () -> Void in current = "6" },
-        "R" : { () -> Void in current = "8" },
-        "D" : { () -> Void in current = "B" }, ],
-    "8" : [
-        "U" : { () -> Void in current = "4" },
-        "L" : { () -> Void in current = "7" },
-        "R" : { () -> Void in current = "9" },
-        "D" : { () -> Void in current = "C" }, ],
-    "9" : [
-        "L" : { () -> Void in current = "8" }, ],
-    "A" : [
-        "U" : { () -> Void in current = "6" },
-        "R" : { () -> Void in current = "B" }, ],
-    "B" : [
-        "U" : { () -> Void in current = "7" },
-        "L" : { () -> Void in current = "A" },
-        "R" : { () -> Void in current = "C" },
-        "D" : { () -> Void in current = "D" }, ],
-    "C" : [
-        "U" : { () -> Void in current = "8" },
-        "L" : { () -> Void in current = "B" }, ],
-    "D" : [
-        "U" : { () -> Void in current = "B" }, ]
-]
+
+
+func process( input: AOCinput, pad: [ Character: [ Character : Character ] ] ) -> String {
+    let lines = parse( input: input )
+    var current: Character = "5"
+    var result = ""
+
+    for line in lines {
+        for move in line {
+            current = pad[current]?[move] ?? current
+        }
+        result.append( current )
+    }
+    return result
+}
 
 
 func parse( input: AOCinput ) -> [String] {
@@ -75,30 +60,12 @@ func parse( input: AOCinput ) -> [String] {
 
 
 func part1( input: AOCinput ) -> String {
-    let lines = parse( input: input )
-    var result = ""
-    
-    for line in lines {
-        for move in line {
-            movement[move]?()
-        }
-        result.append( Character( String( position.y * ( size + 1 ) + position.x + 1 ) ) )
-    }
-    return result
+    return process( input: input, pad: pad9 )
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let lines = parse( input: input )
-    var result = ""
-    
-    for line in lines {
-        for move in line {
-            mapping[current]?[move]?()
-        }
-        result.append( current )
-    }
-    return result
+    return process( input: input, pad: pad13 )
 }
 
 
