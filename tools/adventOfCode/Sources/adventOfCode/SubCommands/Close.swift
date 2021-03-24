@@ -36,7 +36,7 @@ extension adventOfCode {
             }
             
             guard isDir.boolValue else {
-                throw RuntimeError( "File \(package) doesn't exist" )
+                throw RuntimeError( "File \(package) is not a directory" )
             }
             
             guard fileManager.fileExists( atPath: mainSwift ) else {
@@ -51,7 +51,7 @@ extension adventOfCode {
             }
             
             for file in sourcesFiles {
-                try updateLibrary(libraryFolder: libraryFolder, sourceFile: file )
+                try updateLibrary( libraryFolder: libraryFolder, sourceFile: file )
             }
             try fileManager.removeItem( atPath: package )
         }
@@ -73,12 +73,12 @@ func updateLibrary( libraryFolder: String, sourceFile: String ) throws -> Void {
     let libraryFile = "\(libraryFolder)/\(filename)"
     
     if !fileManager.fileExists( atPath: libraryFile ) {
-        if askYN(prompt: "\(sourceFile) is new.  Add to library", expected: true ) {
+        if askYN( prompt: "\(sourceFile) is new.  Add to library", expected: true ) {
             try copyFile( atPath: sourceFile, toPath: libraryFile )
         }
     } else {
         if !fileManager.contentsEqual( atPath: sourceFile, andPath: libraryFile ) {
-            if askYN(prompt: "\(sourceFile) and \(libraryFile) differ.  Update library", expected: true ) {
+            if askYN( prompt: "\(sourceFile) and \(libraryFile) differ.  Update library", expected: true ) {
                 try fileManager.removeItem( atPath: libraryFile )
                 try copyFile( atPath: sourceFile, toPath: libraryFile )
             }
