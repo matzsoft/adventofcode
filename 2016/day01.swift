@@ -1,6 +1,6 @@
 //
 //         FILE: main.swift
-//  DESCRIPTION: day01 -
+//  DESCRIPTION: day01 - Find the Easter Bunny Headquarters.
 //        NOTES: ---
 //       AUTHOR: Mark T. Johnson, markj@matzsoft.com
 //    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
