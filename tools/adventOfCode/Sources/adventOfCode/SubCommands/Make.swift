@@ -29,8 +29,10 @@ extension adventOfCode {
             let inputFile = "\(inputFolder)/\(package).txt"
             
             if fileManager.fileExists( atPath: swiftFile ) {
-                print( "\(swiftFile) already exists" )
-                throw ExitCode.failure
+                let oldFile = "old-\(swiftFile)"
+                
+                print( "\(swiftFile) already exists, moving it to \(oldFile)" )
+                try fileManager.moveItem( atPath: swiftFile, toPath: oldFile )
             }
             
             if !fileManager.fileExists( atPath: inputFolder ) {
