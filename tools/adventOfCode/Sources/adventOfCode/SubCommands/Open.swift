@@ -78,10 +78,13 @@ func performOpen( swiftFile: String ) throws -> Void {
         
         try fileManager.copyItem( atPath: file, toPath: "\(sourcesFolder)/\(filename)" )
     }
+    guard shell( "swift", "package", "generate-xcodeproj" ) == 0 else {
+        throw RuntimeError( "Can't create Xcode project." )
+    }
     print( "Waiting for 5 seconds..." )
     sleep( 5 )
     
-    guard shell( "open", "Package.swift" ) == 0 else {
+    guard shell( "open", "\(package).xcodeproj" ) == 0 else {
         throw RuntimeError( "Can't open Xcode." )
     }
     print( "Waiting for 5 seconds..." )
