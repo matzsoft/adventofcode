@@ -1,40 +1,62 @@
 //
-//  main.swift
-//  day05
-//
-//  Created by Mark Johnson on 11/28/18.
-//  Copyright © 2018 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day05 -
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 03/24/21 23:05:40
 //
 
 import Foundation
 
 let passwordLength = 8
-let doorID = "reyedfim"
-var part1Password = ""
-var part2Password: [Int:Character] = [:]
 
-for index in 0 ... Int.max {
-    let md5 = "\(doorID)\(index)".utf8.md5
-    
-    if md5.description.starts(with: "00000") {
-        let hex = md5.description
-        let char6 = hex[ hex.index( hex.startIndex, offsetBy: 5 ) ]
-        
-        if part1Password.count < passwordLength {
-            part1Password.append( char6 )
-        }
-        
-        if let position = Int( String(char6), radix: 16 ) {
-            if position < passwordLength && part2Password[position] == nil {
-                part2Password[position] = hex[ hex.index( hex.startIndex, offsetBy: 6 ) ]
-                if part2Password.keys.count == passwordLength { break }
-            }
-        }
-    }
+func parse( input: AOCinput ) -> String {
+    return input.line
 }
 
-print( "Part1:", part1Password )
 
-let sorted = part2Password.sorted( by: { $0.0 < $1.0 } )
+func part1( input: AOCinput ) -> String {
+    let doorID = parse( input: input )
+    var index = 0
+    var password = ""
 
-print( "Part2:", String( sorted.map( { $0.value } ) ) )
+    while password.count < passwordLength {
+        let hash = md5Hash( str: "\(doorID)\(index)" )
+        
+        if hash.starts( with: "00000" ) {
+            password.append( hash[ hash.index( hash.startIndex, offsetBy: 5 ) ] )
+        }
+        index += 1
+    }
+    return password
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let doorID = parse( input: input )
+    var index = 0
+    var password = Array<Character?>( repeating: nil, count: passwordLength )
+
+    while password.filter( { $0 != nil } ).count < passwordLength {
+        let hash = md5Hash( str: "\(doorID)\(index)" )
+
+        if hash.starts( with: "00000" ) {
+            let char6 = hash[ hash.index( hash.startIndex, offsetBy: 5 ) ]
+            
+            if let position = Int( String( char6 ), radix: 16 ) {
+                if position < passwordLength && password[position] == nil {
+                    password[position] = hash[ hash.index( hash.startIndex, offsetBy: 6 ) ]
+                }
+            }
+        }
+        index += 1
+    }
+    
+    return password.map { String( $0! ) }.joined()
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
