@@ -1,1 +1,1 @@
-day 19 part 2 - compute commands instead of hard coding them.
+1. day 19 part 2 - compute commands instead of hard coding them.
