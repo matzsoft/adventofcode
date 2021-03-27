@@ -1,282 +1,219 @@
 //
-//  main.swift
-//  day08
-//
-//  Created by Mark Johnson on 11/29/18.
-//  Copyright © 2018 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day08 - Two-Factor Authentication
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 03/26/21 23:59:23
 //
 
 import Foundation
 
-let input = """
-rect 1x1
-rotate row y=0 by 7
-rect 1x1
-rotate row y=0 by 5
-rect 1x1
-rotate row y=0 by 5
-rect 1x1
-rotate row y=0 by 2
-rect 1x1
-rotate row y=0 by 3
-rect 1x1
-rotate row y=0 by 5
-rect 1x1
-rotate row y=0 by 3
-rect 1x1
-rotate row y=0 by 2
-rect 1x1
-rotate row y=0 by 3
-rect 2x1
-rotate row y=0 by 7
-rect 6x1
-rotate row y=0 by 3
-rect 2x1
-rotate row y=0 by 2
-rect 1x2
-rotate row y=1 by 10
-rotate row y=0 by 3
-rotate column x=0 by 1
-rect 2x1
-rotate column x=20 by 1
-rotate column x=15 by 1
-rotate column x=5 by 1
-rotate row y=1 by 5
-rotate row y=0 by 2
-rect 1x2
-rotate row y=0 by 5
-rotate column x=0 by 1
-rect 4x1
-rotate row y=2 by 15
-rotate row y=0 by 5
-rotate column x=0 by 1
-rect 4x1
-rotate row y=2 by 5
-rotate row y=0 by 5
-rotate column x=0 by 1
-rect 4x1
-rotate row y=2 by 10
-rotate row y=0 by 10
-rotate column x=8 by 1
-rotate column x=5 by 1
-rotate column x=0 by 1
-rect 9x1
-rotate column x=27 by 1
-rotate row y=0 by 5
-rotate column x=0 by 1
-rect 4x1
-rotate column x=42 by 1
-rotate column x=40 by 1
-rotate column x=22 by 1
-rotate column x=17 by 1
-rotate column x=12 by 1
-rotate column x=7 by 1
-rotate column x=2 by 1
-rotate row y=3 by 10
-rotate row y=2 by 5
-rotate row y=1 by 3
-rotate row y=0 by 10
-rect 1x4
-rotate column x=37 by 2
-rotate row y=3 by 18
-rotate row y=2 by 30
-rotate row y=1 by 7
-rotate row y=0 by 2
-rotate column x=13 by 3
-rotate column x=12 by 1
-rotate column x=10 by 1
-rotate column x=7 by 1
-rotate column x=6 by 3
-rotate column x=5 by 1
-rotate column x=3 by 3
-rotate column x=2 by 1
-rotate column x=0 by 1
-rect 14x1
-rotate column x=38 by 3
-rotate row y=3 by 12
-rotate row y=2 by 10
-rotate row y=0 by 10
-rotate column x=7 by 1
-rotate column x=5 by 1
-rotate column x=2 by 1
-rotate column x=0 by 1
-rect 9x1
-rotate row y=4 by 20
-rotate row y=3 by 25
-rotate row y=2 by 10
-rotate row y=0 by 15
-rotate column x=12 by 1
-rotate column x=10 by 1
-rotate column x=8 by 3
-rotate column x=7 by 1
-rotate column x=5 by 1
-rotate column x=3 by 3
-rotate column x=2 by 1
-rotate column x=0 by 1
-rect 14x1
-rotate column x=34 by 1
-rotate row y=1 by 45
-rotate column x=47 by 1
-rotate column x=42 by 1
-rotate column x=19 by 1
-rotate column x=9 by 2
-rotate row y=4 by 7
-rotate row y=3 by 20
-rotate row y=0 by 7
-rotate column x=5 by 1
-rotate column x=3 by 1
-rotate column x=2 by 1
-rotate column x=0 by 1
-rect 6x1
-rotate row y=4 by 8
-rotate row y=3 by 5
-rotate row y=1 by 5
-rotate column x=5 by 1
-rotate column x=4 by 1
-rotate column x=3 by 2
-rotate column x=2 by 1
-rotate column x=1 by 3
-rotate column x=0 by 1
-rect 6x1
-rotate column x=36 by 3
-rotate column x=25 by 3
-rotate column x=18 by 3
-rotate column x=11 by 3
-rotate column x=3 by 4
-rotate row y=4 by 5
-rotate row y=3 by 5
-rotate row y=2 by 8
-rotate row y=1 by 8
-rotate row y=0 by 3
-rotate column x=3 by 4
-rotate column x=0 by 4
-rect 4x4
-rotate row y=4 by 10
-rotate row y=3 by 20
-rotate row y=1 by 10
-rotate row y=0 by 10
-rotate column x=8 by 1
-rotate column x=7 by 1
-rotate column x=6 by 1
-rotate column x=5 by 1
-rotate column x=3 by 1
-rotate column x=2 by 1
-rotate column x=1 by 1
-rotate column x=0 by 1
-rect 9x1
-rotate row y=0 by 40
-rotate column x=44 by 1
-rotate column x=35 by 5
-rotate column x=18 by 5
-rotate column x=15 by 3
-rotate column x=10 by 5
-rotate row y=5 by 15
-rotate row y=4 by 10
-rotate row y=3 by 40
-rotate row y=2 by 20
-rotate row y=1 by 45
-rotate row y=0 by 35
-rotate column x=48 by 1
-rotate column x=47 by 5
-rotate column x=46 by 5
-rotate column x=45 by 1
-rotate column x=43 by 1
-rotate column x=40 by 1
-rotate column x=38 by 2
-rotate column x=37 by 3
-rotate column x=36 by 2
-rotate column x=32 by 2
-rotate column x=31 by 2
-rotate column x=28 by 1
-rotate column x=23 by 3
-rotate column x=22 by 3
-rotate column x=21 by 5
-rotate column x=20 by 1
-rotate column x=18 by 1
-rotate column x=17 by 3
-rotate column x=13 by 1
-rotate column x=10 by 1
-rotate column x=8 by 1
-rotate column x=7 by 5
-rotate column x=6 by 5
-rotate column x=5 by 1
-rotate column x=3 by 5
-rotate column x=2 by 5
-rotate column x=1 by 5
-"""
-
-let lines = input.split(separator: "\n")
-
-var screen = Array(repeating: Array(repeating: false, count: 50), count: 6)
-
-for line in lines {
-    let words = line.split(separator: " ")
+func makeBlockLetterCode( visual: [String] ) -> Int {
+    guard visual.count == 6, visual.allSatisfy( { $0.count == 5 } ) else {
+        return 0
+    }
     
-    switch words[0] {
-    case "rect":
-        let size = words[1].split(separator: "x")
+    return visual.joined().reduce( into: 0, { $0 = ( $0 << 1 ) | ( $1 == " " ? 0 : 1 ) } )
+}
+
+struct BlockLetter {
+    let letter: Character
+    let code: Int
+    
+    init( letter: Character, visual: [String] ) {
+        self.letter = letter
         
-        if size.count != 2 {
-            print( "Invalid input \(words[1])" )
-        } else {
-            let ( cols, rows ) = ( Int( size[0] )!, Int( size[1] )! )
-
-            for row in 0 ..< rows {
-                for col in 0 ..< cols {
-                    screen[row][col] = true
-                }
-            }
+        guard visual.count == 6, visual.allSatisfy( { $0.count == 5 } ) else {
+            code = 0
+            return
         }
-    case "rotate":
-        switch words[1] {
-        case "row":
-            let rowRep = words[2].split(separator: "=")
-            
-            if rowRep.count != 2 {
-                print( "Invalid input \(words[2])" )
-            } else {
-                let row = Int( rowRep[1] )!
-                let amount = Int( words[4] )!
-                let front = Array( screen[row].prefix( screen[row].count - amount ) )
-                let back = Array( screen[row].suffix( amount ) )
-                
-                screen[row] = back
-                screen[row].append(contentsOf: front)
-            }
-        case "column":
-            let colRep = words[2].split(separator: "=")
-            
-            if colRep.count != 2 {
-                print( "Invalid input \(words[2])" )
-            } else {
-                let col = Int( colRep[1] )!
-                let amount = Int( words[4] )!
-                let breakpoint = screen.count - amount
-                var newCol: [Bool] = []
-
-                for i in breakpoint ..< screen.count {
-                    newCol.append(screen[i][col])
-                }
-                for i in 0 ..< breakpoint {
-                    newCol.append(screen[i][col])
-                }
-                for i in 0 ..< screen.count {
-                    screen[i][col] = newCol[i]
-                }
-            }
-        default:
-            print( "Invalid input \(words[1])" )
-        }
-    default:
-        print( "Invalid input \(words[0])" )
+        
+        code = makeBlockLetterCode( visual: visual )
     }
 }
 
-print( "Part1:", screen.flatMap{$0}.reduce(0, { $0 + ( $1 ? 1 : 0 ) } ) )
-print( "Part2:" )
-
-let output = screen.map { $0.map { $0 ? "*" : " "} }
-
-for row in output {
-    print( row.joined() )
+func makeBlockLetterDictionary( blockLetters: [BlockLetter] ) -> [ Int : Character ] {
+    return blockLetters.reduce( into: [:], { $0[$1.code] = $1.letter } )
 }
+
+let blockLetterDictionary = makeBlockLetterDictionary( blockLetters: [
+    BlockLetter( letter: "E", visual: [
+        "**** ",
+        "*    ",
+        "***  ",
+        "*    ",
+        "*    ",
+        "**** ",
+    ] ),
+    BlockLetter( letter: "O", visual: [
+        " **  ",
+        "*  * ",
+        "*  * ",
+        "*  * ",
+        "*  * ",
+        " **  ",
+    ] ),
+    BlockLetter( letter: "A", visual: [
+        " **  ",
+        "*  * ",
+        "*  * ",
+        "**** ",
+        "*  * ",
+        "*  * ",
+    ] ),
+    BlockLetter( letter: "R", visual: [
+        "***  ",
+        "*  * ",
+        "*  * ",
+        "***  ",
+        "* *  ",
+        "*  * ",
+    ] ),
+    BlockLetter( letter: "G", visual: [
+        " **  ",
+        "*  * ",
+        "*    ",
+        "* ** ",
+        "*  * ",
+        " *** ",
+    ] ),
+    BlockLetter( letter: "P", visual: [
+        "***  ",
+        "*  * ",
+        "*  * ",
+        "***  ",
+        "*    ",
+        "*    ",
+    ] ),
+    BlockLetter( letter: "H", visual: [
+        "*  * ",
+        "*  * ",
+        "**** ",
+        "*  * ",
+        "*  * ",
+        "*  * ",
+    ] ),
+    BlockLetter( letter: "Y", visual: [
+        "*   *",
+        "*   *",
+        " * * ",
+        "  *  ",
+        "  *  ",
+        "  *  ",
+    ] ),
+] )
+
+
+struct Screen {
+    let width = 50
+    let height = 6
+    let letterWidth = 5
+    let pixels: [[Bool]]
+    
+    init( lines: [String] ) {
+        var screen = Array( repeating: Array( repeating: false, count: 50 ), count: 6 )
+
+        for line in lines {
+            let words = line.split( separator: " " )
+            
+            switch words[0] {
+            case "rect":
+                let size = words[1].split( separator: "x" )
+                
+                if size.count != 2 {
+                    print( "Invalid input \(words[1])" )
+                } else {
+                    let ( cols, rows ) = ( Int( size[0] )!, Int( size[1] )! )
+
+                    for row in 0 ..< rows {
+                        for col in 0 ..< cols {
+                            screen[row][col] = true
+                        }
+                    }
+                }
+            case "rotate":
+                switch words[1] {
+                case "row":
+                    let rowRep = words[2].split( separator: "=" )
+                    
+                    if rowRep.count != 2 {
+                        print( "Invalid input \(words[2])" )
+                    } else {
+                        let row = Int( rowRep[1] )!
+                        let amount = Int( words[4] )!
+                        let front = Array( screen[row].prefix( screen[row].count - amount ) )
+                        let back = Array( screen[row].suffix( amount ) )
+                        
+                        screen[row] = back
+                        screen[row].append( contentsOf: front )
+                    }
+                case "column":
+                    let colRep = words[2].split( separator: "=" )
+                    
+                    if colRep.count != 2 {
+                        print( "Invalid input \(words[2])" )
+                    } else {
+                        let col = Int( colRep[1] )!
+                        let amount = Int( words[4] )!
+                        let breakpoint = screen.count - amount
+                        var newCol: [Bool] = []
+
+                        for i in breakpoint ..< screen.count {
+                            newCol.append( screen[i][col] )
+                        }
+                        for i in 0 ..< breakpoint {
+                            newCol.append( screen[i][col] )
+                        }
+                        for i in 0 ..< screen.count {
+                            screen[i][col] = newCol[i]
+                        }
+                    }
+                default:
+                    print( "Invalid input \(words[1])" )
+                }
+            default:
+                print( "Invalid input \(words[0])" )
+            }
+        }
+        pixels = screen
+    }
+    
+    var letters: [[String]] {
+        var result = [[String]]()
+        
+        for x in stride( from: 0, to: pixels[0].count, by: letterWidth ) {
+            var letter = [String]()
+            
+            for y in 0 ..< pixels.count {
+                letter.append( pixels[y][x..<x+letterWidth].map { $0 ? "*" : " " }.joined() )
+            }
+            result.append( letter )
+        }
+        
+        return result
+    }
+}
+
+
+func parse( input: AOCinput ) -> Screen {
+    return Screen( lines: input.lines )
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let screen = parse( input: input )
+    return "\(screen.pixels.flatMap{ $0 }.reduce( 0, { $0 + ( $1 ? 1 : 0 ) } ) )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let screen = parse( input: input )
+    let answer = screen.letters.map { blockLetterDictionary[ makeBlockLetterCode(visual: $0 ) ] ?? "?" }
+    return "\(String(answer))"
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
