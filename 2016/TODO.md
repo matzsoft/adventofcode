@@ -1,0 +1,1 @@
+1. day08 - Should work on the BlockLetter stuff.  It needs cleanup, moved to the library, and fill out the alphabet.
