@@ -7,6 +7,8 @@
 
 import Foundation
 
+enum AOCPart { case part1, part2 }
+
 struct RuntimeError: Error {
     let message: String
 
@@ -83,7 +85,7 @@ func runTests( part1: ( ( AOCinput ) -> String )?, part2: ( ( AOCinput ) -> Stri
             if result == expected {
                 successes += 1
             } else {
-                print( "Test \(index) Part 1 should be :\(expected), was: \(result)" )
+                print( "Test \(index) Part 1: \(result), should be \(expected)" )
             }
         }
         
@@ -93,7 +95,7 @@ func runTests( part1: ( ( AOCinput ) -> String )?, part2: ( ( AOCinput ) -> Stri
             if result == expected {
                 successes += 1
             } else {
-                print( "Test \(index) Part 2 should be :\(expected), was: \(result)" )
+                print( "Test \(index) Part 2: \(result), should be \(expected)" )
             }
         }
     }
