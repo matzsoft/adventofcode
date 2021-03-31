@@ -30,8 +30,9 @@ struct Part {
     let element: String
     
     init( compatible: String, type: String ) {
-        self.type = PartType( rawValue: String( type ) )!
-        element = ( self.type == .generator ) ? compatible : String( compatible.dropLast( "-compatible".count ) )
+        self.type = PartType( rawValue: type )!
+        element = ( self.type == .generator ) ? compatible :
+            String( compatible.dropLast( "-compatible".count ) )
     }
     
     var offset: Int {
@@ -43,14 +44,12 @@ struct Part {
 let groundFloor  = FloorName.first.intValue
 let topFloor     = FloorName.fourth.intValue
 
-func isSafe( position: Int ) -> Bool {
-    let digits = Array( String( position ) ).map { Int( String( $0 ) )! }
-
-    for i in stride( from: 1, to: digits.count, by: 2 ) {
-        if digits[i] != digits[i+1] {
+func isSafe( position: [Int] ) -> Bool {
+    for i in stride( from: 1, to: position.count, by: 2 ) {
+        if position[i] != position[i+1] {
             // Compatible generator and microchip are on different floors.
-            for j in stride( from: 1, to: digits.count, by: 2 ) {
-                if digits[j] == digits[i+1] { return false }
+            for j in stride( from: 1, to: position.count, by: 2 ) {
+                if position[j] == position[i+1] { return false }
             }
         }
     }
@@ -59,26 +58,26 @@ func isSafe( position: Int ) -> Bool {
 }
 
 
-func indicesToMove( length: Int, indices: [Int] ) -> Int {
+func indicesToMove( length: Int, indices: [Int] ) -> [Int] {
     var result = Array( repeating: 0, count: length )
     
     indices.forEach { result[$0] = 1 }
-    return Int( result.map { String($0) }.joined() )!
+    return result
 }
 
 
-func deltaToMoves( floor: Int, position: Int, delta: Int ) -> [Int] {
-    var moves: [Int] = []
+func deltaToMoves( position: [Int], delta: [Int] ) -> [[Int]] {
+    var moves: [[Int]] = []
 
-    if floor < topFloor {
-        let move = position + delta
+    if position[0] < topFloor {
+        let move = zip( position, delta ).map(+)
         
         if isSafe( position: move ) { moves.append( move ) }
     }
     
-    if floor > groundFloor {
-        let move = position - delta
-        
+    if position[0] > groundFloor {
+        let move = zip( position, delta ).map(-)
+
         if isSafe( position: move ) { moves.append( move ) }
     }
     
@@ -89,12 +88,12 @@ func deltaToMoves( floor: Int, position: Int, delta: Int ) -> [Int] {
 func possibleMoves( position: Int ) -> [Int] {
     let digits = Array( String( position ) ).map { Int( String( $0 ) )! }
     let indices = digits.enumerated().filter { $0.element == digits[0] }.map { $0.offset }
-    var moves: [Int] = []
+    var moves: [[Int]] = []
 
     for i in 1 ..< indices.count {
         let move = indicesToMove( length: digits.count, indices: [ 0, indices[i] ] )
         
-        moves.append( contentsOf: deltaToMoves( floor: digits[0], position: position, delta: move ) )
+        moves.append( contentsOf: deltaToMoves( position: digits, delta: move ) )
         
         for j in i + 1 ..< indices.count {
             let sameType = indices[i] % 2 == indices[j] % 2
@@ -103,14 +102,14 @@ func possibleMoves( position: Int ) -> [Int] {
             if sameType || compatible {
                 let list = [ 0, indices[i], indices[j] ]
                 let move = indicesToMove( length: digits.count, indices: list )
-                let positions = deltaToMoves( floor: digits[0], position: position, delta: move )
+                let positions = deltaToMoves( position: digits, delta: move )
                 
                 moves.append( contentsOf: positions )
             }
         }
     }
     
-    return moves
+    return moves.map { Int( $0.map { String($0) }.joined() )! }
 }
 
 
@@ -139,16 +138,15 @@ func solve( initial: Int, final: Int ) -> Int {
 
 func parse( input: AOCinput ) -> Int {
     var elements = [ String : Int ]()
-    var result = 1                      // first digit is me and I always start on floor 1
+    var result = 1                      // first digit is the elevator that always start on floor 1
     
     for line in input.lines {
-        let words = line.split { " ,.".contains( $0 ) }
+        let words = line.split { " ,.".contains( $0 ) }.filter { $0 != "and" }
         let floor = FloorName( rawValue: String( words[1] ) )!.intValue
         
         if words[4] != "nothing" {
-            let reduced = words.filter { $0 != "and" }
-            let parts = stride( from: 4, to: reduced.count, by: 3 ).map {
-                Part( compatible: String( reduced[$0+1] ), type: String( reduced[$0+2] ) )
+            let parts = stride( from: 4, to: words.count, by: 3 ).map {
+                Part( compatible: String( words[$0+1] ), type: String( words[$0+2] ) )
             }
             
             for part in parts {
