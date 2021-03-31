@@ -1,41 +1,55 @@
 //
-//  main.swift
-//  new11
-//
-//  Created by Mark Johnson on 12/7/18.
-//  Copyright © 2018 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day11 - Radioisotope Thermoelectric Generators
+//        NOTES: The parse function generates an Int in order to make an easy key for the seen dictionary.
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 03/29/21 18:59:28
 //
 
 import Foundation
 
-// Instead of parsing the input, just build a structure for it.
-//The first floor contains a promethium generator and a promethium-compatible microchip.
-//The second floor contains a cobalt generator, a curium generator, a ruthenium generator, and a plutonium generator.
-//The third floor contains a cobalt-compatible microchip, a curium-compatible microchip, a ruthenium-compatible microchip, and a plutonium-compatible microchip.
-//The fourth floor contains nothing relevant.
+enum PartType: String {  case generator, microchip }
+enum FloorName: String, CaseIterable {
+    case first, second, third, fourth
+    
+    var intValue: Int {
+        return FloorName.allCases.enumerated().first( where: { $0.element == self } )!.offset + 1
+    }
+}
 
-let initialTest1 = 12131
-let finalTest1   = 44444
-let initialTest2 = 1112323
-let finalTest2   = 4444444
-let initialPart1  = 11123232323
-let finalPart1    = 44444444444
-let initialPart2  = 111232323231111
-let finalPart2    = 444444444444444
 
-let initial      = initialTest1
-let final        = finalTest1
+func pow( _ base: Int, _ power: Int ) -> Int {
+    return Int( pow( Double( base), Double( power) ) )
+}
 
-let groundFloor  = 1
-let topFloor     = 4
+
+struct Part {
+    let type: PartType
+    let element: String
+    
+    init( compatible: String, type: String ) {
+        self.type = PartType( rawValue: String( type ) )!
+        element = ( self.type == .generator ) ? compatible : String( compatible.dropLast( "-compatible".count ) )
+    }
+    
+    var offset: Int {
+        return type == .generator ? 1 : 0
+    }
+}
+
+
+let groundFloor  = FloorName.first.intValue
+let topFloor     = FloorName.fourth.intValue
 
 func isSafe( position: Int ) -> Bool {
     let digits = Array( String( position ) ).map { Int( String( $0 ) )! }
 
-    for i in stride(from: 1, to: digits.count, by: 2) {
+    for i in stride( from: 1, to: digits.count, by: 2 ) {
         if digits[i] != digits[i+1] {
             // Compatible generator and microchip are on different floors.
-            for j in stride(from: 1, to: digits.count, by: 2) {
+            for j in stride( from: 1, to: digits.count, by: 2 ) {
                 if digits[j] == digits[i+1] { return false }
             }
         }
@@ -44,12 +58,14 @@ func isSafe( position: Int ) -> Bool {
     return true
 }
 
+
 func indicesToMove( length: Int, indices: [Int] ) -> Int {
-    var result = Array(repeating: 0, count: length)
+    var result = Array( repeating: 0, count: length )
     
     indices.forEach { result[$0] = 1 }
     return Int( result.map { String($0) }.joined() )!
 }
+
 
 func deltaToMoves( floor: Int, position: Int, delta: Int ) -> [Int] {
     var moves: [Int] = []
@@ -69,6 +85,7 @@ func deltaToMoves( floor: Int, position: Int, delta: Int ) -> [Int] {
     return moves
 }
 
+
 func possibleMoves( position: Int ) -> [Int] {
     let digits = Array( String( position ) ).map { Int( String( $0 ) )! }
     let indices = digits.enumerated().filter { $0.element == digits[0] }.map { $0.offset }
@@ -79,18 +96,16 @@ func possibleMoves( position: Int ) -> [Int] {
         
         moves.append( contentsOf: deltaToMoves( floor: digits[0], position: position, delta: move ) )
         
-        if i < indices.count - 1 {
-            for j in i + 1 ..< indices.count {
-                let sameType = indices[i] % 2 == indices[j] % 2
-                let compatible = ( indices[i] - 1 ) / 2 == ( indices[j] - 1 ) / 2
+        for j in i + 1 ..< indices.count {
+            let sameType = indices[i] % 2 == indices[j] % 2
+            let compatible = ( indices[i] - 1 ) / 2 == ( indices[j] - 1 ) / 2
+            
+            if sameType || compatible {
+                let list = [ 0, indices[i], indices[j] ]
+                let move = indicesToMove( length: digits.count, indices: list )
+                let positions = deltaToMoves( floor: digits[0], position: position, delta: move )
                 
-                if sameType || compatible {
-                    let list = [ 0, indices[i], indices[j] ]
-                    let move = indicesToMove(length: digits.count, indices: list )
-                    let positions = deltaToMoves( floor: digits[0], position: position, delta: move )
-                    
-                    moves.append( contentsOf: positions )
-                }
+                moves.append( contentsOf: positions )
             }
         }
     }
@@ -98,12 +113,13 @@ func possibleMoves( position: Int ) -> [Int] {
     return moves
 }
 
+
 func solve( initial: Int, final: Int ) -> Int {
     var seen = [ initial: 0 ]
     var queue = [ initial ]
     
     while let position = queue.first {
-        let moves = possibleMoves(position: position)
+        let moves = possibleMoves( position: position )
         
         queue.removeFirst()
         for move in moves {
@@ -112,7 +128,7 @@ func solve( initial: Int, final: Int ) -> Int {
             }
             if seen[move] == nil {
                 seen[move] = seen[position]! + 1
-                queue.append(move)
+                queue.append( move )
             }
         }
     }
@@ -120,13 +136,53 @@ func solve( initial: Int, final: Int ) -> Int {
     return Int.max
 }
 
-//print( possibleMoves(position: initialTest1) )
-//print( possibleMoves(position: finalTest1) )
-//print( possibleMoves(position: initialTest2) )
-//print( possibleMoves(position: finalTest2) )
-//print( possibleMoves(position: initialPart1) )
-//print( possibleMoves(position: finalPart1) )
-//print( possibleMoves(position: 12112) )
 
-print( "Part1:", solve(initial: initialPart1, final: finalPart1) )
-print( "Part2:", solve(initial: initialPart2, final: finalPart2) )
+func parse( input: AOCinput ) -> Int {
+    var elements = [ String : Int ]()
+    var result = 1                      // first digit is me and I always start on floor 1
+    
+    for line in input.lines {
+        let words = line.split { " ,.".contains( $0 ) }
+        let floor = FloorName( rawValue: String( words[1] ) )!.intValue
+        
+        if words[4] != "nothing" {
+            let reduced = words.filter { $0 != "and" }
+            let parts = stride( from: 4, to: reduced.count, by: 3 ).map {
+                Part( compatible: String( reduced[$0+1] ), type: String( reduced[$0+2] ) )
+            }
+            
+            for part in parts {
+                if let index = elements[part.element] {
+                    let power = ( elements.count - index ) * 2 + part.offset
+                    
+                    result += floor * pow( 10, power )
+                } else {
+                    result *= 100
+                    result += floor * pow( 10, part.offset )
+                    elements[part.element]  = elements.count + 1
+                }
+            }
+        }
+    }
+    return result
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let initial = parse( input: input )
+    let final = Int( Array( repeating: "4", count: String( initial ).count ).joined() )!
+
+    return "\(solve( initial: initial, final: final ))"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let initial = parse( input: input ) * 10000 + 1111
+    let final = Int( Array( repeating: "4", count: String( initial ).count ).joined() )!
+
+    return "\(solve( initial: initial, final: final ))"
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
