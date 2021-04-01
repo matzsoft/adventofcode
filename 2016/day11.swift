@@ -10,6 +10,11 @@
 
 import Foundation
 
+typealias Move = [Int]
+typealias Position = [Int]
+typealias Eligibles = [Int]
+typealias PositionKey = Int
+
 enum PartType: String {  case generator, microchip }
 enum FloorName: String, CaseIterable {
     case first, second, third, fourth
@@ -44,7 +49,7 @@ struct Part {
 let groundFloor  = FloorName.first.intValue
 let topFloor     = FloorName.fourth.intValue
 
-func isSafe( position: [Int] ) -> Bool {
+func isSafe( position: Position ) -> Bool {
     for i in stride( from: 1, to: position.count, by: 2 ) {
         if position[i] != position[i+1] {
             // Compatible generator and microchip are on different floors.
@@ -58,42 +63,35 @@ func isSafe( position: [Int] ) -> Bool {
 }
 
 
-func indicesToMove( length: Int, indices: [Int] ) -> [Int] {
-    var result = Array( repeating: 0, count: length )
-    
-    indices.forEach { result[$0] = 1 }
-    return result
-}
+func indicesToPositions( position: Position, indices: [Int] ) -> [Position] {
+    var eligibles = Array( repeating: 0, count: position.count )
+    var positions: [Position] = []
 
-
-func deltaToMoves( position: [Int], delta: [Int] ) -> [[Int]] {
-    var moves: [[Int]] = []
+    indices.forEach { eligibles[$0] = 1 }
 
     if position[0] < topFloor {
-        let move = zip( position, delta ).map(+)
+        let newPosition = zip( position, eligibles ).map(+)
         
-        if isSafe( position: move ) { moves.append( move ) }
+        if isSafe( position: newPosition ) { positions.append( newPosition ) }
     }
     
     if position[0] > groundFloor {
-        let move = zip( position, delta ).map(-)
+        let newPosition = zip( position, eligibles ).map(-)
 
-        if isSafe( position: move ) { moves.append( move ) }
+        if isSafe( position: newPosition ) { positions.append( newPosition ) }
     }
     
-    return moves
+    return positions
 }
 
 
-func possibleMoves( position: Int ) -> [Int] {
+func possibleNextPositions( position: PositionKey ) -> [PositionKey] {
     let digits = Array( String( position ) ).map { Int( String( $0 ) )! }
     let indices = digits.enumerated().filter { $0.element == digits[0] }.map { $0.offset }
-    var moves: [[Int]] = []
+    var possibles: [Position] = []
 
     for i in 1 ..< indices.count {
-        let move = indicesToMove( length: digits.count, indices: [ 0, indices[i] ] )
-        
-        moves.append( contentsOf: deltaToMoves( position: digits, delta: move ) )
+        possibles.append( contentsOf: indicesToPositions( position: digits, indices: [ 0, indices[i] ] ) )
         
         for j in i + 1 ..< indices.count {
             let sameType = indices[i] % 2 == indices[j] % 2
@@ -101,33 +99,31 @@ func possibleMoves( position: Int ) -> [Int] {
             
             if sameType || compatible {
                 let list = [ 0, indices[i], indices[j] ]
-                let move = indicesToMove( length: digits.count, indices: list )
-                let positions = deltaToMoves( position: digits, delta: move )
                 
-                moves.append( contentsOf: positions )
+                possibles.append( contentsOf: indicesToPositions( position: digits, indices: list ) )
             }
         }
     }
     
-    return moves.map { Int( $0.map { String($0) }.joined() )! }
+    return possibles.map { Int( $0.map { String($0) }.joined() )! }
 }
 
 
-func solve( initial: Int, final: Int ) -> Int {
+func solve( initial: PositionKey, final: PositionKey ) -> Int {
     var seen = [ initial: 0 ]
     var queue = [ initial ]
     
     while let position = queue.first {
-        let moves = possibleMoves( position: position )
+        let nextPositions = possibleNextPositions( position: position )
         
         queue.removeFirst()
-        for move in moves {
-            if move == final {
+        for nextPosition in nextPositions {
+            if nextPosition == final {
                 return seen[position]! + 1
             }
-            if seen[move] == nil {
-                seen[move] = seen[position]! + 1
-                queue.append( move )
+            if seen[nextPosition] == nil {
+                seen[nextPosition] = seen[position]! + 1
+                queue.append( nextPosition )
             }
         }
     }
@@ -136,7 +132,7 @@ func solve( initial: Int, final: Int ) -> Int {
 }
 
 
-func parse( input: AOCinput ) -> Int {
+func parse( input: AOCinput ) -> PositionKey {
     var elements = [ String : Int ]()
     var result = 1                      // first digit is the elevator that always start on floor 1
     
