@@ -10,10 +10,13 @@
 
 import Foundation
 
-typealias Move = [Int]
-typealias Position = [Int]
-typealias Eligibles = [Int]
+typealias Move        = [Int]
+typealias Position    = [Int]
+typealias Eligibles   = [Int]
 typealias PositionKey = Int
+
+let groundFloor  = FloorName.first.intValue
+let topFloor     = FloorName.fourth.intValue
 
 enum PartType: String {  case generator, microchip }
 enum FloorName: String, CaseIterable {
@@ -22,6 +25,16 @@ enum FloorName: String, CaseIterable {
     var intValue: Int {
         return FloorName.allCases.enumerated().first( where: { $0.element == self } )!.offset + 1
     }
+}
+
+
+func transform( key: PositionKey) -> Position {
+    Array( String( key ) ).map { Int( String( $0 ) )! }
+}
+
+
+func transform( position: Position ) -> PositionKey {
+    return Int( position.map { String($0) }.joined() )!
 }
 
 
@@ -46,9 +59,6 @@ struct Part {
 }
 
 
-let groundFloor  = FloorName.first.intValue
-let topFloor     = FloorName.fourth.intValue
-
 func isSafe( position: Position ) -> Bool {
     for i in stride( from: 1, to: position.count, by: 2 ) {
         if position[i] != position[i+1] {
@@ -63,35 +73,97 @@ func isSafe( position: Position ) -> Bool {
 }
 
 
-func indicesToPositions( position: Position, indices: [Int] ) -> [Position] {
+func indicesToMoves( position: Position, indices: [Int] ) -> [Move] {
     var eligibles = Array( repeating: 0, count: position.count )
-    var positions: [Position] = []
+    var moves: [Move] = []
 
     indices.forEach { eligibles[$0] = 1 }
 
     if position[0] < topFloor {
         let newPosition = zip( position, eligibles ).map(+)
         
-        if isSafe( position: newPosition ) { positions.append( newPosition ) }
+        if isSafe( position: newPosition ) { moves.append( eligibles ) }
     }
     
     if position[0] > groundFloor {
         let newPosition = zip( position, eligibles ).map(-)
 
-        if isSafe( position: newPosition ) { positions.append( newPosition ) }
+        if isSafe( position: newPosition ) { moves.append( eligibles.map { -$0 } ) }
     }
     
-    return positions
+    return moves
 }
 
 
-func possibleNextPositions( position: PositionKey ) -> [PositionKey] {
-    let digits = Array( String( position ) ).map { Int( String( $0 ) )! }
-    let indices = digits.enumerated().filter { $0.element == digits[0] }.map { $0.offset }
-    var possibles: [Position] = []
+func removingEquivalents( moves: [Move] ) -> [Move] {
+    guard moves.count > 0 else { return [] }
+    
+    enum MoveType: Int, CaseIterable {
+        case oneGenerator, oneMicrochip, oneEach, twoGenerators, twoMicrochips
+    }
+    var buckets = Array( repeating: [Move](), count: MoveType.allCases.count )
+    var singles = 0
+    var doubles = 0
+    
+    for move in moves {
+        let indices = move.enumerated().filter { $0.element != 0 }.map { $0.offset }
+        
+        switch indices.count {
+        case 2 where !indices[1].isMultiple( of: 2 ):
+            buckets[MoveType.oneGenerator.rawValue].append( move )
+            singles += 1
+        case 2 where indices[1].isMultiple( of: 2 ):
+            buckets[MoveType.oneMicrochip.rawValue].append( move )
+            singles += 1
+        case 3 where indices[1].isMultiple( of: 2 ) != indices[2].isMultiple( of: 2 ):
+            buckets[MoveType.oneEach.rawValue].append( move )
+            doubles += 1
+        case 3 where !indices[1].isMultiple( of: 2 ) && !indices[2].isMultiple( of: 2 ):
+            buckets[MoveType.twoGenerators.rawValue].append( move )
+            doubles += 1
+        case 3 where indices[1].isMultiple( of: 2 ) && indices[2].isMultiple( of: 2 ):
+            buckets[MoveType.twoMicrochips.rawValue].append( move )
+            doubles += 1
+        default:
+            print( "Invalid move detected" )
+            exit( 1 )
+        }
+    }
+    
+    if moves[0][0] > 0 {
+        if doubles > 0 {
+            doubles += 1
+            buckets[MoveType.oneGenerator.rawValue] = []
+            buckets[MoveType.oneMicrochip.rawValue] = []
+        }
+    } else {
+        if singles > 0 {
+            buckets[MoveType.oneEach.rawValue] = []
+            buckets[MoveType.twoGenerators.rawValue] = []
+            buckets[MoveType.twoMicrochips.rawValue] = []
+        }
+    }
+    
+    return buckets.compactMap { $0.first }
+}
+
+
+func elimianteEquivalents( position: Position, moves: [Move] ) -> [Move] {
+    let upMoves = moves.filter { $0[0] > 0 }
+    let isEmptyBelow = position.allSatisfy { $0 >= position[0] }
+    let downMoves = isEmptyBelow ? [] : moves.filter { $0[0] < 0 }
+
+    return removingEquivalents( moves: upMoves ) + removingEquivalents( moves: downMoves )
+}
+
+
+func possibleNextPositions( positionKey: PositionKey ) -> [PositionKey] {
+    let position = transform( key: positionKey )
+    let indices = position.enumerated().filter { $0.element == position[0] }.map { $0.offset }
+    var moves: [Position] = []
 
     for i in 1 ..< indices.count {
-        possibles.append( contentsOf: indicesToPositions( position: digits, indices: [ 0, indices[i] ] ) )
+        moves.append( contentsOf: indicesToMoves( position: position, indices: [ 0, indices[i] ] ) )
         
         for j in i + 1 ..< indices.count {
             let sameType = indices[i] % 2 == indices[j] % 2
@@ -100,21 +172,52 @@ func possibleNextPositions( position: PositionKey ) -> [PositionKey] {
             if sameType || compatible {
                 let list = [ 0, indices[i], indices[j] ]
                 
-                possibles.append( contentsOf: indicesToPositions( position: digits, indices: list ) )
+                moves.append( contentsOf: indicesToMoves( position: position, indices: list ) )
             }
         }
     }
     
-    return possibles.map { Int( $0.map { String($0) }.joined() )! }
+    
+    let possibles = elimianteEquivalents( position: position, moves: moves ).map {
+        zip( position, $0 ).map(+)
+    }
+    return possibles.map { transform( position: $0 ) }
+}
+
+
+struct Seen {
+    var seen: [ PositionKey: Int ] = [:]
+    
+    init( positionKey: PositionKey, distance: Int ) {
+        self[positionKey] = distance
+    }
+    
+    subscript( positionKey: PositionKey ) -> Int? {
+        get { return seen[positionKey] }
+        set( newDistance ) {
+            let position = transform( key: positionKey )
+            
+            seen[positionKey] = newDistance
+            for i in stride( from: 1, to: position.count - 2, by: 2 ) {
+                for j in stride(from: i + 2, to: position.count, by: 2 ) {
+                    var newPosition = position
+                    
+                    ( newPosition[i], newPosition[j] ) = ( newPosition[j], newPosition[i] )
+                    ( newPosition[i+1], newPosition[j+1] ) = ( newPosition[j+1], newPosition[i+1] )
+                    seen[ transform( position: newPosition ) ] = newDistance
+                }
+            }
+        }
+    }
 }
 
 
 func solve( initial: PositionKey, final: PositionKey ) -> Int {
-    var seen = [ initial: 0 ]
+    var seen = Seen( positionKey: initial, distance: 0 )
     var queue = [ initial ]
     
     while let position = queue.first {
-        let nextPositions = possibleNextPositions( position: position )
+        let nextPositions = possibleNextPositions( positionKey: position )
         
         queue.removeFirst()
         for nextPosition in nextPositions {
