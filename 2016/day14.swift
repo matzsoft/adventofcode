@@ -1,17 +1,16 @@
 //
-//  main.swift
-//  day14
-//
-//  Created by Mark Johnson on 1/1/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day14 - One-Time Pad
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/03/21 20:45:48
 //
 
 import Foundation
 
-let test1Salt = "abc"
-let inputSalt = "qzyelonm"
 let range = 1000
-let stretchCount = 2016
 
 class KeyGenerator {
     let salt: String
@@ -28,14 +27,14 @@ class KeyGenerator {
         self.stretch = stretch
         buffer = []
         
-        buffer = [ hashValue(for: 0) ]
+        buffer = [ hashValue( for: 0 ) ]
     }
     
     func hashValue( for index: Int ) -> String {
-        var hash = "\(salt)\(index)".utf8.md5.rawValue
+        var hash = md5Hash( str: "\(salt)\(index)" )
         
         for _ in 0 ..< stretch {
-            hash = hash.utf8.md5.rawValue
+            hash = md5Hash( str: hash )
         }
         
         return hash
@@ -50,12 +49,12 @@ class KeyGenerator {
         
         guard index == lastIndex + 1 else { print( "Index overflow:", index ); exit(1) }
         
-        let value = hashValue(for: index)
+        let value = hashValue( for: index )
         
         if buffer.count < range {
             last = buffer.count
             lastIndex = index
-            buffer.append(value)
+            buffer.append( value )
         } else {
             buffer[first] = value
             last = first
@@ -74,7 +73,7 @@ class KeyGenerator {
             if let target = KeyGenerator.isPotential( key: self[current] ) {
                 //print( "\(current): \(self[current])" )
                 for index in current + 1 ... current + range {
-                    if self[index].range(of: target ) != nil {
+                    if self[index].range( of: target ) != nil {
                         //print( "    \(index): \(self[index])" )
                         return self[current]
                     }
@@ -90,7 +89,7 @@ class KeyGenerator {
             let index3 = key.index( key.startIndex, offsetBy: offset + 2 )
 
             if key[index1] == key[index2] && key[index1] == key[index3] {
-                return String(repeating: key[index1], count: 5)
+                return String( repeating: key[index1], count: 5 )
             }
         }
         
@@ -98,19 +97,37 @@ class KeyGenerator {
     }
 }
 
-let generator1 = KeyGenerator(salt: inputSalt, stretch: 0)
-let generator2 = KeyGenerator(salt: inputSalt, stretch: stretchCount)
-var keys: [String] = []
 
-while keys.count < 64 {
-    keys.append( generator1.nextKey() )
+func parse( input: AOCinput ) -> String {
+    return input.line
 }
 
-print( "Part1:", generator1.current )
 
-keys = []
-while keys.count < 64 {
-    keys.append( generator2.nextKey() )
+func part1( input: AOCinput ) -> String {
+    let salt = parse( input: input )
+    let generator = KeyGenerator( salt: salt, stretch: 0 )
+    var keys: [String] = []
+
+    while keys.count < 64 {
+        keys.append( generator.nextKey() )
+    }
+
+    return "\(generator.current)"
 }
 
-print( "Part2:", generator2.current )
+
+func part2( input: AOCinput ) -> String {
+    let salt = parse( input: input )
+    let generator = KeyGenerator( salt: salt, stretch: 2016 )
+    var keys: [String] = []
+
+    while keys.count < 64 {
+        keys.append( generator.nextKey() )
+    }
+
+    return "\(generator.current)"
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
