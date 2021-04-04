@@ -33,8 +33,20 @@ enum Direction4: Int, CaseIterable {
 struct Point2D: Hashable {
     let x: Int
     let y: Int
-}
-
-func +(lhs: Point2D, rhs: Point2D) -> Point2D {
-    return Point2D( x: lhs.x + rhs.x, y: lhs.y + rhs.y )
+    
+    func distance( other: Point2D ) -> Int {
+        return abs( x - other.x ) + abs( y - other.y )
+    }
+    
+    static func +( left: Point2D, right: Point2D ) -> Point2D {
+        return Point2D( x: left.x + right.x, y: left.y + right.y )
+    }
+    
+    static func ==( left: Point2D, right: Point2D ) -> Bool {
+        return left.x == right.x && left.y == right.y
+    }
+    
+    func move( direction: Direction4 ) -> Point2D {
+        return self + direction.vector
+    }
 }

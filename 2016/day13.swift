@@ -1,50 +1,16 @@
 //
-//  main.swift
-//  day13
-//
-//  Created by Mark Johnson on 12/31/18.
-//  Copyright © 2018 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day13 - A Maze of Twisty Little Cubicles
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/03/21 19:23:47
 //
 
 import Foundation
 
-enum Direction: CaseIterable {
-    case north, east, south, west
-}
-
-enum Type: String {
-    case open = ".", wall = "#"
-}
-
-struct Point {
-    let x: Int
-    let y: Int
-    
-    func distance( other: Point ) -> Int {
-        return abs( x - other.x ) + abs( y - other.y )
-    }
-    
-    static func +( left: Point, right: Point ) -> Point {
-        return Point(x: left.x + right.x, y: left.y + right.y)
-    }
-    
-    static func ==( left: Point, right: Point ) -> Bool {
-        return left.x == right.x && left.y == right.y
-    }
-    
-    func move( direction: Direction ) -> Point {
-        switch direction {
-        case .north:
-            return self + Point(x: 0, y: -1)
-        case .east:
-            return self + Point(x: 1, y: 0)
-        case .south:
-            return self + Point(x: 0, y: 1)
-        case .west:
-            return self + Point(x: -1, y: 0)
-        }
-    }
-}
+enum Type: Int { case open, wall }
 
 class Cubicle {
     let type: Type
@@ -59,11 +25,7 @@ class Cubicle {
             value >>= 1
         }
         
-        if parity == 1 {
-            type = .wall
-        } else {
-            type = .open
-        }
+        type = Type( rawValue: parity )!
         distance = Int.max
     }
 }
@@ -76,28 +38,28 @@ class Floor {
             var row: [Cubicle] = []
             
             for x in 0 ..< width {
-                row.append( Cubicle(x: x, y: y, favorite: favorite) )
+                row.append( Cubicle( x: x, y: y, favorite: favorite ) )
             }
             map.append(row)
         }
     }
     
-    subscript( point: Point ) -> Cubicle? {
+    subscript( point: Point2D ) -> Cubicle? {
         guard point.x >= 0 && point.y >= 0 else { return nil }
         guard point.x < map[0].count && point.y < map.count else { return nil }
         
         return map[point.y][point.x]
     }
     
-    func possibleMoves( point: Point ) -> [Point] {
-        var results: [Point] = []
+    func possibleMoves( point: Point2D ) -> [Point2D] {
+        var results: [Point2D] = []
         
-        for direction in Direction.allCases {
-            let nextPos = point.move(direction: direction)
+        for direction in Direction4.allCases {
+            let nextPos = point.move( direction: direction )
             
             if let next = self[ nextPos ] {
                 if next.type == .open {
-                    results.append(nextPos)
+                    results.append( nextPos )
                 }
             }
         }
@@ -105,8 +67,8 @@ class Floor {
         return results
     }
     
-    func findDistance( start: Point, end: Point ) -> Int? {
-        var queue: [Point] = []
+    func findDistance( start: Point2D, end: Point2D ) -> Int? {
+        var queue: [Point2D] = []
         
         map.forEach { $0.forEach { $0.distance = Int.max } }
         if let begin = self[start] {
@@ -115,7 +77,7 @@ class Floor {
         queue.append(start)
         
         while let next = queue.first {
-            let possibles = possibleMoves(point: next)
+            let possibles = possibleMoves( point: next )
             
             queue.removeFirst()
             if let nextCube = self[next] {
@@ -129,7 +91,7 @@ class Floor {
                     if let cube = self[possible] {
                         if cube.distance == Int.max {
                             cube.distance = newDistance
-                            queue.append(possible)
+                            queue.append( possible )
                         }
                     }
                 }
@@ -139,17 +101,17 @@ class Floor {
         return nil
     }
     
-    func find( inRange: Int, start: Point ) -> Int {
-        var queue: [Point] = []
+    func find( inRange: Int, start: Point2D ) -> Int {
+        var queue: [Point2D] = []
         
         map.forEach { $0.forEach { $0.distance = Int.max } }
         if let begin = self[start] {
             begin.distance = 0
         }
-        queue.append(start)
+        queue.append( start )
         
         while let next = queue.first {
-            let possibles = possibleMoves(point: next)
+            let possibles = possibleMoves( point: next )
             
             queue.removeFirst()
             if let nextCube = self[next] {
@@ -163,7 +125,7 @@ class Floor {
                     if let cube = self[possible] {
                         if cube.distance == Int.max {
                             cube.distance = newDistance
-                            queue.append(possible)
+                            queue.append( possible )
                         }
                     }
                 }
@@ -198,20 +160,28 @@ class Floor {
 }
 
 
-
-let startPoint = Point(x: 1, y: 1)
-
-let test1Favorite = 10
-let test1End = Point(x: 7, y: 4
-)
-let inputFavorite = 1364
-let inputEnd = Point(x: 31, y: 39)
-
-
-let floor = Floor(width: 70, height: 70, favorite: inputFavorite)
-
-if let part1 = floor.findDistance( start: startPoint, end: inputEnd ) {
-    print( "Part1:", part1 )
+func parse( input: AOCinput ) -> Int {
+    return Int( input.line )!
 }
 
-print( "Part2:", floor.find( inRange: 50, start: startPoint ) )
+
+let startPoint = Point2D( x: 1, y: 1 )
+
+func part1( input: AOCinput ) -> String {
+    let favorite = parse( input: input )
+    let floor = Floor( width: 70, height: 70, favorite: favorite )
+    
+    return "\(floor.findDistance( start: startPoint, end: Point2D( x: 31, y: 39 ) )!)"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let favorite = parse( input: input )
+    let floor = Floor( width: 70, height: 70, favorite: favorite )
+    
+    return "\(floor.find( inRange: 50, start: startPoint ))"
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
