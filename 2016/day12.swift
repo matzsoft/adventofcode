@@ -1,47 +1,94 @@
 //
-//  main.swift
-//  day12
-//
-//  Created by Mark Johnson on 12/31/18.
-//  Copyright © 2018 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day12 - Leonardo's Monorail
+//        NOTES: See comments at the end for a description of how I arrived at the solution.
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/01/21 19:42:01
 //
 
 import Foundation
 
-let test1 = """
-cpy 41 a
-inc a
-inc a
-dec a
-jnz a 2
-dec a
-"""
-let input = """
-cpy 1 a
-cpy 1 b
-cpy 26 d
-jnz c 2
-jnz 1 5
-cpy 7 c
-inc d
-dec c
-jnz c -2
-cpy a c
-inc a
-dec b
-jnz b -2
-cpy c b
-dec d
-jnz d -6
-cpy 18 c
-cpy 11 d
-inc a
-dec d
-jnz d -2
-dec c
-jnz c -5
-"""
+func fibonacci( _ n: Int ) -> Int {
+    return Int( pow( ( 1 + sqrt( 5 ) ) / 2, Double( n ) ) / sqrt( 5 ) + 0.5 )
+}
 
+
+func parse( input: AOCinput ) -> Assembunny {
+    return Assembunny( lines: input.lines )
+}
+
+
+func part1Slow( input: AOCinput ) -> String {
+    let computer = parse( input: input )
+    
+    computer.run()
+    return "\(computer.registers["a"]!)"
+}
+
+
+func part2Slow( input: AOCinput ) -> String {
+    let computer = parse( input: input )
+    
+    computer.registers["c"] = 1
+    computer.run()
+    return "\(computer.registers["a"]!)"
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let computer = parse( input: input )
+    let fibNumber = Int( computer.memory[2].x )! + 2
+    let product = Int( computer.memory[16].x )! * Int( computer.memory[17].x )!
+    
+    return "\(fibonacci( fibNumber ) + product)"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let computer = parse( input: input )
+    let fibNumber = Int( computer.memory[2].x )! + Int( computer.memory[5].x )! + 2
+    let product = Int( computer.memory[16].x )! * Int( computer.memory[17].x )!
+    
+    return "\(fibonacci( fibNumber ) + product)"
+}
+
+
+try runTests( part1: part1Slow, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
+//try runSolutions( part1: part1Slow, part2: part2Slow )
+
+
+/*
+ My input produces an Assembunny computer with the following memory contents:
+ 
+ 00: cpy 1 a
+ 01: cpy 1 b
+ 02: cpy 26 d
+ 03: jnz c 2
+ 04: jnz 1 5
+ 05: cpy 7 c
+ 06: inc d
+ 07: dec c
+ 08: jnz c -2
+ 09: cpy a c
+ 10: inc a
+ 11: dec b
+ 12: jnz b -2
+ 13: cpy c b
+ 14: dec d
+ 15: jnz d -6
+ 16: cpy 18 c
+ 17: cpy 11 d
+ 18: inc a
+ 19: dec d
+ 20: jnz d -2
+ 21: dec c
+ 22: jnz c -5
+
+ It was pretty easy to reverse engineer that into the following function.
+ 
 func execute( a:Int, b: Int, c: Int, d: Int ) -> Int {
     var a = a
     var b = b
@@ -62,9 +109,9 @@ func execute( a:Int, b: Int, c: Int, d: Int ) -> Int {
     return a
 }
 
-let lines = input.split(separator: "\n")
-lines.enumerated().forEach { print( "\($0.0):", $0.1 ) }
-
-
 print( "Part1:", execute(a: 0, b: 0, c: 0, d: 0) )
 print( "Part2:", execute(a: 0, b: 0, c: 1, d: 0) )
+ 
+ Upon further examination, the for loop really just computes fibonacci( d + 2 ), leading to the code in part1 and part2 above.
+ 
+*/
