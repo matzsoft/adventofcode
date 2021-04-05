@@ -61,12 +61,12 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let disks = parse( input: input )
+    let newDisk = Disc( number: disks.last!.number + 1, positions: 11, initial: 0 )
     let composite = disks[2...].reduce( into: disks[0].combine( with: disks[1] ) ) {
         $0 = $0.combine( with: $1 )
-    }
-    let newDisk = Disc( number: disks.last!.number + 1, positions: 11, initial: 0 )
-    let newComposite = composite.combine( with: newDisk )
-    return "\(newComposite.start)"
+    }.combine( with: newDisk )
+
+    return "\(composite.start)"
 }
 
 
