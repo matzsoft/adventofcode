@@ -1,41 +1,14 @@
 //
-//  main.swift
-//  day16
-//
-//  Created by Mark Johnson on 1/3/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day16 - Dragon Checksum
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/04/21 23:09:26
 //
 
 import Foundation
-
-let dragonTests: [ ( in: String, out: String ) ] = [
-    ( in: "1", out: "100" ),
-    ( in: "0", out: "001" ),
-    ( in: "11111", out: "11111000000" ),
-    ( in: "111100001010", out: "1111000010100101011110000" )
-]
-
-let checksumTests: [ ( in: String, out: String ) ] = [
-    ( in: "110010110100", out: "100" )
-]
-
-let fullTests: [ ( length: Int, initial: String, checksum: String ) ] = [
-    ( length: 20, initial: "10000", checksum: "01100" )
-]
-
-let lengthDisk1 = 272
-let initialDisk1 = "11101000110010100"
-let lengthDisk2 = 35651584
-let initialDisk2 = initialDisk1
-
-func dragonStep( a: String ) -> String {
-    let b = a.reversed()
-    let b1 = b.map { $0 == "1" ? "2" : $0 }
-    let b2 = b1.map { $0 == "0" ? "1" : $0 }
-    let b3 = b2.map { $0 == "2" ? "0" : $0 }
-    
-    return a + "0" + b3
-}
 
 extension Substring {
     subscript( offset: Int ) -> Character {
@@ -51,7 +24,7 @@ func checksum( input: Substring ) -> String {
     let right = input[index...]
     
     if left == right { return "1" }
-    return checksum(input: left) == checksum(input: right) ? "1" : "0"
+    return checksum( input: left ) == checksum( input: right ) ? "1" : "0"
 }
 
 func checksum( input: String ) -> String {
@@ -60,7 +33,7 @@ func checksum( input: String ) -> String {
     var result = ""
     
     while current & chunkSize == 0 { chunkSize <<= 1 }
-    for offset in stride(from: 0, to: input.count, by: chunkSize) {
+    for offset in stride( from: 0, to: input.count, by: chunkSize ) {
         let startIndex = input.index( input.startIndex, offsetBy: offset )
         let endIndex = input.index( startIndex, offsetBy: chunkSize  )
         
@@ -74,40 +47,35 @@ func fill( length: Int, initial: String ) -> String {
     var data = initial
     
     while data.count < length {
-        data = dragonStep(a: data)
+        data += "0" + data.reversed().map { $0 == "1" ? "0" : "1" }
     }
     
-    let index = data.index(data.startIndex, offsetBy: length)
-    
-    data = String( data[..<index] )
-    return data
+    return String( data.prefix( length ) )
 }
 
 func fillAndChecksum( length: Int, initial: String ) -> String {
-    return checksum(input: fill(length: length, initial: initial))
+    return checksum( input: fill( length: length, initial: initial ) )
 }
 
 
-for test in dragonTests {
-    if dragonStep(a: test.in ) != test.out {
-        print( "Dragon test failed for '\(test.in)'" )
-        exit(1)
-    }
+func parse( input: AOCinput ) -> String {
+    return input.line
 }
 
-for test in checksumTests {
-    if checksum(input: test.in) != test.out {
-        print( "Checksum test failed for '\(test.in)'" )
-        exit(1)
-    }
+
+func part1( input: AOCinput ) -> String {
+    let initial = parse( input: input )
+    
+    return "\(fillAndChecksum( length: 272, initial: initial ))"
 }
 
-for test in fullTests {
-    if fillAndChecksum(length: test.length, initial: test.initial) != test.checksum {
-        print( "Checksum test failed for '\(test.initial)'" )
-        exit(1)
-    }
+
+func part2( input: AOCinput ) -> String {
+    let initial = parse( input: input )
+    
+    return "\(fillAndChecksum( length: 35651584, initial: initial ))"
 }
 
-print( "Part1:", fillAndChecksum(length: lengthDisk1, initial: initialDisk1) )
-print( "Part2:", fillAndChecksum(length: lengthDisk2, initial: initialDisk2) )
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
