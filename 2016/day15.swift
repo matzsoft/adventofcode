@@ -1,25 +1,14 @@
 //
-//  main.swift
-//  day15
-//
-//  Created by Mark Johnson on 1/2/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day15 - Timing is Everything
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/04/21 17:05:57
 //
 
 import Foundation
-
-let test1 = """
-Disc #1 has 5 positions; at time=0, it is at position 4.
-Disc #2 has 2 positions; at time=0, it is at position 1.
-"""
-let input = """
-Disc #1 has 13 positions; at time=0, it is at position 10.
-Disc #2 has 17 positions; at time=0, it is at position 15.
-Disc #3 has 19 positions; at time=0, it is at position 17.
-Disc #4 has 7 positions; at time=0, it is at position 1.
-Disc #5 has 5 positions; at time=0, it is at position 0.
-Disc #6 has 3 positions; at time=0, it is at position 1.
-"""
 
 class Disc {
     let number: Int
@@ -34,10 +23,10 @@ class Disc {
         start = ( positions * number - initial - number ) % positions
     }
     
-    convenience init( line: Substring ) {
+    convenience init( line: String ) {
         let words = line.split( whereSeparator: { " #.".contains($0) } )
         
-        self.init(number: Int( words[1] )!, positions: Int( words[3] )!, initial: Int( words[11] )!)
+        self.init( number: Int( words[1] )!, positions: Int( words[3] )!, initial: Int( words[11] )! )
     }
     
     func combine( with next: Disc ) -> Disc {
@@ -54,30 +43,32 @@ class Disc {
     }
 }
 
-func parse( input: String ) -> [Disc] {
-    let lines = input.split(separator: "\n")
-    var result: [Disc] = []
-    
-    for line in lines {
-        result.append( Disc(line: line) )
-    }
-    
-    return result
+
+func parse( input: AOCinput ) -> [Disc] {
+    return input.lines.map { Disc( line: $0 ) }
 }
 
 
-let disks = parse(input: input)
-var composite = disks[0].combine(with: disks[1])
-
-if disks.count > 2 {
-    for disk in disks[2...] {
-        composite = composite.combine(with: disk)
+func part1( input: AOCinput ) -> String {
+    let disks = parse( input: input )
+    let composite = disks[2...].reduce( into: disks[0].combine( with: disks[1] ) ) {
+        $0 = $0.combine( with: $1 )
     }
+
+    return "\(composite.start)"
 }
 
-print( "Part1:", composite.start )
 
-let newDisk = Disc(number: disks.last!.number + 1, positions: 11, initial: 0)
+func part2( input: AOCinput ) -> String {
+    let disks = parse( input: input )
+    let composite = disks[2...].reduce( into: disks[0].combine( with: disks[1] ) ) {
+        $0 = $0.combine( with: $1 )
+    }
+    let newDisk = Disc( number: disks.last!.number + 1, positions: 11, initial: 0 )
+    let newComposite = composite.combine( with: newDisk )
+    return "\(newComposite.start)"
+}
 
-composite = composite.combine(with: newDisk)
-print( "Part2:", composite.start )
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
