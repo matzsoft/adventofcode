@@ -51,6 +51,15 @@ func flip( data: String ) -> String {
 }
 
 
+// The dragon curve for the problem works as follows ( f(a) is the flip function, reverses and inverts a ):
+// Round 1 - a0f(a) = a0b
+// Round 2 - a0b0f(b)1f(a) = a0b0a1b
+// Round 3 - a0b0a1b0a0b1a1b
+// etc.
+//
+// Notice that it doesn't matter what a is so we can leave out the a (and b) and just return the seperating
+// string of 0's and 1's.
+
 func dragonSkeleton( limit: Int ) -> String {
     var result = ""
     
@@ -60,6 +69,21 @@ func dragonSkeleton( limit: Int ) -> String {
     
     return result
 }
+
+
+// This function uses dragonSkeleton to get the 0's and 1's (see above).  Then it adds in the a and b segments
+// in the appropriate places.  The loopCount is derived by observing that the length after n rounds of the
+// dragon curve is
+//
+// 2**n * c + 2**n - 1
+//
+// This needs to be enough to satisy the length argument (denoted below by L). So solve
+//
+// 2**n * c + 2**n - 1 >= L
+// 2**n( c + 1 ) - 1 >= L
+// 2**n( c + 1 ) >= L + 1
+// 2**n >= ( L + 1 ) / ( c + 1 )
+// n >= log2( ( L + 1 ) / ( c + 1 ) )
 
 func fill( length: Int, initial: String ) -> String {
     let loopCount = Int( ceil( log2( Double( ( length + 1 ) / ( initial.count + 1 ) ) ) ) )
