@@ -16,6 +16,7 @@ extension Substring {
     }
 }
 
+
 func checksum( input: Substring ) -> String {
     guard input.count > 2 else { return input[0] == input[1] ? "1" : "0" }
     
@@ -26,6 +27,7 @@ func checksum( input: Substring ) -> String {
     if left == right { return "1" }
     return checksum( input: left ) == checksum( input: right ) ? "1" : "0"
 }
+
 
 func checksum( input: String ) -> String {
     let current = input.count
@@ -43,14 +45,34 @@ func checksum( input: String ) -> String {
     return result
 }
 
-func fill( length: Int, initial: String ) -> String {
-    var data = initial
+
+func flip( data: String ) -> String {
+    return data.reversed().map { $0 == "0" ? "1" : "0" }.joined()
+}
+
+
+func dragonSkeleton( limit: Int ) -> String {
+    var result = ""
     
-    while data.count < length {
-        data += "0" + data.reversed().map { $0 == "1" ? "0" : "1" }
+    for _ in 1 ... limit {
+        result = result + "0" + flip( data: result )
     }
     
-    return String( data.prefix( length ) )
+    return result
+}
+
+func fill( length: Int, initial: String ) -> String {
+    let loopCount = Int( ceil( log2( Double( ( length + 1 ) / ( initial.count + 1 ) ) ) ) )
+    let dataB = flip( data: initial )
+    let skeleton = dragonSkeleton( limit: loopCount )
+    
+    guard skeleton.count > 1 else { return "\(initial)0\(dataB)" }
+    
+    let result = skeleton.enumerated().map {
+        $0.offset % 2 == 1 ? String( $0.element ) : "\(initial)\($0.element)\(dataB)"
+    }
+    
+    return String( result.joined().prefix( length ) )
 }
 
 func fillAndChecksum( length: Int, initial: String ) -> String {
@@ -65,7 +87,7 @@ func parse( input: AOCinput ) -> String {
 
 func part1( input: AOCinput ) -> String {
     let initial = parse( input: input )
-    
+
     return "\(fillAndChecksum( length: 272, initial: initial ))"
 }
 
