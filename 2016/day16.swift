@@ -10,44 +10,80 @@
 
 import Foundation
 
-extension Substring {
-    subscript( offset: Int ) -> Character {
-        return self[ self.index( self.startIndex, offsetBy: offset ) ]
-    }
-}
-
-
-func checksum( input: Substring ) -> String {
-    guard input.count > 2 else { return input[0] == input[1] ? "1" : "0" }
+struct Disk {
+    let length:    Int
+    let chunkSize: Int
+    let initial:   [Character]
+    let inverted:  [Character]
+    let skeleton:  [Character]
     
-    let index = input.index( input.startIndex, offsetBy: input.count / 2 )
-    let left = input[..<index]
-    let right = input[index...]
-    
-    if left == right { return "1" }
-    return checksum( input: left ) == checksum( input: right ) ? "1" : "0"
-}
-
-
-func checksum( input: String ) -> String {
-    let current = input.count
-    var chunkSize = 1
-    var result = ""
-    
-    while current & chunkSize == 0 { chunkSize <<= 1 }
-    for offset in stride( from: 0, to: input.count, by: chunkSize ) {
-        let startIndex = input.index( input.startIndex, offsetBy: offset )
-        let endIndex = input.index( startIndex, offsetBy: chunkSize  )
+    init( initial: String, length: Int ) {
+        self.length   = length
+        self.initial  = Array( initial )
+        self.inverted = Array( Disk.flip( data: initial ) )
         
-        result += checksum( input: input[ startIndex ..< endIndex ] )
+        // Calculate the chunk size - the biggest power of 2 that is a factor of length.
+        // Each chunk becomes a single bit in the final checksum.
+        var chunkSize = 1
+        
+        while length & chunkSize == 0 { chunkSize <<= 1 }
+        self.chunkSize = chunkSize
+
+        // Calculate the dragon curve skeleton - see class comments for more detail.
+        let rounds = Int( ceil( log2( Double( ( length + 1 ) / ( initial.count + 1 ) ) ) ) )
+        var skeleton = ""
+        
+        for _ in 1 ... rounds {
+            skeleton = skeleton + "0" + Disk.flip( data: skeleton )
+        }
+        
+        self.skeleton = Array( skeleton )
     }
     
-    return result
-}
+    static func flip( data: String ) -> String {
+        return data.reversed().map { $0 == "0" ? "1" : "0" }.joined()
+    }
 
+    subscript( offset: Int ) -> Character {
+        if offset % ( initial.count + 1 )  == initial.count {
+            // It's a character from the skeleton
+            return skeleton[ offset / ( initial.count + 1 ) ]
+        }
+        
+        if offset % ( 2 * initial.count + 2 ) < initial.count {
+            // It's an a (initial)
+            return initial[ offset % ( initial.count + 1 ) ]
+        }
+        
+        // It's a b (inverted)
+        return inverted[ offset % ( initial.count + 1 ) ]
+    }
 
-func flip( data: String ) -> String {
-    return data.reversed().map { $0 == "0" ? "1" : "0" }.joined()
+    func isEqual( leftStart: Int, rightStart: Int, size: Int ) -> Bool {
+        return ( 0 ..< size ).allSatisfy { self[leftStart+$0] == self[rightStart+$0] }
+    }
+    
+    var checksum: String {
+        let result = stride( from: 0, to: length, by: chunkSize ).map {
+            checksum( startIndex: $0, endIndex: $0 + chunkSize )
+        }
+        
+        return String( result )
+    }
+    
+    func checksum( startIndex: Int, endIndex: Int ) -> Character {
+        let size = endIndex - startIndex
+        let half = size / 2
+        
+        guard half > 1 else { return self[startIndex] == self[startIndex+1] ? "1" : "0" }
+        
+        if isEqual( leftStart: startIndex, rightStart: startIndex + half, size: half ) { return "1" }
+        
+        let left = checksum( startIndex: startIndex, endIndex: startIndex + half )
+        let right = checksum(startIndex: startIndex + half, endIndex: endIndex )
+        
+        return left == right ? "1" : "0"
+    }
 }
 
 
@@ -60,20 +96,10 @@ func flip( data: String ) -> String {
 // Notice that it doesn't matter what a is so we can leave out the a (and b) and just return the seperating
 // string of 0's and 1's.
 
-func dragonSkeleton( limit: Int ) -> String {
-    var result = ""
-    
-    for _ in 1 ... limit {
-        result = result + "0" + flip( data: result )
-    }
-    
-    return result
-}
 
-
-// This function uses dragonSkeleton to get the 0's and 1's (see above).  Then it adds in the a and b segments
-// in the appropriate places.  The loopCount is derived by observing that the length after n rounds of the
-// dragon curve is
+// This function uses dragonSkeleton to get the 0's and 1's (see above).  Then it adds in the a and b
+// segments in the appropriate places.  The loopCount is derived by observing that the length after n rounds
+// of the dragon curve is
 //
 // 2**n * c + 2**n - 1
 //
@@ -85,41 +111,39 @@ func dragonSkeleton( limit: Int ) -> String {
 // 2**n >= ( L + 1 ) / ( c + 1 )
 // n >= log2( ( L + 1 ) / ( c + 1 ) )
 
-func fill( length: Int, initial: String ) -> String {
-    let loopCount = Int( ceil( log2( Double( ( length + 1 ) / ( initial.count + 1 ) ) ) ) )
-    let dataB = flip( data: initial )
-    let skeleton = dragonSkeleton( limit: loopCount )
-    
-    guard skeleton.count > 1 else { return "\(initial)0\(dataB)" }
-    
-    let result = skeleton.enumerated().map {
-        $0.offset % 2 == 1 ? String( $0.element ) : "\(initial)\($0.element)\(dataB)"
-    }
-    
-    return String( result.joined().prefix( length ) )
-}
-
-func fillAndChecksum( length: Int, initial: String ) -> String {
-    return checksum( input: fill( length: length, initial: initial ) )
-}
-
 
 func parse( input: AOCinput ) -> String {
     return input.line
 }
 
 
+//func part1( input: AOCinput ) -> String {
+//    let initial = parse( input: input )
+//
+//    return "\(fillAndChecksum( length: 272, initial: initial ))"
+//}
+
+
 func part1( input: AOCinput ) -> String {
     let initial = parse( input: input )
+    let disk = Disk( initial: initial, length: 272 )
 
-    return "\(fillAndChecksum( length: 272, initial: initial ))"
+    return disk.checksum
 }
+
+
+//func part2( input: AOCinput ) -> String {
+//    let initial = parse( input: input )
+//
+//    return "\(fillAndChecksum( length: 35651584, initial: initial ))"
+//}
 
 
 func part2( input: AOCinput ) -> String {
     let initial = parse( input: input )
-    
-    return "\(fillAndChecksum( length: 35651584, initial: initial ))"
+    let disk = Disk( initial: initial, length: 35651584 )
+
+    return disk.checksum
 }
 
 
