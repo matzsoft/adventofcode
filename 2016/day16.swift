@@ -10,6 +10,49 @@
 
 import Foundation
 
+// There are 2 important realizations that allow this problem to be solved in resonable time.  Number one,
+// there is no need to generate the data for filling the disk.  Number two, there is a shortcut for
+// calculating the checksum that requires little memory and is O(n).
+
+// In the following discussion a is the initial data, f is a function that reverses the order of the
+// chatacters in its argument and interchanges all the "0" and "1" characters, and b = f(a).
+
+// The dragon curve for the problem works as follows:
+// Round 1 - a0f(a) = a0b
+// Round 2 - a0b0f(a0b) = a0b0f(b)1f(a) = a0b0a1b
+// Round 3 - a0b0a1b0a0b1a1b
+// ...
+// Round n - asbsasbs...asb
+//            0 1 2 3    n
+//
+// Where s represents the elements of what I call the skeleton.  Notice that it doesn't matter what a is so
+// we can leave out the a (and b) and just return the skeleton as a string of 0's and 1's.
+
+// But how big does n need to be to get the desired length of data?  Observe that the length of the dragon
+// curve after n rounds is:
+//
+// 2**n * c + 2**n - 1
+//
+// The ( 2**n * c ) is the length of all the a and b parts and the ( 2**n - 1 ) is the length of the
+// skeleton.  So if we denote the desired length as L, just solve the following for n.
+//
+// 2**n * c + 2**n - 1 >= L
+// 2**n( c + 1 ) - 1 >= L
+// 2**n( c + 1 ) >= L + 1
+// 2**n >= ( L + 1 ) / ( c + 1 )
+// n >= log2( ( L + 1 ) / ( c + 1 ) )
+
+// So by knowing a, b, and the skeleton you can determine the value of any character in the filled disk just
+// given its offset.
+
+// The key to the checksum is noticing that the length of the resulting checksum will be the length of the
+// data with all the 2 factors removed.  So divide the data into chunks, each with a length of the largest
+// power of 2 that divides the data length.  Then each chunk will contribute one character to the checksum
+// and that character can be computed independantly from all the other chunks.
+//
+// The checksum for a chunk is computed by combining the first two character, then combining that with the
+// combination of the next two characters, and so on.
+
 struct Disk {
     let length:    Int
     let chunkSize: Int
@@ -72,56 +115,19 @@ struct Disk {
     }
     
     func checksum( startIndex: Int, endIndex: Int ) -> Character {
-        let size = endIndex - startIndex
-        let half = size / 2
+        let step = stride( from: startIndex + 2, to: endIndex, by: 2 )
+        let result = step.reduce( self[startIndex] == self[startIndex+1] ) {
+            $0 == ( self[$1] == self[$1+1] )
+        }
         
-        guard half > 1 else { return self[startIndex] == self[startIndex+1] ? "1" : "0" }
-        
-        if isEqual( leftStart: startIndex, rightStart: startIndex + half, size: half ) { return "1" }
-        
-        let left = checksum( startIndex: startIndex, endIndex: startIndex + half )
-        let right = checksum(startIndex: startIndex + half, endIndex: endIndex )
-        
-        return left == right ? "1" : "0"
+        return result ? "1" : "0"
     }
 }
-
-
-// The dragon curve for the problem works as follows ( f(a) is the flip function, reverses and inverts a ):
-// Round 1 - a0f(a) = a0b
-// Round 2 - a0b0f(b)1f(a) = a0b0a1b
-// Round 3 - a0b0a1b0a0b1a1b
-// etc.
-//
-// Notice that it doesn't matter what a is so we can leave out the a (and b) and just return the seperating
-// string of 0's and 1's.
-
-
-// This function uses dragonSkeleton to get the 0's and 1's (see above).  Then it adds in the a and b
-// segments in the appropriate places.  The loopCount is derived by observing that the length after n rounds
-// of the dragon curve is
-//
-// 2**n * c + 2**n - 1
-//
-// This needs to be enough to satisy the length argument (denoted below by L). So solve
-//
-// 2**n * c + 2**n - 1 >= L
-// 2**n( c + 1 ) - 1 >= L
-// 2**n( c + 1 ) >= L + 1
-// 2**n >= ( L + 1 ) / ( c + 1 )
-// n >= log2( ( L + 1 ) / ( c + 1 ) )
 
 
 func parse( input: AOCinput ) -> String {
     return input.line
 }
-
-
-//func part1( input: AOCinput ) -> String {
-//    let initial = parse( input: input )
-//
-//    return "\(fillAndChecksum( length: 272, initial: initial ))"
-//}
 
 
 func part1( input: AOCinput ) -> String {
@@ -130,13 +136,6 @@ func part1( input: AOCinput ) -> String {
 
     return disk.checksum
 }
-
-
-//func part2( input: AOCinput ) -> String {
-//    let initial = parse( input: input )
-//
-//    return "\(fillAndChecksum( length: 35651584, initial: initial ))"
-//}
 
 
 func part2( input: AOCinput ) -> String {
