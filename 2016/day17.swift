@@ -1,82 +1,22 @@
 //
-//  main.swift
-//  day17
-//
-//  Created by Mark Johnson on 1/4/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day17 - Two Steps Forward
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/08/21 11:24:38
 //
 
 import Foundation
 
-enum Direction: String, CaseIterable {
-    case up = "U", down = "D", left = "L", right = "R"
-}
-
-struct Point {
-    let x: Int
-    let y: Int
-    
-    func distance( other: Point ) -> Int {
-        return abs( x - other.x ) + abs( y - other.y )
-    }
-    
-    static func +( left: Point, right: Point ) -> Point {
-        return Point(x: left.x + right.x, y: left.y + right.y)
-    }
-    
-    static func ==( left: Point, right: Point ) -> Bool {
-        return left.x == right.x && left.y == right.y
-    }
-    
-    func move( direction: Direction ) -> Point {
-        switch direction {
-        case .up:
-            return self + Point(x: 0, y: -1)
-        case .right:
-            return self + Point(x: 1, y: 0)
-        case .down:
-            return self + Point(x: 0, y: 1)
-        case .left:
-            return self + Point(x: -1, y: 0)
-        }
-    }
-}
+let start = Point2D( x: 0, y: 0 )
+let vault = Point2D( x: 3, y: 3 )
+let extent = Rect2D( min: start, max: vault )
 
 struct Position {
-    let point: Point
+    let point: Point2D
     let path: String
-}
-
-
-let tests = [
-    ( in: "ihgpwlah", out: "DDRRRD", longest: 370 ),
-    ( in: "kglvqrro", out: "DDUDRLRRUDRD", longest: 492 ),
-    ( in: "ulqzkmiv", out: "DRURDRUDDLLDLUURRDULRLDUUDDDRR", longest: 830 ),
-]
-
-let xmin = 0
-let xmax = 3
-let ymin = 0
-let ymax = 3
-let start = Point(x: 0, y: 0)
-let vault = Point(x: 3, y: 3)
-let input = "qzthpkfp"
-
-
-
-extension String {
-    subscript( offset: Int ) -> Character {
-        return self[ self.index( self.startIndex, offsetBy: offset ) ]
-    }
-}
-
-func isValid( point: Point ) -> Bool {
-    guard point.x >= xmin else { return false }
-    guard point.x <= xmax else { return false }
-    guard point.y >= ymin else { return false }
-    guard point.y <= ymax else { return false }
-    
-    return true
 }
 
 func isOpen( hexChar: Character ) -> Bool {
@@ -85,27 +25,28 @@ func isOpen( hexChar: Character ) -> Bool {
     return value > 10
 }
 
-func isOpen( direction: Direction, hash: String ) -> Bool {
+func isOpen( direction: DirectionUDLR, hash: String ) -> Bool {
+    let hashChars = Array( hash )
     switch direction {
     case .up:
-        return isOpen(hexChar: hash[0])
+        return isOpen( hexChar: hashChars[0] )
     case .down:
-        return isOpen(hexChar: hash[1])
+        return isOpen( hexChar: hashChars[1] )
     case .left:
-        return isOpen(hexChar: hash[2])
+        return isOpen( hexChar: hashChars[2] )
     case .right:
-        return isOpen(hexChar: hash[3])
+        return isOpen( hexChar: hashChars[3] )
     }
 }
 
-func possibleMoves( key: String, point: Point, path: String ) -> [Position] {
-    let hash = "\(key)\(path)".utf8.md5.rawValue
+func possibleMoves( key: String, point: Point2D, path: String ) -> [Position] {
+    let hash = md5Hash( str: "\(key)\(path)" )
     var results: [Position] = []
     
-    for direction in Direction.allCases {
-        let nextPos = point.move(direction: direction)
+    for direction in DirectionUDLR.allCases {
+        let nextPos = point.move( direction: direction.inverted )
         
-        if isValid( point: nextPos ) && isOpen( direction: direction, hash: hash ) {
+        if extent.contains( point: nextPos ) && isOpen( direction: direction, hash: hash ) {
             results.append( Position( point: nextPos, path: path + direction.rawValue ) )
         }
     }
@@ -113,11 +54,11 @@ func possibleMoves( key: String, point: Point, path: String ) -> [Position] {
     return results
 }
 
-func findDistance( key: String, start: Point, end: Point ) -> String? {
+func findDistance( key: String, start: Point2D, end: Point2D ) -> String? {
     var queue: [Position] = [ Position( point: start, path: "" ) ]
     
     while let next = queue.first {
-        let possibles = possibleMoves(key: key, point: next.point, path: next.path)
+        let possibles = possibleMoves( key: key, point: next.point, path: next.path )
         
         queue.removeFirst()
         for possible in possibles {
@@ -125,26 +66,26 @@ func findDistance( key: String, start: Point, end: Point ) -> String? {
                 return possible.path
             }
             
-            queue.append(possible)
+            queue.append( possible )
         }
     }
     
     return nil
 }
 
-func findLongest( key: String, start: Point, end: Point ) -> String? {
+func findLongest( key: String, start: Point2D, end: Point2D ) -> String? {
     var queue: [Position] = [ Position( point: start, path: "" ) ]
     var last: String?
     
     while let next = queue.first {
-        let possibles = possibleMoves(key: key, point: next.point, path: next.path)
+        let possibles = possibleMoves( key: key, point: next.point, path: next.path )
         
         queue.removeFirst()
         for possible in possibles {
             if possible.point == end {
                 last = possible.path
             } else {
-                queue.append(possible)
+                queue.append( possible )
             }
         }
     }
@@ -153,36 +94,30 @@ func findLongest( key: String, start: Point, end: Point ) -> String? {
 }
 
 
-for test in tests {
-    if let result = findDistance(key: test.in, start: start, end: vault) {
-        if result != test.out {
-            print( "Wrong part1 for test:", test.in )
-            exit(1)
-        }
-    } else {
-        print( "No part1 for test:", test.in )
-        exit(1)
+
+
+func parse( input: AOCinput ) -> String {
+    return input.line
+}
+
+
+func part1( input: AOCinput ) -> String {
+    guard let result = findDistance( key: input.line, start: start, end: vault ) else {
+        return "Failed!"
     }
     
-    if let result = findLongest(key: test.in, start: start, end: vault) {
-        if result.count != test.longest {
-            print( "Wrong part2 for test:", test.in )
-            exit(1)
-        }
-    } else {
-        print( "No part2 for test:", test.in )
-        exit(1)
+    return result
+}
+
+
+func part2( input: AOCinput ) -> String {
+    guard let result = findLongest( key: input.line, start: start, end: vault ) else {
+        return "Failed!"
     }
+    
+    return "\(result.count)"
 }
 
-if let part1 = findDistance( key: input, start: start, end: vault ) {
-    print( "Part1:", part1 )
-} else {
-    print( "Part1: failed" )
-}
 
-if let part2 = findLongest(key: input, start: start, end: vault ) {
-    print( "Part2:", part2.count )
-} else {
-    print( "Part2: failed" )
-}
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
