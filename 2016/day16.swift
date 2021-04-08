@@ -10,6 +10,13 @@
 
 import Foundation
 
+extension String {
+    subscript( offset: Int ) -> Character {
+        return self[ self.index( self.startIndex, offsetBy: offset ) ]
+    }
+}
+
+
 // There are 2 important realizations that allow this problem to be solved in resonable time.  Number one,
 // there is no need to generate the data for filling the disk.  Number two, there is a shortcut for
 // calculating the checksum that requires little memory and is O(n).
@@ -56,14 +63,14 @@ import Foundation
 struct Disk {
     let length:    Int
     let chunkSize: Int
-    let initial:   [Character]
-    let inverted:  [Character]
-    let skeleton:  [Character]
+    let initial:   String
+    let inverted:  String
+    let skeleton:  String
     
     init( initial: String, length: Int ) {
         self.length   = length
-        self.initial  = Array( initial )
-        self.inverted = Array( Disk.flip( data: initial ) )
+        self.initial  = initial
+        self.inverted = Disk.flip( data: initial )
         
         // Calculate the chunk size - the biggest power of 2 that is a factor of length.
         // Each chunk becomes a single bit in the final checksum.
@@ -80,7 +87,7 @@ struct Disk {
             skeleton = skeleton + "0" + Disk.flip( data: skeleton )
         }
         
-        self.skeleton = Array( skeleton )
+        self.skeleton = skeleton
     }
     
     static func flip( data: String ) -> String {
