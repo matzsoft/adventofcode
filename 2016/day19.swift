@@ -1,17 +1,14 @@
 //
-//  main.swift
-//  day19
-//
-//  Created by Mark Johnson on 1/5/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day19 - An Elephant Named Joseph
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/08/21 19:44:02
 //
 
 import Foundation
-
-let tests = [
-    ( in: 5, out: 3 )
-]
-let input = 3012210
 
 func reduceLeft( list: [Int] ) -> Int {
     guard list.count > 2 else { return list[0] }
@@ -20,24 +17,6 @@ func reduceLeft( list: [Int] ) -> Int {
     let start = 2 * ( list.count & 1 )
     
     return reduceLeft( list: stride( from: start, to: list.count, by: 2 ).map { list[$0] } )
-}
-
-func reduceCenter( list: [Int] ) -> Int {
-    guard list.count > 2 else { return list[0] }
-    guard list.count > 3 else { return list[2] }
-    
-    var list = list
-    var i = 0
-    
-    while list.count > 1 {
-        let j = ( i + list.count / 2 ) % list.count
-        
-        list.remove(at: j)
-        if i < j { i += 1 }
-        i %= list.count
-    }
-    
-    return list[0]
 }
 
 func fastCenter( count: Int ) -> Int {
@@ -53,9 +32,23 @@ func fastCenter( count: Int ) -> Int {
     return powerOf3 + 2 * ( count - 2 * powerOf3 )
 }
 
-//for i in 1 ... 100 {
-//    print( "\(i): \(reduceCenter(list: ( 1 ... i ).map { $0 } ) )" )
-//}
 
-print( "Part1:", reduceLeft(list: ( 1 ... input).map { $0 } ) )
-print( "Part2:", fastCenter(count: input) )
+func parse( input: AOCinput ) -> Int {
+    return Int( input.line )!
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let count = parse( input: input )
+    return "\(reduceLeft( list: ( 1 ... count ).map { $0 } ))"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let count = parse( input: input )
+    return "\(fastCenter( count: count ))"
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
