@@ -44,7 +44,7 @@ func possibleMoves( key: String, point: Point2D, path: String ) -> [Position] {
     var results: [Position] = []
     
     for direction in DirectionUDLR.allCases {
-        let nextPos = point.move( direction: direction.inverted )
+        let nextPos = point.move( direction: direction )
         
         if extent.contains( point: nextPos ) && isOpen( direction: direction, hash: hash ) {
             results.append( Position( point: nextPos, path: path + direction.rawValue ) )

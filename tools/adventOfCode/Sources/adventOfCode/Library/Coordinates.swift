@@ -12,6 +12,9 @@ protocol Direction2D {
 }
 
 enum Turn: Int { case right = 1, left = -1 }
+
+/// Important Notice - this enum implements a coordinate system normally used in mathematics.
+/// Positive Y is north and positive X is east.
 enum Direction4: Int, CaseIterable, Direction2D {
     case north, east, south, west
     
@@ -34,30 +37,21 @@ enum Direction4: Int, CaseIterable, Direction2D {
     }
 }
 
+/// Important Notice - this enum implements a coordinate system normally used in computer images.
+/// Positive Y is down and positive X is east.
 enum DirectionUDLR: String, CaseIterable, Direction2D {
     case up = "U", down = "D", left = "L", right = "R"
     
     var vector: Point2D {
         switch self {
         case .up:
-            return Point2D( x: 0, y: 1 )
+            return Point2D( x: 0, y: -1 )
         case .right:
             return Point2D( x: 1, y: 0 )
         case .down:
-            return Point2D( x: 0, y: -1 )
+            return Point2D( x: 0, y: 1 )
         case .left:
             return Point2D( x: -1, y: 0 )
-        }
-    }
-    
-    var inverted: DirectionUDLR {
-        switch self {
-        case .up:
-            return .down
-        case .down:
-            return .up
-        default:
-            return self
         }
     }
 }
