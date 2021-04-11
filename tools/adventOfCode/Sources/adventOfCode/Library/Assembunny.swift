@@ -9,7 +9,7 @@ import Foundation
 
 class Assembunny {
     enum Opcode: String, CaseIterable {
-        case cpy, inc, dec, jnz, tgl
+        case cpy, inc, dec, jnz, tgl, out
     }
 
     class Instruction {
@@ -25,7 +25,7 @@ class Assembunny {
             switch mnemonic {
             case .cpy, .jnz:
                 y = String( instruction[2] )
-            case .inc, .dec, .tgl:
+            case .inc, .dec, .tgl, .out:
                 y = ""
             }
         }
@@ -66,7 +66,8 @@ class Assembunny {
             .inc : increment,
             .dec : decrement,
             .jnz : jumpNonZero,
-            .tgl : toggle
+            .tgl : toggle,
+            .out : out
         ]
     }
     
@@ -126,13 +127,21 @@ class Assembunny {
             switch memory[address].mnemonic {
             case .inc:
                 memory[address].mnemonic = .dec
-            case .dec, .tgl:
+            case .dec, .tgl, .out:
                 memory[address].mnemonic = .inc
             case .cpy:
                 memory[address].mnemonic = .jnz
             case .jnz:
                 memory[address].mnemonic = .cpy
             }
+        }
+    }
+    
+    func out( x: String, y: String ) -> Void {
+        if let value = Int( x ) {
+            print( "Output =", value )
+        } else {
+            print( "Output =", registers[x]! )
         }
     }
     
