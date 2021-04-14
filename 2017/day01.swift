@@ -10,9 +10,7 @@
 
 import Foundation
 
-func captcha( input: [Int], delta: Bool = false ) -> Int {
-    let offset = delta ? ( input.count / 2 ) : 1
-    
+func captcha( input: [Int], offset: Int = 1 ) -> Int {
     return zip( input, input[offset...] + input[..<offset] ).reduce( 0 ) {
         return $0 + ( $1.0 == $1.1 ? $1.0 : 0 )
     }
@@ -30,7 +28,8 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    return "\(captcha( input: parse( input: input ), delta: true ))"
+    let digits = parse( input: input )
+    return "\(captcha( input: digits, offset: digits.count / 2 ))"
 }
 
 
