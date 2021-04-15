@@ -1,136 +1,102 @@
 //
-//  main.swift
-//  day03
-//
-//  Created by Mark Johnson on 1/9/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day03 - Spiral Memory
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/15/21 11:20:14
 //
 
 import Foundation
 
-let test1 = 1
-let test2 = 12
-let test3 = 23
-let test4 = 1024
-let input = 289326
-
-enum Direction: String, CaseIterable {
-    case N, NE, E, SE, S, SW, W, NW
-}
-
-struct Point: Hashable {
-    let x: Int
-    let y: Int
-    
-    func distance( other: Point ) -> Int {
-        return abs( x - other.x ) + abs( y - other.y )
-    }
-    
-    static func +( left: Point, right: Point ) -> Point {
-        return Point(x: left.x + right.x, y: left.y + right.y)
-    }
-    
-    static func ==( left: Point, right: Point ) -> Bool {
-        return left.x == right.x && left.y == right.y
-    }
-    
-    func move( direction: Direction ) -> Point {
-        switch direction {
-        case .N:
-            return self + Point(x: 0, y: 1)
-        case .NE:
-            return self + Point(x: 1, y: 1)
-        case .E:
-            return self + Point(x: 1, y: 0)
-        case .SE:
-            return self + Point(x: 1, y: -1)
-        case .S:
-            return self + Point(x: 0, y: -1)
-        case .SW:
-            return self + Point(x: -1, y: -1)
-        case .W:
-            return self + Point(x: -1, y: 0)
-        case .NW:
-            return self + Point(x: -1, y: 1)
-        }
-    }
-}
-
 struct Square {
     let label: Int
-    let position: Point
+    let position: Point2D
     let value: Int
 }
 
 
-func quadratic( b: Int, c: Int ) -> Int {
+func quadratic( b: Int, c: Int ) throws -> Int {
     let square = b * b - 16 * c
     
-    guard square >= 0 else { print( "Imaginary solution") ; exit(1) }
+    guard square >= 0 else { throw RuntimeError( "Imaginary solution" ) }
 
     let root = sqrt( Double( square ) )
     let solution1 = ( Double( -b ) + root ) / 8
     let solution2 = ( Double( -b ) - root ) / 8
     
-    guard solution2 <= 0 else { print( "Two solutions" ); exit(1) }
-    guard solution1 >= 0 else { print( "No solutions" ); exit(1) }
-    
+    guard solution2 <= 0 else { throw RuntimeError( "Two solutions" ) }
+    guard solution1 >= 0 else { throw RuntimeError( "No solutions" ) }
+
     return Int( solution1 )
 }
 
-func coords( square: Int ) -> Point {
-    guard square > 1 else { return Point( x: 0, y: 0 ) }
+
+func coords( square: Int ) -> Point2D {
+    guard square > 1 else { return Point2D( x: 0, y: 0 ) }
     
-    let base = quadratic( b: 4, c: 2 - square )
+    let base = try! quadratic( b: 4, c: 2 - square )
     let se = 4 * base * base + 4 * base + 2
     
-    if square == se { return Point( x: base + 1, y: -base ) }
+    if square == se { return Point2D( x: base + 1, y: -base ) }
     
     let n = base + 1
     let ne = 4 * n * n - 2 * n + 1
     
-    if square == ne { return Point( x: n, y: n ) }
-    if square < ne { return Point( x: n, y: square - se - base ) }
+    if square == ne { return Point2D( x: n, y: n ) }
+    if square < ne { return Point2D( x: n, y: square - se - base ) }
     
     let nw = 4 * n * n + 1
     
-    if square == nw { return Point( x: -n, y: n ) }
-    if square < nw { return Point( x: n - square + ne, y: n )}
+    if square == nw { return Point2D( x: -n, y: n ) }
+    if square < nw { return Point2D( x: n - square + ne, y: n )}
     
     let sw = 4 * n * n + 2 * n + 1
     
-    if square == sw { return Point( x: -n, y: -n ) }
-    if square < sw { return Point( x: -n, y: n - square + nw ) }
+    if square == sw { return Point2D( x: -n, y: -n ) }
+    if square < sw { return Point2D( x: -n, y: n - square + nw ) }
     
-    return Point( x: -n + square - sw, y: -n )
+    return Point2D( x: -n + square - sw, y: -n )
 }
 
+
 func fillUntil( value: Int ) -> Int {
-    var grid = [ Point( x: 0, y: 0 ) : Square( label: 1, position: Point(x: 0, y: 0), value: 1 ) ]
+    var grid = [ Point2D( x: 0, y: 0 ) : Square( label: 1, position: Point2D( x: 0, y: 0), value: 1 ) ]
     
     for n in 2 ..< Int.max {
-        let position = coords(square: n)
-        var sum = 0
-        
-        for direction in Direction.allCases {
-            let next = position.move(direction: direction)
+        let position = coords( square: n )
+        let sum = Direction8.allCases.reduce( 0 ) {
+            let next = position.move( direction: $1 )
             
-            if let other = grid[next] {
-                sum += other.value
-            }
+            return $0 + ( grid[next] == nil ? 0 : grid[next]!.value )
         }
         
-        if sum > value {
-            return sum
-        }
+        if sum > value { return sum }
         
-        grid[position] = Square(label: n, position: position, value: sum)
+        grid[position] = Square( label: n, position: position, value: sum )
     }
     
     return Int.max
 }
 
-let position = coords( square: input )
 
-print( "Part1:", abs(position.x) + abs(position.y) )
-print( "Part2:", fillUntil(value: input) )
+
+func parse( input: AOCinput ) -> Int {
+    return Int( input.line )!
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let position = coords( square: parse( input: input ) )
+    return "\(abs( position.x ) + abs( position.y ))"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    return "\(fillUntil( value: parse( input: input ) ))"
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )

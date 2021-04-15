@@ -56,6 +56,33 @@ enum DirectionUDLR: String, CaseIterable, Direction2D {
     }
 }
 
+/// Important Notice - this enum implements a coordinate system normally used in mathematics.
+/// Positive Y is north and positive X is east.
+enum Direction8: String, CaseIterable, Direction2D {
+    case N, NE, E, SE, S, SW, W, NW
+    
+    var vector: Point2D {
+        switch self {
+        case .N:
+            return Point2D( x: 0, y: 1 )
+        case .NE:
+            return Point2D( x: 1, y: 1 )
+        case .E:
+            return Point2D( x: 1, y: 0 )
+        case .SE:
+            return Point2D( x: 1, y: -1 )
+        case .S:
+            return Point2D( x: 0, y: -1 )
+        case .SW:
+            return Point2D( x: -1, y: -1 )
+        case .W:
+            return Point2D( x: -1, y: 0 )
+        case .NW:
+            return Point2D( x: -1, y: 1 )
+        }
+    }
+}
+
 struct Point2D: Hashable {
     let x: Int
     let y: Int
