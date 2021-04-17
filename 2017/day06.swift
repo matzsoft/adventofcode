@@ -1,47 +1,73 @@
 //
-//  main.swift
-//  day06
-//
-//  Created by Mark Johnson on 1/11/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day06 - Memory Reallocation
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/16/21 15:16:27
 //
 
 import Foundation
 
-let input = "4    1    15    12    0    9    9    5    5    8    7    3    14    5    12    3"
-var banks = input.split(separator: " ").map { Int( $0 )! }
-var seen: [String:Int] = [:]
-var stepCount = 0
-
-func banksKey() -> String {
-    return banks.map { String( $0 ) }.joined(separator: ",")
+struct Result {
+    let stepCount: Int
+    let cycleLength: Int
 }
 
-func redistribute() -> Void {
+
+func makeKey( for banks: [Int] ) -> String {
+    return banks.map { String( $0 ) }.joined( separator: "," )
+}
+
+
+func redistribute( from banks: [Int] ) -> [Int] {
     let biggie = banks.max()!
-    let index = ( 0 ..< banks.count ).first( where: { banks[$0] == biggie } )!
-    
-    banks[index] = 0
-    ( 0 ..< banks.count ).forEach { banks[$0] += biggie / banks.count }
-    
-    for index in index + 1 ... index + biggie % banks.count {
-        let index = index % banks.count
-        
-        banks[index] += 1
+    let index = banks.indices.first( where: { banks[$0] == biggie } )!
+    let portion = biggie / banks.count
+    let remainder = biggie % banks.count
+    return banks.enumerated().map { ( arg0 ) -> Int in
+        if arg0.offset == index {
+            return portion
+        }
+        let permutedIndex = ( arg0.offset - index - 1 + banks.count ) % banks.count
+        return arg0.element + portion + ( permutedIndex < remainder ? 1 : 0 )
     }
 }
 
-seen[banksKey()] = stepCount
-while true {
-    stepCount += 1
-    redistribute()
+
+func parse( input: AOCinput ) -> Result? {
+    var banks = input.line.split( separator: "\t" ).map { Int( $0 )! }
+    var seen = [ makeKey( for: banks ) : 0 ]
     
-    let key = banksKey()
-    
-    if let last = seen[key] {
-        print( "Part1:", stepCount )
-        print( "Part2:", stepCount - last )
-        break
+    for stepCount in 1 ... Int.max {
+        banks = redistribute( from: banks )
+        
+        let key = makeKey( for: banks )
+        
+        if let last = seen[key] {
+            return Result( stepCount: stepCount, cycleLength: stepCount - last )
+        }
+        seen[key] = stepCount
     }
-    seen[key] = stepCount
+    
+    return nil
 }
+
+
+func part1( input: AOCinput ) -> String {
+    guard let result = parse( input: input )?.stepCount else { return "Failed!" }
+    
+    return "\(result)"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    guard let result = parse( input: input )?.cycleLength else { return "Failed!" }
+    
+    return "\(result)"
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
