@@ -83,12 +83,42 @@ enum Direction8: String, CaseIterable, Direction2D {
     }
 }
 
+/// Important Notice - this enum implements a coordinate system normally used in mathematics.
+/// Positive Y is north and positive X is east.
+enum Direction6: String, CaseIterable, Direction2D {
+    case n, ne, se, s, sw, nw
+    
+    var vector: Point2D {
+        switch self {
+        case .n:
+            return Point2D( x: 0, y: 2 )
+        case .ne:
+            return Point2D( x: 1, y: 1 )
+        case .se:
+            return Point2D( x: 1, y: -1 )
+        case .s:
+            return Point2D( x: 0, y: -2 )
+        case .sw:
+            return Point2D( x: -1, y: -1 )
+        case .nw:
+            return Point2D( x: -1, y: 1 )
+        }
+    }
+}
+
 struct Point2D: Hashable {
     let x: Int
     let y: Int
     
     func distance( other: Point2D ) -> Int {
         return abs( x - other.x ) + abs( y - other.y )
+    }
+    
+    func hexDistance( other: Point2D ) -> Int {
+        let absX = abs( x - other.x )
+        let absY = abs( y - other.y )
+
+        return absY <= absX ? absX : ( absY - absX ) / 2 + absX
     }
     
     static func +( left: Point2D, right: Point2D ) -> Point2D {
