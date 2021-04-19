@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day10
-//
-//  Created by Mark Johnson on 1/12/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day10 - Knot Hash
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/18/21 20:44:19
 //
 
 import Foundation
@@ -44,42 +46,34 @@ class KnotHash {
     
     func generate() -> String {
         guard list.count == 256 else { return "Wrong sized list" }
-        var hash = ""
         
-        for _ in 0 ..< 64 {
-            oneRound()
-        }
+        for _ in 0 ..< 64 { oneRound() }
         
-        for i in stride( from: 0, to: list.count, by: 16 ) {
-            let element = list[ i ..< ( i + 16 ) ].reduce( 0, { $0 ^ $1 } )
-            
-            hash += String( format: "%02x", element )
-        }
-        
-        return hash
+        return stride( from: 0, to: list.count, by: 16 ).map {
+            return String( format: "%02x", list[ $0 ..< ( $0 + 16 ) ].reduce( 0, { $0 ^ $1 } ) )
+        }.joined()
     }
 }
 
 
-let test1 = [ 3, 4, 1, 5 ]
-var testList = ( 0 ... 4 ).map { $0 }
-let input = "34,88,2,222,254,93,150,0,199,255,39,32,137,136,1,167"
-let lengths = input.split(separator: ",").map { Int( $0 )! }
-let list = ( 0 ... 255 ).map { $0 }
+func part1( input: AOCinput ) -> String {
+    let list = ( 0 ... 255 ).map { $0 }
+    let lengths = input.line.split( separator: "," ).map { Int( $0 )! }
+    let knot = KnotHash( list: list, lengths: lengths )
 
-let tester = KnotHash( list: testList, lengths: test1 )
-let knot = KnotHash( list: list, lengths: lengths )
-
-tester.oneRound()
-knot.oneRound()
-
-print( "Test1:", tester.list[0] * tester.list[1] )
-print( "Part1:", knot.list[0] * knot.list[1] )
+    knot.oneRound()
+    return "\(knot.list[0] * knot.list[1])"
+}
 
 
-let asciiLengths = input.map { Int( $0.unicodeScalars.first!.value ) }
-let extraLengths = [ 17, 31, 73, 47, 23 ]
-let part2Lengths = asciiLengths + extraLengths
-let knothash = KnotHash( list: list, lengths: part2Lengths )
+func part2( input: AOCinput ) -> String {
+    let list = ( 0 ... 255 ).map { $0 }
+    let lengths = input.line.map { Int( $0.unicodeScalars.first!.value ) } + [ 17, 31, 73, 47, 23 ]
+    let knothash = KnotHash( list: list, lengths: lengths )
+    
+    return "\(knothash.generate())"
+}
 
-print( "Part2:", knothash.generate() )
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
