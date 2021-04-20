@@ -46,3 +46,23 @@ extension String {
         return self.splitAt( isSplit: { delimiters.contains( $0 ) } )
     }
 }
+
+/// Returns the Greatest Common Divisor of two Int values.
+func gcd( _ m: Int, _ n: Int ) -> Int {
+    var a = 0
+    var b = max( m, n )
+    var r = min( m, n )
+    
+    while r != 0 {
+        a = b
+        b = r
+        r = a % b
+    }
+    return b
+}
+
+/// Returns the Least Common Multiple of two Int values.
+func lcm( _ m: Int, _ n: Int ) -> Int {
+    return m / gcd (m, n ) * n
+}
+
