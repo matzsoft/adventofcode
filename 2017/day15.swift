@@ -1,74 +1,68 @@
 //
-//  main.swift
-//  day15
-//
-//  Created by Mark Johnson on 1/14/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day15 - Dueling Generators
+//        NOTES: Using a class as a generator is nicer code but takes more than 2.5 times longer to run.
+//               Also (and scary) using a for loop instead of while takes 25 times longer to run.
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/20/21 17:33:44
 //
 
 import Foundation
 
-let input = """
-Generator A starts with 783
-Generator B starts with 325
-"""
+let ( factorA, maskA ) = ( 16807, 3 )
+let ( factorB, maskB ) = ( 48271, 7 )
+let modulo = 2147483647
+let lowOrder16 = 0xFFFF
 
-let startA = 783
-let factorA = 16807
-let maskA = 3
 
-let startB = 325
-let factorB = 48271
-let maskB = 7
-
-let divisor = 2147483647
-
-func simpleNextValue( previous: Int, factor: Int ) -> Int {
-    return ( previous * factor ) % divisor
-}
-
-func complexNextValue( previous: Int, factor: Int, mask: Int ) -> Int {
-    var next = previous
-    
-    repeat {
-        next = ( next * factor ) % divisor
-    } while next & mask != 0
-    
-    return next
+func parse( input: AOCinput ) -> ( Int, Int ) {
+    let wordsA = input.lines[0].split( separator: " " )
+    let wordsB = input.lines[1].split( separator: " " )
+    return ( Int( wordsA[4] )!, Int( wordsB[4] )! )
 }
 
 
+func part1( input: AOCinput ) -> String {
+    var ( valueA, valueB ) = parse( input: input )
+    var judge = 0
+    var count = 0
 
-var currentA = startA
-var currentB = startB
-var judge = 0
+    while count < 40000000 {
+        count += 1
+        valueA = ( valueA * factorA ) % modulo
+        valueB = ( valueB * factorB ) % modulo
+        if valueA & lowOrder16 == valueB & lowOrder16 {
+            judge += 1
+        }
+    }
 
-for _ in 0 ..< 40000000 {
-    currentA = simpleNextValue( previous: currentA, factor: factorA )
-    currentB = simpleNextValue( previous: currentB, factor: factorB )
-    
-    let maskedA = currentA & 0xFFFF
-    let maskedB = currentB & 0xFFFF
-    
-    if maskedA == maskedB { judge += 1 }
+    return "\(judge)"
 }
 
-print( "Part1:", judge )
 
+func part2( input: AOCinput ) -> String {
+    var ( valueA, valueB ) = parse( input: input )
+    var judge = 0
+    var count = 0
 
+    while count < 5000000 {
+        count += 1
+        repeat {
+            valueA = ( valueA * factorA ) % modulo
+        } while valueA & maskA != 0
+        repeat {
+            valueB = ( valueB * factorB ) % modulo
+        } while valueB & maskB != 0
+        if valueA & lowOrder16 == valueB & lowOrder16 {
+            judge += 1
+        }
+    }
 
-currentA = startA
-currentB = startB
-judge = 0
-
-for _ in 0 ..< 5000000 {
-    currentA = complexNextValue( previous: currentA, factor: factorA, mask: maskA )
-    currentB = complexNextValue( previous: currentB, factor: factorB, mask: maskB )
-    
-    let maskedA = currentA & 0xFFFF
-    let maskedB = currentB & 0xFFFF
-    
-    if maskedA == maskedB { judge += 1 }
+    return "\(judge)"
 }
 
-print( "Part2:", judge )
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
