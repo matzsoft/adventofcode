@@ -1,95 +1,48 @@
 //
-//  main.swift
-//  day18
-//
-//  Created by Mark Johnson on 1/15/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day18 - Duet
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/23/21 12:32:07
 //
 
 import Foundation
 
-let input = """
-set i 31
-set a 1
-mul p 17
-jgz p p
-mul a 2
-add i -1
-jgz i -2
-add a -1
-set i 127
-set p 618
-mul p 8505
-mod p a
-mul p 129749
-add p 12345
-mod p a
-set b p
-mod b 10000
-snd b
-add i -1
-jgz i -9
-jgz a 3
-rcv b
-jgz b -1
-set f 0
-set i 126
-rcv a
-rcv b
-set p a
-mul p -1
-add p b
-jgz p 4
-snd a
-set a b
-jgz 1 3
-snd b
-set f 1
-add i -1
-jgz i -11
-snd a
-jgz f -16
-jgz a -19
-"""
+class Program {
+    enum Opcode: String, CaseIterable { case snd, set, add, mul, mod, rcv, jgz }
+    enum State { case running, waiting, halted }
 
-enum Opcode: String, CaseIterable {
-    case snd, set, add, mul, mod, rcv, jgz
-}
-
-enum State {
-    case running, waiting, halted
-}
-
-class Instruction {
-    var mnemonic: Opcode
-    let x: String
-    let y: String
-    
-    init( input: Substring ) {
-        let instruction = input.split(separator: " ")
+    class Instruction {
+        var mnemonic: Opcode
+        let x: String
+        let y: String
         
-        mnemonic = Opcode( rawValue: String( instruction[0] ) )!
-        x = String( instruction[1] )
-        switch mnemonic {
-        case .set, .add, .mul, .mod, .jgz:
-            y = String( instruction[2] )
-        case .snd, .rcv:
-            y = ""
+        init( input: String ) {
+            let instruction = input.split( separator: " " )
+            
+            mnemonic = Opcode( rawValue: String( instruction[0] ) )!
+            x = String( instruction[1] )
+            switch mnemonic {
+            case .set, .add, .mul, .mod, .jgz:
+                y = String( instruction[2] )
+            case .snd, .rcv:
+                y = ""
+            }
+        }
+        
+        func description() -> String {
+            return "\(mnemonic.rawValue) \(x) \(y)"
         }
     }
-    
-    func description() -> String {
-        return "\(mnemonic.rawValue) \(x) \(y)"
+
+    struct Trace {
+        var lastHit: Int?
+        var lastCycle: Int?
+        var cycleCount: Int
     }
-}
 
-struct Trace {
-    var lastHit: Int?
-    var lastCycle: Int?
-    var cycleCount: Int
-}
-
-class Program {
     var registers: [ String : Int ]
     var ip = 0
     var cycleNumber = 0
@@ -106,15 +59,9 @@ class Program {
     var breakPoint: Int?
     var action: (( Program ) -> Bool)?
     
-    init( input: String, initialP: Int ) {
-        let lines = input.split(separator: "\n")
-        
+    init( lines: [String], initialP: Int ) {
         registers = [ "p" : initialP ]
-        memory = []
-        
-        for line in lines {
-            memory.append( Instruction(input: line) )
-        }
+        memory = lines.map { Instruction( input: $0 ) }
         
         queue = []
         state = .running
@@ -311,21 +258,6 @@ class Program {
 }
 
 
-
-
-func initialize() -> [Int] {
-    let a = Int( pow( 2.0, 31.0 ) ) - 1
-    var p = 618
-    var results: [Int] = []
-    
-    for _ in 1 ... 127 {
-        p = ( ( p * 8505 ) % a * 129749 + 12345 ) % a
-        results.append( p % 10000 )
-    }
-    
-    return results
-}
-
 func bubbleSort( numbers: [Int] ) -> Int {
     var results = numbers
     var passes = 0
@@ -346,30 +278,35 @@ func bubbleSort( numbers: [Int] ) -> Int {
 }
 
 
+func parse( input: AOCinput ) -> [Int] {
+    let program = Program( lines: input.lines, initialP: 0 )
+    let modulus1 = 1 << Int( program.memory[0].y )! - 1
+    let multiplier1 = Int( program.memory[10].y )!
+    let multiplier2 = Int( program.memory[12].y )!
+    let addend = Int( program.memory[13].y )!
+    let modulus2 = Int( program.memory[16].y )!
+    var current = Int( program.memory[9].y )!
 
-let numbers = initialize()
-let passes = bubbleSort( numbers: numbers )
-
-print( "Part1:", numbers.last! )
-print( "Part2:", ( passes + 1 ) / 2 * numbers.count )
-
-
+    return ( 1 ... Int( program.memory[8].y )! ).map { _ in
+        current = ( ( current * multiplier1 ) % modulus1 * multiplier2 + addend ) % modulus1
+        return current % modulus2
+    }
+}
 
 
-// The following brute force, interpretive solution requires days (or more) to run.
-// I only save because of the interpreter enhancements.
+func part1( input: AOCinput ) -> String {
+    let numbers = parse( input: input )
+    return "\(numbers.last!)"
+}
 
-//let program0 = Program( input: input, initialP: 0 )
-//let program1 = Program( input: input, initialP: 1 )
-//
-//program0.setReceiver( receiver: program1 )
-//program1.setReceiver( receiver: program0 )
-//
-////program0.dump()
-//
-//while program0.state == .running || program1.state == .running {
-//    program0.run()
-//    program1.run()
-//}
-//
-//print( "Part2:", program1.sendCount )
+
+func part2( input: AOCinput ) -> String {
+    let numbers = parse( input: input )
+    let passes = bubbleSort( numbers: numbers )
+
+    return "\(( passes + 1 ) / 2 * numbers.count)"
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
