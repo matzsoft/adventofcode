@@ -145,3 +145,26 @@ struct Rect2D {
         return true
     }
 }
+
+struct Point3D: Hashable {
+    let x: Int
+    let y: Int
+    let z: Int
+
+    func distance( other: Point3D ) -> Int {
+        return abs( x - other.x ) + abs( y - other.y + abs( z - other.z ) )
+    }
+    
+    static func +( left: Point3D, right: Point3D ) -> Point3D {
+        return Point3D( x: left.x + right.x, y: left.y + right.y, z: left.z + right.z )
+    }
+    
+    static func ==( left: Point3D, right: Point3D ) -> Bool {
+        return left.x == right.x && left.y == right.y && left.z == right.z
+    }
+    
+    func magnitude() -> Int {
+        return abs(x) + abs(y) + abs(z)
+    }
+}
+
