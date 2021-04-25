@@ -31,7 +31,7 @@ func bubbleSort( numbers: [Int] ) -> Int {
 
 
 func parse( input: AOCinput ) -> [Int] {
-    let program = Coprocessor( lines: input.lines, initialP: 0 )
+    let program = Coprocessor( lines: input.lines )
     let modulus1 = 1 << Int( program.memory[0].y )! - 1
     let multiplier1 = Int( program.memory[10].y )!
     let multiplier2 = Int( program.memory[12].y )!

@@ -8,7 +8,7 @@
 import Foundation
 
 class Coprocessor {
-    enum Opcode: String, CaseIterable { case snd, set, add, mul, mod, rcv, jgz }
+    enum Opcode: String, CaseIterable { case snd, set, add, sub, mul, mod, rcv, jgz, jnz }
     enum State { case running, waiting, halted }
 
     class Instruction {
@@ -22,7 +22,7 @@ class Coprocessor {
             mnemonic = Opcode( rawValue: String( instruction[0] ) )!
             x = String( instruction[1] )
             switch mnemonic {
-            case .set, .add, .mul, .mod, .jgz:
+            case .set, .add, .sub, .mul, .mod, .jgz, .jnz:
                 y = String( instruction[2] )
             case .snd, .rcv:
                 y = ""
@@ -40,7 +40,7 @@ class Coprocessor {
         var cycleCount: Int
     }
 
-    var registers: [ String : Int ]
+    var registers = [ String : Int ]()
     var ip = 0
     var cycleNumber = 0
     var opcodes: [ Opcode : ( String, String ) -> Void ]
@@ -56,8 +56,7 @@ class Coprocessor {
     var breakPoint: Int?
     var action: (( Coprocessor ) -> Bool)?
     
-    init( lines: [String], initialP: Int ) {
-        registers = [ "p" : initialP ]
+    init( lines: [String] ) {
         memory = lines.map { Instruction( input: $0 ) }
         
         queue = []
@@ -68,10 +67,12 @@ class Coprocessor {
             .snd : send,
             .set : set,
             .add : add,
+            .sub : sub,
             .mul : multiply,
             .mod : modulo,
             .rcv : receive,
-            .jgz : jumpGTZero
+            .jgz : jumpGTZero,
+            .jnz : jumpNonZero
         ]
     }
     
@@ -108,6 +109,22 @@ class Coprocessor {
             registers[x] = addend1 + addend2
         } else {
             registers[x] = addend2
+        }
+    }
+    
+    func sub( x: String, y: String ) -> Void {
+        var addend2 = 0
+        
+        if let value = Int( y ) {
+            addend2 = value
+        } else if let value = registers[y] {
+            addend2 = value
+        }
+        
+        if let addend1 = registers[x] {
+            registers[x] = addend1 - addend2
+        } else {
+            registers[x] = -addend2
         }
     }
     
@@ -151,6 +168,27 @@ class Coprocessor {
     }
     
     func jumpGTZero( x: String, y: String ) -> Void {
+        var xval = 0
+        var yval = 0
+        
+        if let value = Int( x ) {
+            xval = value
+        } else if let value = registers[x] {
+            xval = value
+        }
+        
+        if let value = Int( y ) {
+            yval = value
+        } else if let value = registers[y] {
+            yval = value
+        }
+        
+        if xval > 0 {
+            ip += yval - 1
+        }
+    }
+    
+    func jumpNonZero( x: String, y: String ) -> Void {
         var xval = 0
         var yval = 0
         
