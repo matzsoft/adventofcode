@@ -11,7 +11,7 @@ protocol Direction2D {
     var vector: Point2D { get }
 }
 
-enum Turn: Int { case right = 1, left = -1 }
+enum Turn: Int { case right = 1, left = -1, back = 2 }
 
 /// Important Notice - this enum implements a coordinate system normally used in mathematics.
 /// Positive Y is north and positive X is east.
@@ -52,6 +52,44 @@ enum DirectionUDLR: String, CaseIterable, Direction2D {
             return Point2D( x: 0, y: 1 )
         case .left:
             return Point2D( x: -1, y: 0 )
+        }
+    }
+    
+    func turn( _ turn: Turn ) -> DirectionUDLR {
+        switch turn {
+        case .left:
+            switch self {
+            case .up:
+                return .left
+            case .right:
+                return .up
+            case .down:
+                return .right
+            case .left:
+                return .down
+            }
+        case .right:
+            switch self {
+            case .up:
+                return .right
+            case .right:
+                return .down
+            case .down:
+                return .left
+            case .left:
+                return .up
+            }
+        case .back:
+            switch self {
+            case .up:
+                return .down
+            case .right:
+                return .left
+            case .down:
+                return .up
+            case .left:
+                return .right
+            }
         }
     }
 }
@@ -143,6 +181,15 @@ struct Rect2D {
         guard min.y <= point.y, point.y <= max.y else { return false }
 
         return true
+    }
+    
+    func expand( with point: Point2D ) -> Rect2D {
+        let minx = Swift.min( min.x, point.x )
+        let maxx = Swift.max( max.x, point.x )
+        let miny = Swift.min( min.y, point.y )
+        let maxy = Swift.max( max.y, point.y )
+
+        return Rect2D( min: Point2D( x: minx, y: miny ), max: Point2D( x: maxx, y: maxy ) )
     }
 }
 
