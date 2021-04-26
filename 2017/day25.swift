@@ -11,18 +11,18 @@
 import Foundation
 
 struct Transition {
-    let input: Bool
+    let input:  Bool
     let output: Bool
-    let move: Int
-    let state: String
+    let move:   Int
+    let state:  String
     
-    init( block: String ) {
-        let words = block.split( whereSeparator: { " :-.".contains( $0 ) } )
+    init( lines: [String] ) {
+        let words = lines.map { $0.split( whereSeparator: { " :-.".contains( $0 ) } ) }
         
-        input = String( words[5] ) == "1"
-        output = String( words[9] ) == "1"
-        move = String( words[15] )  == "right" ? 1 : -1
-        state = String( words[19] )
+        input =  String( words[0][5] ) == "1"
+        output = String( words[1][3] ) == "1"
+        move =   String( words[2][5] ) == "right" ? 1 : -1
+        state =  String( words[3][3] )
     }
 }
 
@@ -34,35 +34,32 @@ struct State {
         let words = lines[0].split( whereSeparator: { " :".contains( $0 ) } )
         
         label = String( words[2] )
-        
-        let zero = String( lines[1...4].joined() )
-        let one = String( lines[5...8].joined() )
-        
-        transitions = [ Transition( block: zero ), Transition( block: one ) ]
+        transitions = [
+            Transition( lines: Array( lines[1...4] ) ),
+            Transition( lines: Array( lines[5...8] ) )
+        ]
     }
 }
 
 class TuringMachine {
-    let fsa: [ String: State ]
-    let goal: Int
-    var state: String
-    var tape: [Bool]
-    var current: Int
+    var tape    = Set<Int>()
+    var current = 0
+    let fsa:    [ String: State ]
+    let goal:   Int
+    var state:  String
     
-    var checksum: Int { return tape.reduce( 0, { $0 + ( $1 ? 1 : 0 ) } ) }
+    var checksum: Int { return tape.count }
     
     init( blocks: [[String]] ) {
         let words = blocks[0].map { $0.split( whereSeparator: { " .".contains( $0 ) } ) }
         
-        state = String( words[0][3] )
-        goal = Int( words[1][5] )!
-        tape = Array( repeating: false, count: goal )
-        current = ( goal + 1 ) / 2
         fsa = Dictionary( uniqueKeysWithValues: blocks[1...].map{
             let state = State( lines: $0 )
             
             return ( state.label, state )
         } )
+        goal = Int( words[1][5] )!
+        state = String( words[0][3] )
     }
     
     func run() -> Void {
@@ -70,17 +67,16 @@ class TuringMachine {
         
         while step < goal {
             step += 1
-            for transition in fsa[state]!.transitions {
-                if transition.input == tape[current] {
-                    tape[current] = transition.output
-                    state = transition.state
-                    current += transition.move
-                    if current < 0 || current >= goal {
-                        print( "Insufficient tape at", step + 1 )
-                        exit(1)
-                    }
-                    break
-                }
+            if tape.contains( current ) {
+                let transition = fsa[state]!.transitions[1]
+                if !transition.output { tape.remove( current ) }
+                current += transition.move
+                state = transition.state
+            } else {
+                let transition = fsa[state]!.transitions[0]
+                if transition.output { tape.insert( current ) }
+                current += transition.move
+                state = transition.state
             }
         }
     }
