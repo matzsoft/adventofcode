@@ -1,102 +1,14 @@
 //
-//  main.swift
-//  day25
-//
-//  Created by Mark Johnson on 1/25/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day25 - The Halting Problem
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/25/21 20:14:05
 //
 
 import Foundation
-
-let testInput = """
-Begin in state A.
-Perform a diagnostic checksum after 6 steps.
-
-In state A:
-If the current value is 0:
-- Write the value 1.
-- Move one slot to the right.
-- Continue with state B.
-If the current value is 1:
-- Write the value 0.
-- Move one slot to the left.
-- Continue with state B.
-
-In state B:
-If the current value is 0:
-- Write the value 1.
-- Move one slot to the left.
-- Continue with state A.
-If the current value is 1:
-- Write the value 1.
-- Move one slot to the right.
-- Continue with state A.
-"""
-let input = """
-Begin in state A.
-Perform a diagnostic checksum after 12134527 steps.
-
-In state A:
-If the current value is 0:
-- Write the value 1.
-- Move one slot to the right.
-- Continue with state B.
-If the current value is 1:
-- Write the value 0.
-- Move one slot to the left.
-- Continue with state C.
-
-In state B:
-If the current value is 0:
-- Write the value 1.
-- Move one slot to the left.
-- Continue with state A.
-If the current value is 1:
-- Write the value 1.
-- Move one slot to the right.
-- Continue with state C.
-
-In state C:
-If the current value is 0:
-- Write the value 1.
-- Move one slot to the right.
-- Continue with state A.
-If the current value is 1:
-- Write the value 0.
-- Move one slot to the left.
-- Continue with state D.
-
-In state D:
-If the current value is 0:
-- Write the value 1.
-- Move one slot to the left.
-- Continue with state E.
-If the current value is 1:
-- Write the value 1.
-- Move one slot to the left.
-- Continue with state C.
-
-In state E:
-If the current value is 0:
-- Write the value 1.
-- Move one slot to the right.
-- Continue with state F.
-If the current value is 1:
-- Write the value 1.
-- Move one slot to the right.
-- Continue with state A.
-
-In state F:
-If the current value is 0:
-- Write the value 1.
-- Move one slot to the right.
-- Continue with state A.
-If the current value is 1:
-- Write the value 1.
-- Move one slot to the right.
-- Continue with state E.
-"""
-
 
 struct Transition {
     let input: Bool
@@ -118,8 +30,7 @@ struct State {
     let label: String
     let transitions: [Transition]
     
-    init( input: String ) {
-        let lines = input.split(separator: "\n")
+    init( lines: [String] ) {
         let words = lines[0].split( whereSeparator: { " :".contains( $0 ) } )
         
         label = String( words[2] )
@@ -140,23 +51,25 @@ class TuringMachine {
     
     var checksum: Int { return tape.reduce( 0, { $0 + ( $1 ? 1 : 0 ) } ) }
     
-    init( input: String ) {
-        let blocks = input.components(separatedBy: "\n\n")
-        let words = blocks[0].split( whereSeparator: { " .\n".contains( $0 ) } )
+    init( blocks: [[String]] ) {
+        let words = blocks[0].map { $0.split( whereSeparator: { " .".contains( $0 ) } ) }
         
-        state = String( words[3] )
-        goal = Int( words[9] )!
+        state = String( words[0][3] )
+        goal = Int( words[1][5] )!
         tape = Array( repeating: false, count: goal )
         current = ( goal + 1 ) / 2
         fsa = Dictionary( uniqueKeysWithValues: blocks[1...].map{
-            let state = State( input: $0 )
+            let state = State( lines: $0 )
             
             return ( state.label, state )
         } )
     }
     
     func run() -> Void {
-        for step in 0 ..< goal {
+        var step = 0
+        
+        while step < goal {
+            step += 1
             for transition in fsa[state]!.transitions {
                 if transition.input == tape[current] {
                     tape[current] = transition.output
@@ -173,7 +86,25 @@ class TuringMachine {
     }
 }
 
-let machine = TuringMachine( input: input )
 
-machine.run()
-print( "Part1:", machine.checksum )
+
+func parse( input: AOCinput ) -> TuringMachine {
+    return TuringMachine( blocks: input.paragraphs )
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let machine = parse( input: input )
+    
+    machine.run()
+    return "\(machine.checksum)"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    return "None"
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
