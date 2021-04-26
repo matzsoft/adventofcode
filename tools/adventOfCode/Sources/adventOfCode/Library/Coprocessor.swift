@@ -53,8 +53,7 @@ class Coprocessor {
     var cycleTraceStop = Int.max
     var ipTraceStart = Int.max
     var ipTraceStop = Int.max
-    var breakPoint: Int?
-    var action: (( Coprocessor ) -> Bool)?
+    var breakPoints = [ Int : ( ( Coprocessor ) -> Bool ) ]()
     
     init( lines: [String] ) {
         memory = lines.map { Instruction( input: $0 ) }
@@ -157,16 +156,18 @@ class Coprocessor {
     }
     
     func receive( x: String, y: String ) -> Void {
-        if let value = queue.first {
-            queue.removeFirst()
-            registers[x] = value
-        } else {
-            state = .waiting
-            ip -= 1
-            cycleNumber -= 1
+        if let regValue = registers[x], regValue != 0 {
+            if let value = queue.first {
+                queue.removeFirst()
+                registers[x] = value
+            } else {
+                state = .waiting
+                ip -= 1
+                cycleNumber -= 1
+            }
         }
     }
-    
+
     func jumpGTZero( x: String, y: String ) -> Void {
         var xval = 0
         var yval = 0
@@ -218,7 +219,7 @@ class Coprocessor {
         sendCount = 0
         setCycleTrace( start: Int.max, stop: Int.max )
         setIpTrace( start: Int.max, stop: Int.max )
-        breakPoint = nil
+        breakPoints = [:]
     }
     
     func registerValues() -> String {
@@ -229,10 +230,8 @@ class Coprocessor {
     
     func run() -> Void {
         while state == .running && 0 <= ip && ip < memory.count {
-            if let bp = breakPoint {
-                if ip == bp {
-                    if !action!(self) { return }
-                }
+            if let action = breakPoints[ip] {
+                if !action(self) { return }
             }
             cycle()
         }
@@ -281,8 +280,7 @@ class Coprocessor {
     }
     
     func setBreakPoint( address: Int, action: @escaping ( Coprocessor ) -> Bool ) -> Void {
-        breakPoint = address
-        self.action = action
+        breakPoints[address] = action
     }
     
     func dump() -> Void {
