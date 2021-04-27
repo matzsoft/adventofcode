@@ -1,309 +1,56 @@
 //
-//  main.swift
-//  day02
-//
-//  Created by Mark Johnson on 12/1/18.
-//  Copyright © 2018 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day02 - Inventory Management System
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 04/26/21 17:01:15
 //
 
 import Foundation
 
-let input = """
-kbqwtcvzgumhpwelrnaxydpfuj
-kbqwtcvzgsmhpoelryaxydiqij
-kbqwpcvzssmhpoelgnaxydifuj
-kbqgtcvxgsmhpoalrnaxydifuj
-kbqwtcvygsmhpoelrnaxydiaut
-kbqwtcvjgsmhpoelrnawydzfuj
-kbqftcvzgsmhpoeprnaxydifus
-rbqwtcgzgsxhpoelrnaxydifuj
-kbqwtlvzgvmhpoelrnaxkdifuj
-kbqwtcvzgsmhpolqrnaxydifub
-kbqbtcqzgsmhposlrnaxydifuj
-kbqwmcvzgswhpoelxnaxydifuj
-kbqwtyvzgsmhkoelrnsxydifuj
-khqwtcvzgsmhqoelinaxydifuj
-koqwtcvzcsmhpoelrnaxydizuj
-kbqwtcvzlsmhpoezrnaxydmfuj
-kbqwtcvzdsmhpoelrjaxydifij
-kbqwtcvzgsmhpoelrncxyjifuk
-kbtwtcvzgsmhpoelonaxydiwuj
-kbqwfcrzgsmhpoelrnaeydifuj
-kbqutcvkgsmhpoelrnfxydifuj
-kbqwtcvzgsmvvoelrnaxydihuj
-kbqwtcvzhymhpoelrnaxydifyb
-kbqctcvzgumhpoalrnaxydifuj
-kuqktcvzgsmhpoelrnaxydieuj
-kbqwtcvzgsmvpozlrnaxydifmj
-kbqwtcvzgsmhpojlraaxydiouj
-kbqwtcvzgmmhpoelknaxydizuj
-kbwwtcvzgsmhpoefrnaxydifij
-kbqwucvzgsmhpoelvnahydifuj
-kbqwtcvzpsmhpgelrqaxydifuj
-kblqtcvzgsmhpoeirnaxydifuj
-kbqwtcvzgsmhpovlrnabydifum
-kbqwwcvzgsmhpoelrnaoydnfuj
-kyqwdcvzgsmhpoelrnaxfdifuj
-kbqftcvzgsmxpoelknaxydifuj
-kbqwtsvzksmhpoelqnaxydifuj
-kbqwtcvzgsmhplelrnauydifux
-kbqytcvzgsmhpkelrnaxydefuj
-kbqwtcvzgsmjjoelrlaxydifuj
-kbqvtcvzgsmhpoelnnaxydafuj
-kbqwtcvzgsjhioelrnaxpdifuj
-kbqptcvpgsmhpoelrnaxydiful
-kbqwjcazgimhpoelrnaxydifuj
-kbqxtcvzgwmhpaelrnaxydifuj
-kbqwtcezgsmhqoelrnaxydifub
-kbqwtcvzgsmhooelynaxydifuf
-kbqwtwvzgsmkpoelrnaxrdifuj
-nbqwtcvugsmhpoelrnzxydifuj
-kbvwqcvzgsmhpoelsnaxydifuj
-kbqwtcyzjsmhpoelrnaxymifuj
-kbqwtcvzgsmhpoclrnaxykzfuj
-kbbwtcvzgsmhyodlrnaxydifuj
-kbwwtcvzgsmytoelrnaxydifuj
-kbmwtcczgpmhpoelrnaxydifuj
-ubqwtcvzgsmmpoblrnaxydifuj
-kbqwtcvzgrmhpoelrnaxnrifuj
-kbqwhcvzgsmhpoelynaaydifuj
-kbqwtcvzgsmtpoelrcpxydifuj
-kdqwtchzgsmhpoelrmaxydifuj
-qbqrncvzgsmhpoelrnaxydifuj
-kbqwtcvzghshpoelrnaxodifuj
-kbqwhcvzgsmhpoelknaxydiwuj
-ebqwtcvzgsmhpoelrotxydifuj
-kbqwacvzusmhpoelryaxydifuj
-kbqwtcvggsmhpoelrnaxygifyj
-kbqwtcvzgsmhpoelrnaxycwfuo
-kzqwzcvzgsmhpoelrxaxydifuj
-khqwtcvzgsmhpoelrnaxldifyj
-kbqwtbtzgsmhpoelrnaxydifud
-gbqwtcvzgqmhpoelrnaxydifrj
-kbqdtqvzgwmhpoelrnaxydifuj
-kbqwscvzgsmhpoelrpaxypifuj
-kmqwtcdzgsmhpoelenaxydifuj
-klqwtcvvgsmhpoelrfaxydifuj
-kbuwtcvzgsmhpoelrtaxyuifuj
-kbqwtcvrgomhpoelrnaxydijuj
-kbqwtgvzgsmhzoelrnpxydifuj
-kbqltcvzgsmhooeljnaxydifuj
-kbqwtcvzgbmxpoelrnaxydivuj
-kbqdtcmzgsmhpoelrnaxydmfuj
-kbqwtcazgsmhpoplrnacydifuj
-kbqztcvegsmhpoelrnvxydifuj
-kbqwtcvzgsmhpoecrnaxydzfsj
-kbqwtcvzgsmepoelrnaqydifuf
-kbqwtcqzgsmhpoelrnoxydivuj
-kbqwtcvzgsmhpoeylnaxydhfuj
-kbqwtcvfgsmhpoelrnaxgdifyj
-kbqwtcvzgsmhnbelrnaxyfifuj
-kbqwtcvzgsmhpoelrnaxbdffmj
-kwqwtcvogtmhpoelrnaxydifuj
-kdqwtcvzggyhpoelrnaxydifuj
-kbqwtuvzgtmhpoelrnaxydifxj
-kbqctdvzcsmhpoelrnaxydifuj
-kbqwtcvzgsmhpoblrniyydifuj
-kbqwucvzzsmhpoelrnvxydifuj
-kbqwtcvzgslzpoelrnaxydiruj
-kbqwtdmzgsmhpwelrnaxydifuj
-kbqwtcvzgsmhpoilrnaxqiifuj
-kbqwtcvzgsmhpgelrnaxydisnj
-kbdwtqvzgsmhpoelrnaxydivuj
-kbqvtdvzgsmhpoelrjaxydifuj
-kfqwtcvzgsmhpoeurnyxydifuj
-kbqwtcvzgsmhpoglrnaxqkifuj
-kbqwtcvrgsmhpoelrnajydifnj
-xbqwpcvzgjmhpoelrnaxydifuj
-kbqwtcvzgsmhpoelrdaxvdihuj
-kbuwtcvzssmhpoklrnaxydifuj
-kbqwtcvzgqmhpoelrnzxydifbj
-kbqwtcvzgsmhsoeoknaxydifuj
-kfqltcvzgsmhpoelrnaxydifnj
-qbqwtsvzgsmhpoelrnaxodifuj
-kbqwwevzgsmypoelrnaxydifuj
-kbqwtcuzgimhpoelrnaxydffuj
-kxqwlcvzgsmhpoelrnaxyrifuj
-nbqwtcvzgsmhpoelryaxyiifuj
-kbqwtcvzgsmhhoxlreaxydifuj
-mbqwtcvzfsmxpoelrnaxydifuj
-kbqwttvzgsmhpoeqrnaxidifuj
-kbqwtcvzgamhpielrnaxyiifuj
-rfqwtcvzgsmhpoelrnaxydifun
-kbpwtqvzgsmbpoelrnaxydifuj
-kbqwtcvzgsmhpoqlroaxydifua
-hbqwtcvzksmhpoelrnaxydbfuj
-kaqutcvzgsmhpoelrnaxydiiuj
-kbqctcvzgsnhpoelrcaxydifuj
-kbqwtnvzgsmhpoelrnaxydqfoj
-kbqwtcvzhsmhpoelrnaxydifyb
-ubqwtcvcgsmhooelrnaxydifuj
-kbqwtcvrgsmhpoelrnaxtdivuj
-kbqwtcvzgsmhplelrnmxydifaj
-ebqwlcvzghmhpoelrnaxydifuj
-hbqwtcvzgsmhpoelrnaqyeifuj
-kbqstcvzgsmeprelrnaxydifuj
-kbqwtcvogsthpoelrnnxydifuj
-ybqwtcvzgdmhpoelrnaxydufuj
-kbqutcvzgsmhpoelrnaxydifgx
-kbqwtcvzgsmhpozlunadydifuj
-kkqwtcvzgsmhpuefrnaxydifuj
-kbqrtcvzgsmhpoelrnaxcdifuq
-kbqwtcvzjsmupoelrnaxydiluj
-kbqwmcvzgsuhpoelrnaxydifhj
-kbqwfcvzgsmhpoelrnaxydkzuj
-kbqatcvzgsdhpoeyrnaxydifuj
-kbtwtcvzusmhpoelrxaxydifuj
-kbqwtcwzgsmhpoelrnaxysofuj
-kbqqtcvmgsmhpoevrnaxydifuj
-kbqwjcvzgsmhpoelrnaxydhuuj
-mbdwtcvzgsmhpoelqnaxydifuj
-kbqwtcvlgsmhpoelrdaxydifaj
-kbqwtcvzgsmmpoelrlaxydnfuj
-kbqwtchfggmhpoelrnaxydifuj
-kbqqtcvzgsyhpoelrnaxyoifuj
-knqwtcvzqsmupoelrnaxydifuj
-kdqdtcvzgsmhpoelrnaxydmfuj
-kbqwtcvzgsmhptelrnawyhifuj
-kbqwtcvzgrmhpoeqrnaxydifuw
-kbnxtcvzgsmhpoelrnauydifuj
-kbqwacvsgsmhpoelrnaxydifgj
-kbqwtcvzgsmhpperrnaxydifuc
-gbqwtcvzgsqhxoelrnaxydifuj
-kbqwtcvzgsmhpoeljgaxydifwj
-kbqktcvzgsmhpotlrnatydifuj
-bbqwtcvzgsmhpoilrnaxydjfuj
-kbqwecvdgsmhpoelrnaxypifuj
-keqwtcvzgemhpotlrnaxydifuj
-kbqptcvzgsmvpoelrnaxydixuj
-kbqwbctzgsmhpoelrnaxydifup
-kbqwtcvzgszhpbelrnzxydifuj
-mbqwtcvtgsmhpoeyrnaxydifuj
-kbqwtcvzgsmhqcelrhaxydifuj
-kbqotcvzgsmhooelrnazydifuj
-kbqwtcvzgsmhpoelmpaxyiifuj
-kbqwtcvwgsmypoclrnaxydifuj
-kbqwtcvsgskhpoelrnaxykifuj
-kbqwtcvzgszvpoelrnwxydifuj
-kbqwtcvzgsmhpoejonaxydrfuj
-kbqwtcvzgsmhkoelrnazyqifuj
-kbzwtzvzgsmhptelrnaxydifuj
-kbqwtcdzgsmhptelrnaxydiduj
-kbqwtcvzgamhpoelrnakyzifuj
-kbqwtcvzgsmhpoeonnaxydifxj
-kbqwtcvzgsmhpoeranaxydifej
-kbqwscvzgsmhpoelunaxydimuj
-cbqwtcvzgsmhpoelrdaxydefuj
-vbqwtcjzgsmhpoelrnaxydifua
-kmqwtcvzksmhpoeljnaxydifuj
-kbqwtcvzgsmppojlrnasydifuj
-kaqwtcvfgsmhpoelrnaxydiauj
-khqwccvzgsmhpoelrnaxydifud
-vbqwtcvzrsmhpoelrhaxydifuj
-kuqwtcvzgsmhpoelgnaiydifuj
-kbqwtcvzdsmhpbelvnaxydifuj
-kbowtcvzgnmhpoelrfaxydifuj
-kbqwtcvsgsmhfoejrnaxydifuj
-kbqwtcvzgskhtoelrnxxydifuj
-kbqwtcvzgtmhpoevrnaxydivuj
-bbqptcgzgsmhpoelrnaxydifuj
-kbqwtpvzgsmnpoelhnaxydifuj
-kbqwtovzgsmmpoelrnaxydifuw
-kbqwtcvzgsihpwelrnaxydsfuj
-kbqwtcvzggmhpollrnaxydifsj
-kbqwtcjzgsmhpoelrnaxyxifub
-ebqwtcvzgsmzpoelrnaaydifuj
-kbqwtcvzusmhpoelrnqxydijuj
-obqwtcvzgsghpoelrnaxydifkj
-kbrwtcvzmdmhpoelrnaxydifuj
-kbqwtcvzxsmhpoblrnhxydifuj
-kbqwacvzgsahpoelrnaxydiguj
-kyqwtcvzgsmipoelrnlxydifuj
-kbbwtcvzgsmhboelpnaxydifuj
-kbqwtcvzgsmhpoelrnaxhdosuj
-kbqwtgvzgxmhpoelrnaxyrifuj
-pbqwtsvzgsmhpoelrnabydifuj
-kbqrtcvzgsmhpsblrnaxydifuj
-kbqwtcvzgsmhpoexrnaaycifuj
-kbqxtcvzgsjhkoelrnaxydifuj
-kbqwtcvzgsmhpxelrnaxydifby
-lbxwtcvzgsmdpoelrnaxydifuj
-kbqwtcczgsmhpoklrnzxydifuj
-zbqwtcvzgsmhpoelrbaxydifui
-krqwtcvzbsmhpoelrjaxydifuj
-kbkwtcvzgsmhpoelrnaxydiacj
-kbqwtcvzgszhpseprnaxydifuj
-kbxwtcvzxsmhpoesrnaxydifuj
-kbqwdcvzgsmhpoelrbaxygifuj
-kbqwthkzgsmhhoelrnaxydifuj
-klqwtchzgamhpoelrnaxydifuj
-obqwtcvzgsvcpoelrnaxydifuj
-kblwtcvzgsmhpoelrnanydifuw
-kbqwtrvzgsmhpoelynaxydifug
-kbqwtcvzgsmhcoelmnaxydkfuj
-kbqwtcvzgsmhpotlqoaxydifuj
-kaqatcvzgsmhpoelrnaxyiifuj
-kbqttcvwgsmhpoelrnaxydifgj
-kpqwtcvzgsmhpwelynaxydifuj
-kbqwucvzgsmhpyelrnaxyxifuj
-kbqwucvzgsmhprelrnaxyfifuj
-kbqwthvzgsmhphelrnaxylifuj
-kbqwtcvzosmhdoelrnaxwdifuj
-kbqwtxvsgsphpoelrnaxydifuj
-koqwtcvfghmhpoelrnaxydifuj
-kbtwicvzpsmhpoelrnaxydifuj
-kbawtcvzgsmhmoelrnaxyiifuj
-kbqwtcvzgslhpbelrnaxydifuk
-kbqttcvzgsmypoelrnaxydifua
-kbqwtcvrgqmhpnelrnaxydifuj
-kbqwtcvzghmhpoekpnaxydifuj
-kbqwtcvzgsmupoelrnaxidifui
-kbqwtcvzgsmhpbelrnaxrdifux
-"""
-let lines = input.split(separator: "\n")
 
-var twoCount = 0
-var threeCount = 0
-
-for line in lines {
-    var histo: [ Character : Int ] = [:]
-    
-    for char in line {
-        if histo[char] == nil {
-            histo[char] = 1
-        } else {
-            histo[char]! += 1
-        }
-    }
-    
-    twoCount += histo.contains( where: { $0.value == 2 } ) ? 1 : 0
-    threeCount += histo.contains( where: { $0.value == 3 } ) ? 1 : 0
+func parse( input: AOCinput ) -> [String] {
+    return input.lines
 }
 
-print( "Part1:", twoCount * threeCount )
 
-for i in 0 ..< lines.count {
-    var arrayI = Array( lines[i] )
-    
-    for j in i ..< lines.count {
-        let arrayJ = Array( lines[j] )
-        var index: Int? = nil
+func part1( input: AOCinput ) -> String {
+    let lines = parse( input: input )
+    let ( twoCount, threeCount ) = lines.reduce( ( 0, 0 ) ) {
+        let histogram = $1.reduce( into: [ Character : Int ]() ) { $0[$1] = ( $0[$1] ?? 0 ) + 1 }
         
-        for k in 0 ..< arrayI.count {
-            if arrayI[k] != arrayJ[k] {
-                if index == nil {
-                    index = k
-                } else {
-                    index = nil
-                    break
-                }
+        return (
+            $0.0 + ( histogram.contains( where: { $0.value == 2 } ) ? 1 : 0 ),
+            $0.1 + ( histogram.contains( where: { $0.value == 3 } ) ? 1 : 0 )
+        )
+    }
+
+    return "\(twoCount * threeCount)"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let lines = parse( input: input )
+    
+    for i in 0 ..< lines.count - 1 {
+        var arrayI = Array( lines[i] )
+        
+        for j in i + 1 ..< lines.count {
+            let arrayJ = Array( lines[j] )
+            let indices = zip( arrayI, arrayJ ).enumerated().filter { $0.element.0 != $0.element.1 }
+
+            if indices.count == 1 {
+                arrayI.remove( at: indices[0].offset )
+                return "\(String( arrayI ))"
             }
         }
-        
-        if let index = index {
-            arrayI.remove(at: index)
-            print( "Part2:", String( arrayI ) )
-            exit(0)
-        }
     }
+    
+    return "Failure"
 }
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
