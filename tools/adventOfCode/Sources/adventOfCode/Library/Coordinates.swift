@@ -173,8 +173,29 @@ struct Point2D: Hashable {
 }
 
 struct Rect2D {
-    let min: Point2D
-    let max: Point2D
+    let min:    Point2D
+    let max:    Point2D
+    let width:  Int
+    let height: Int
+    let area:   Int
+    
+    init( min: Point2D, max: Point2D ) {
+        self.min    = min
+        self.max    = max
+        self.width  = abs( max.x - min.x )
+        self.height = abs( max.y - min.y )
+        self.area   = width * height
+    }
+
+    init?( min: Point2D, width: Int, height: Int ) {
+        guard width > 0 && height > 0 else { return nil }
+        
+        self.min    = min
+        self.max    = Point2D( x: min.x + width, y: min.y + height )
+        self.width  = width
+        self.height = height
+        self.area   = width * height
+    }
     
     func contains( point: Point2D ) -> Bool {
         guard min.x <= point.x, point.x <= max.y else { return false }
@@ -184,12 +205,21 @@ struct Rect2D {
     }
     
     func expand( with point: Point2D ) -> Rect2D {
-        let minx = Swift.min( min.x, point.x )
-        let maxx = Swift.max( max.x, point.x )
-        let miny = Swift.min( min.y, point.y )
-        let maxy = Swift.max( max.y, point.y )
+        let minX = Swift.min( min.x, point.x )
+        let maxX = Swift.max( max.x, point.x )
+        let minY = Swift.min( min.y, point.y )
+        let maxY = Swift.max( max.y, point.y )
 
-        return Rect2D( min: Point2D( x: minx, y: miny ), max: Point2D( x: maxx, y: maxy ) )
+        return Rect2D( min: Point2D( x: minX, y: minY ), max: Point2D( x: maxX, y: maxY ) )
+    }
+    
+    func intersection( with other: Rect2D ) -> Rect2D? {
+        let minX = Swift.max( min.x, other.min.x )
+        let minY = Swift.max( min.y, other.min.y )
+        let maxX = Swift.min( max.x, other.max.x )
+        let maxY = Swift.min( max.y, other.max.y )
+        
+        return Rect2D( min: Point2D( x: minX, y: minY ), width: maxX - minX, height: maxY - minY )
     }
 }
 
