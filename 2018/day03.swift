@@ -10,13 +10,9 @@
 
 import Foundation
 
-func findOverlaps( claims: [ Int : Rect2D ] ) -> [Rect2D] {
-    let keys = claims.keys.map { Int( $0 ) }
-    
-    return ( 0 ..< keys.count - 1 ).flatMap { i in
-        ( i + 1 ..< keys.count ).compactMap {
-            j in claims[keys[i]]?.intersection( with: claims[keys[j]]! )
-        }
+func findOverlaps( rectangles: [Rect2D] ) -> [Rect2D] {
+    return ( 0 ..< rectangles.count - 1 ).flatMap { i in
+        ( i + 1 ..< rectangles.count ).compactMap { rectangles[i].intersection( with: rectangles[$0] ) }
     }
 }
 
@@ -88,7 +84,7 @@ func parse( input: AOCinput ) -> [ Int : Rect2D ] {
 
 func part1( input: AOCinput ) -> String {
     let claims = parse( input: input )
-    let overlaps = findOverlaps( claims: claims )
+    let overlaps = findOverlaps( rectangles: Array<Rect2D>( claims.values ) )
     let consolidated = consolidate( rectangles: overlaps )
     return "\(consolidated.reduce( 0 ) { $0 + $1.area })"
 }
