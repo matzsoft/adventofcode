@@ -10,9 +10,18 @@
 
 import Foundation
 
-func findOverlaps( rectangles: [Rect2D] ) -> [Rect2D] {
-    return ( 0 ..< rectangles.count - 1 ).flatMap { i in
-        ( i + 1 ..< rectangles.count ).compactMap { rectangles[i].intersection( with: rectangles[$0] ) }
+extension Sequence where Iterator.Element: Hashable {
+    var unique: [Iterator.Element] {
+        var seen: Set<Iterator.Element> = []
+        return filter { seen.insert($0).inserted }
+    }
+}
+
+extension Array where Element == Rect2D {
+    var overlaps: [Rect2D] {
+        return ( 0 ..< count - 1 ).flatMap { i in
+            ( i + 1 ..< count ).compactMap{ self[i].intersection( with: self[$0] ) }
+        }.unique
     }
 }
 
@@ -84,8 +93,7 @@ func parse( input: AOCinput ) -> [ Int : Rect2D ] {
 
 func part1( input: AOCinput ) -> String {
     let claims = parse( input: input )
-    let overlaps = findOverlaps( rectangles: Array<Rect2D>( claims.values ) )
-    let consolidated = consolidate( rectangles: overlaps )
+    let consolidated = consolidate( rectangles: Array<Rect2D>( claims.values ).overlaps )
     return "\(consolidated.reduce( 0 ) { $0 + $1.area })"
 }
 

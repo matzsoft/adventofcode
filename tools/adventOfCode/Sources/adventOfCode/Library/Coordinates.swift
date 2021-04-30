@@ -172,7 +172,7 @@ struct Point2D: Hashable {
     }
 }
 
-struct Rect2D {
+struct Rect2D: Hashable {
     let min:    Point2D
     let max:    Point2D
     let width:  Int
