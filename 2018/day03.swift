@@ -10,72 +10,24 @@
 
 import Foundation
 
-extension Sequence where Iterator.Element: Hashable {
-    var unique: [Iterator.Element] {
-        var seen: Set<Iterator.Element> = []
-        return filter { seen.insert($0).inserted }
+extension Rect2D {
+    var setOfPoints: Set<Point2D> {
+        return ( min.x ..< max.x ).reduce( into: Set<Point2D>() ) { set, x  in
+            ( min.y ..< max.y ).forEach { set.insert( Point2D( x: x, y: $0 ) ) }
+        }
     }
 }
+
 
 extension Array where Element == Rect2D {
     var overlaps: [Rect2D] {
         return ( 0 ..< count - 1 ).flatMap { i in
             ( i + 1 ..< count ).compactMap{ self[i].intersection( with: self[$0] ) }
-        }.unique
-    }
-}
-
-func consolidate( rectangles: [Rect2D] ) -> [Rect2D] {
-    var consolidated = [Rect2D]()
-    
-    for rectangle in rectangles {
-        var newList: [Rect2D] = [ rectangle ]
-        
-        for exists in consolidated {
-            guard let trial = exists.intersection( with: rectangle ) else {
-                newList.append( exists )
-                continue
-            }
-            
-            let leftW = trial.min.x - exists.min.x
-            if let left = Rect2D( min: exists.min, width: leftW, height: exists.height ) {
-                newList.append(left)
-            }
-            
-            let topMin = Point2D( x: trial.min.x, y: exists.min.y )
-            let topW = exists.max.x - trial.min.x
-            if let top = Rect2D( min: topMin, width: topW, height: trial.min.y - exists.min.y ) {
-                newList.append(top)
-            }
-            
-            let bottomMin = Point2D( x: trial.min.x, y: trial.max.y )
-            let bottomW = exists.max.x - trial.min.x
-            if let bottom = Rect2D( min: bottomMin, width: bottomW, height: exists.max.y - trial.max.y ) {
-                newList.append(bottom)
-            }
-
-            let rightMin = Point2D( x: trial.max.x, y: trial.min.y )
-            if let right = Rect2D( min: rightMin, width: exists.max.x - trial.max.x, height: trial.height ) {
-                newList.append(right)
-            }
         }
-        
-        consolidated = newList
     }
-    
-    return consolidated
-}
 
-func countOverlaps( claims: [ Int : Rect2D ] ) -> [ Int : Int ] {
-    let keys = claims.keys.map { Int( $0 ) }
-    
-    return ( 0 ..< keys.count - 1 ).reduce( into: [ Int : Int ]() ) { dict, i in
-        ( i + 1 ..< keys.count ).forEach { j in
-            if claims[keys[i]]?.intersection( with: claims[keys[j]]! ) != nil {
-                dict[keys[i]] = ( dict[keys[i]] ?? 0 ) + 1
-                dict[keys[j]] = ( dict[keys[j]] ?? 0 ) + 1
-            }
-        }
+    var setOfPoints: Set<Point2D> {
+        reduce( into: Set<Point2D>() ) { $0.formUnion( $1.setOfPoints ) }
     }
 }
 
@@ -93,15 +45,16 @@ func parse( input: AOCinput ) -> [ Int : Rect2D ] {
 
 func part1( input: AOCinput ) -> String {
     let claims = parse( input: input )
-    let consolidated = consolidate( rectangles: Array<Rect2D>( claims.values ).overlaps )
-    return "\(consolidated.reduce( 0 ) { $0 + $1.area })"
+    let overlaps = Array<Rect2D>( claims.values ).overlaps
+    return "\(overlaps.setOfPoints.count)"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let claims = parse( input: input )
-    let overlapCounts = countOverlaps( claims: claims )
-    let result = claims.keys.first { overlapCounts[$0] == nil }!
+    let overlaps = Array<Rect2D>( claims.values ).overlaps
+    let set = overlaps.setOfPoints
+    let result = claims.keys.first { claims[$0]!.setOfPoints.intersection( set ).isEmpty }!
 
     return "\(result)"
 }
