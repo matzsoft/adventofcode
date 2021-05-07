@@ -1,7 +1,8 @@
 //
 //         FILE: main.swift
 //  DESCRIPTION: day06 - Chronal Coordinates
-//        NOTES: ---
+//        NOTES: part3 and part4 are an attempt to improve performance by migrating code into the loop.
+//               They were only marginally successful but I have left them in for show.
 //       AUTHOR: Mark T. Johnson, markj@matzsoft.com
 //    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
 //      VERSION: 1.0
@@ -42,9 +43,8 @@ func part1( input: AOCinput ) -> String {
             return closest.count == 1 ? closest[0] : nil
         }
     }
-    let topAndBottom = grid[0] + grid.last!
     let edges = ( 1 ..< grid.count - 1 ).flatMap { [ grid[$0][0], grid[$0][grid[$0].count-1] ] }
-    let borders = Set( ( topAndBottom + edges ).compactMap { $0 } )
+    let borders = Set( ( grid[0] + grid.last! + edges ).compactMap { $0 } )
     let histogram = grid.reduce( into: [Int:Int]() ) { dict, row in
         row.forEach {
             if let closest = $0, !borders.contains( closest ) { dict[closest] = ( dict[closest] ?? 0 ) + 1 }
@@ -69,5 +69,51 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+func part3( input: AOCinput ) -> String {
+    let points = parse( input: input )
+    let bounds = points.boundingBox
+    var hitsEdge = Set<Int>();
+    let grid = ( bounds.min.y ... bounds.max.y ).map { ( y ) ->[Int?] in
+        let onEdge = y == bounds.min.y || y == bounds.max.y
+        return ( bounds.min.x ... bounds.max.x ).map { ( x ) -> Int? in
+            let distances = points.map { $0.distance( other: Point2D( x: x, y: y ) ) }
+            let minDistance = distances.min()!
+            let closest = distances.enumerated().filter { $0.element == minDistance }.map { $0.offset }
+            
+            if closest.count > 1 { return nil }
+            if onEdge || x == bounds.min.x || x == bounds.max.x { hitsEdge.insert( closest[0] ) }
+            return closest[0]
+        }
+    }
+    let histogram = grid.reduce( into: [Int:Int]() ) { dict, row in
+        row.forEach {
+            if let closest = $0, !hitsEdge.contains( closest ) {
+                dict[closest] = ( dict[closest] ?? 0 ) + 1
+            }
+        }
+    }
+
+    return "\(histogram.max( by: { $0.value < $1.value } )!.value )"
+}
+
+
+func part4( input: AOCinput ) -> String {
+    let coordinates = parse( input: input )
+    let bounds = coordinates.boundingBox
+    var size = 0
+    
+    for y in ( bounds.min.y ... bounds.max.y ) {
+        for x in ( bounds.min.x ... bounds.max.x ) {
+            let distance = coordinates.map { $0.distance( other: Point2D( x: x, y: y ) ) }.reduce( 0, + )
+            
+            if distance < 10000 { size += 1 }
+        }
+    }
+
+    return "\(size)"
+}
+
+
 try runTests( part1: part1, part2: part2 )
 try runSolutions( part1: part1, part2: part2 )
+try runSolutions( part1: part3, part2: part4 )
