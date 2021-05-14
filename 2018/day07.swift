@@ -1,127 +1,18 @@
 //
-//  main.swift
-//  day07
-//
-//  Created by Mark Johnson on 12/6/18.
-//  Copyright © 2018 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day07 - The Sum of Its Parts
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 05/06/21 19:29:13
 //
 
 import Foundation
 
 let upperCaseA = Character("A").unicodeScalars.first!.value
-
-let input = """
-Step Y must be finished before step J can begin.
-Step C must be finished before step L can begin.
-Step L must be finished before step X can begin.
-Step H must be finished before step R can begin.
-Step R must be finished before step X can begin.
-Step I must be finished before step B can begin.
-Step N must be finished before step Q can begin.
-Step F must be finished before step X can begin.
-Step K must be finished before step G can begin.
-Step G must be finished before step P can begin.
-Step A must be finished before step S can begin.
-Step O must be finished before step D can begin.
-Step M must be finished before step W can begin.
-Step Q must be finished before step J can begin.
-Step X must be finished before step E can begin.
-Step U must be finished before step V can begin.
-Step Z must be finished before step D can begin.
-Step P must be finished before step W can begin.
-Step S must be finished before step J can begin.
-Step J must be finished before step T can begin.
-Step W must be finished before step T can begin.
-Step V must be finished before step B can begin.
-Step B must be finished before step T can begin.
-Step D must be finished before step T can begin.
-Step E must be finished before step T can begin.
-Step I must be finished before step Z can begin.
-Step X must be finished before step D can begin.
-Step Q must be finished before step D can begin.
-Step S must be finished before step T can begin.
-Step R must be finished before step W can begin.
-Step O must be finished before step V can begin.
-Step C must be finished before step Q can begin.
-Step C must be finished before step S can begin.
-Step S must be finished before step E can begin.
-Step A must be finished before step D can begin.
-Step V must be finished before step T can begin.
-Step K must be finished before step B can begin.
-Step B must be finished before step D can begin.
-Step V must be finished before step E can begin.
-Step N must be finished before step M can begin.
-Step Z must be finished before step T can begin.
-Step L must be finished before step A can begin.
-Step K must be finished before step Z can begin.
-Step F must be finished before step J can begin.
-Step M must be finished before step U can begin.
-Step Z must be finished before step P can begin.
-Step R must be finished before step E can begin.
-Step M must be finished before step X can begin.
-Step O must be finished before step E can begin.
-Step K must be finished before step V can begin.
-Step U must be finished before step D can begin.
-Step K must be finished before step T can begin.
-Step F must be finished before step W can begin.
-Step I must be finished before step U can begin.
-Step Z must be finished before step S can begin.
-Step H must be finished before step D can begin.
-Step O must be finished before step P can begin.
-Step B must be finished before step E can begin.
-Step X must be finished before step U can begin.
-Step A must be finished before step J can begin.
-Step Y must be finished before step V can begin.
-Step U must be finished before step T can begin.
-Step G must be finished before step B can begin.
-Step U must be finished before step W can begin.
-Step H must be finished before step W can begin.
-Step G must be finished before step J can begin.
-Step X must be finished before step Z can begin.
-Step L must be finished before step R can begin.
-Step Q must be finished before step X can begin.
-Step I must be finished before step O can begin.
-Step J must be finished before step E can begin.
-Step N must be finished before step D can begin.
-Step C must be finished before step B can begin.
-Step I must be finished before step W can begin.
-Step P must be finished before step J can begin.
-Step D must be finished before step E can begin.
-Step L must be finished before step J can begin.
-Step R must be finished before step J can begin.
-Step N must be finished before step A can begin.
-Step F must be finished before step O can begin.
-Step Y must be finished before step Q can begin.
-Step L must be finished before step F can begin.
-Step Q must be finished before step U can begin.
-Step O must be finished before step T can begin.
-Step Z must be finished before step E can begin.
-Step Y must be finished before step K can begin.
-Step G must be finished before step A can begin.
-Step Q must be finished before step E can begin.
-Step V must be finished before step D can begin.
-Step F must be finished before step K can begin.
-Step C must be finished before step E can begin.
-Step F must be finished before step A can begin.
-Step X must be finished before step B can begin.
-Step G must be finished before step U can begin.
-Step C must be finished before step H can begin.
-Step Y must be finished before step W can begin.
-Step R must be finished before step Z can begin.
-Step W must be finished before step D can begin.
-Step C must be finished before step T can begin.
-Step H must be finished before step M can begin.
-Step O must be finished before step Q can begin.
-"""
-let testInput = """
-Step C must be finished before step A can begin.
-Step C must be finished before step F can begin.
-Step A must be finished before step B can begin.
-Step A must be finished before step D can begin.
-Step B must be finished before step E can begin.
-Step D must be finished before step E can begin.
-Step F must be finished before step E can begin.
-"""
+let baseDuration = 60
+let workerCount = 5
 
 class Node {
     let key: Substring
@@ -133,41 +24,59 @@ class Node {
     }
 }
 
-func buildNodes( _ input: String ) -> [Substring:Node] {
-    var nodes: [Substring:Node] = [:]
-    let lines = input.split(separator: "\n")
 
-    for line in lines {
-        let words = line.split(separator: " ")
+func parse( input: AOCinput ) -> [ Substring : Node ] {
+    var nodes: [ Substring : Node ] = [:]
+
+    for line in input.lines {
+        let words = line.split( separator: " " )
         let first = words[1]
         let second = words[7]
         
-        if nodes[first] == nil { nodes[first] = Node(first) }
-        if nodes[second] == nil { nodes[second] = Node(second) }
+        if nodes[first] == nil { nodes[first] = Node( first ) }
+        if nodes[second] == nil { nodes[second] = Node( second ) }
         
-        nodes[first]?.postrequisites.insert(second)
-        nodes[second]?.prerequisites.insert(first)
+        nodes[first]?.postrequisites.insert( second )
+        nodes[second]?.prerequisites.insert( first )
     }
     
     return nodes
 }
 
-var nodes = buildNodes( input )
-var part1 = ""
 
-while true {
-    let ready = nodes.filter { $0.value.prerequisites.count == 0 }
-    
-    if ready.count == 0 { break }
-    
-    let next = ready.sorted(by: { $0.key < $1.key } ).first!.value
-    
-    next.postrequisites.forEach { nodes[$0]?.prerequisites.remove(next.key ) }
-    part1 += next.key
-    nodes.removeValue(forKey: next.key)
+func part1( input: AOCinput ) -> String {
+    var nodes = parse( input: input )
+    var order = ""
+
+    while let next = nodes.filter( { $0.value.prerequisites.count == 0 } )
+            .sorted( by: { $0.key < $1.key } ).first?.value
+    {
+        next.postrequisites.forEach { nodes[$0]?.prerequisites.remove( next.key ) }
+        order += next.key
+        nodes.removeValue( forKey: next.key )
+    }
+
+    return order
 }
 
-print( "Part1:", part1 )
+// This is a "non-destructive" version of part1.  Takes twice as long to run.
+func part3( input: AOCinput ) -> String {
+    let nodes = parse( input: input )
+    var completed = Set<Substring>()
+    var order = ""
+
+    while let next = nodes
+            .filter( {
+                !completed.contains( $0.key ) && $0.value.prerequisites.subtracting( completed ).isEmpty
+            } )
+            .sorted( by: { $0.key < $1.key } ).first?.value
+    {
+        order += next.key
+        completed.insert( next.key )
+    }
+
+    return order
+}
 
 
 class Worker {
@@ -180,10 +89,6 @@ class Worker {
     }
 }
 
-let baseDuration = 60
-let workerCount = 5
-var time = 0
-var workers = ( 1 ... workerCount ).map { Worker(id: $0) }
 
 func taskDuration( _ task: Node ) -> Int {
     let offset = Int( Character( String( task.key ) ).unicodeScalars.first!.value - upperCaseA )
@@ -191,44 +96,56 @@ func taskDuration( _ task: Node ) -> Int {
     return baseDuration + offset + 1
 }
 
-func completeTasks( busyWorkers: [Worker] ) -> Void {
-    guard busyWorkers.count > 0 else { return }
+
+func completeTasks( busyWorkers: [Worker], nodes: [Substring : Node], time: Int ) -> Int {
+    guard busyWorkers.count > 0 else { return time }
     
-    let nextEvent = busyWorkers.min( by: { $0.busyUntil < $1.busyUntil } )!.busyUntil
+    let time = busyWorkers.min( by: { $0.busyUntil < $1.busyUntil } )!.busyUntil
     
-    time = nextEvent
     for worker in busyWorkers.filter( { $0.busyUntil == time } ) {
         if let task = worker.task {
-            print( "Worker \(worker.id) completes task \(task.key) at time \(time)" )
+            // print( "Worker \(worker.id) completes task \(task.key) at time \(time)" )
             task.postrequisites.forEach { nodes[$0]?.prerequisites.remove(worker.task!.key ) }
             worker.task = nil
         }
     }
+    
+    return time
 }
 
-nodes = buildNodes( input )
 
-while nodes.count > 0 {
-    let busyWorkers = workers.filter { $0.task != nil }
-    
-    if busyWorkers.count == workerCount {
-        completeTasks( busyWorkers: busyWorkers )
+func part2( input: AOCinput ) -> String {
+    var nodes = parse( input: input )
+    let workers = ( 1 ... workerCount ).map { Worker(id: $0) }
+    var time = 0
 
-    } else {
-        let ready = nodes.filter { $0.value.prerequisites.count == 0 }
+    while nodes.count > 0 {
+        let busyWorkers = workers.filter { $0.task != nil }
         
-        if ready.count == 0 {
-            completeTasks( busyWorkers: busyWorkers )
+        if busyWorkers.count == workerCount {
+           time = completeTasks( busyWorkers: busyWorkers, nodes: nodes, time: time )
+
         } else {
-            let task = ready.sorted(by: { $0.key < $1.key } ).first!.value
-            let worker = workers.first(where: { $0.task == nil } )!
+            let ready = nodes.filter { $0.value.prerequisites.count == 0 }
             
-            print( "Worker \(worker.id) assigned task \(task.key) at time \(time)" )
-            worker.task = task
-            worker.busyUntil = time + taskDuration(task)
-            nodes.removeValue(forKey: task.key)
+            if ready.count == 0 {
+                time = completeTasks( busyWorkers: busyWorkers, nodes: nodes, time: time )
+            } else {
+                let task = ready.sorted(by: { $0.key < $1.key } ).first!.value
+                let worker = workers.first( where: { $0.task == nil } )!
+                
+                // print( "Worker \(worker.id) assigned task \(task.key) at time \(time)" )
+                worker.task = task
+                worker.busyUntil = time + taskDuration( task )
+                nodes.removeValue( forKey: task.key )
+            }
         }
     }
+
+    return "\(workers.max( by: { $0.busyUntil < $1.busyUntil } )!.busyUntil)"
 }
 
-print( "Part2:", workers.max( by: { $0.busyUntil < $1.busyUntil } )!.busyUntil )
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
+try runSolutions( part1: part3, part2: nil )
