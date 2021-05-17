@@ -99,7 +99,7 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let screen = parse( input: input )
-    return blockLettersDictionary5x6x0.makeString( screen: screen.pixels )
+    return try! BlockLetterDictionary( from: "figlet.txt" ).makeString( screen: screen.pixels )
 }
 
 
