@@ -10,102 +10,6 @@
 
 import Foundation
 
-func makeBlockLetterCode( visual: [String] ) -> Int {
-    guard visual.count == 6, visual.allSatisfy( { $0.count == 5 } ) else {
-        return 0
-    }
-    
-    return visual.joined().reduce( into: 0, { $0 = ( $0 << 1 ) | ( $1 == " " ? 0 : 1 ) } )
-}
-
-struct BlockLetter {
-    let letter: Character
-    let code: Int
-    
-    init( letter: Character, visual: [String] ) {
-        self.letter = letter
-        
-        guard visual.count == 6, visual.allSatisfy( { $0.count == 5 } ) else {
-            code = 0
-            return
-        }
-        
-        code = makeBlockLetterCode( visual: visual )
-    }
-}
-
-func makeBlockLetterDictionary( blockLetters: [BlockLetter] ) -> [ Int : Character ] {
-    return blockLetters.reduce( into: [:], { $0[$1.code] = $1.letter } )
-}
-
-let blockLetterDictionary = makeBlockLetterDictionary( blockLetters: [
-    BlockLetter( letter: "E", visual: [
-        "**** ",
-        "*    ",
-        "***  ",
-        "*    ",
-        "*    ",
-        "**** ",
-    ] ),
-    BlockLetter( letter: "O", visual: [
-        " **  ",
-        "*  * ",
-        "*  * ",
-        "*  * ",
-        "*  * ",
-        " **  ",
-    ] ),
-    BlockLetter( letter: "A", visual: [
-        " **  ",
-        "*  * ",
-        "*  * ",
-        "**** ",
-        "*  * ",
-        "*  * ",
-    ] ),
-    BlockLetter( letter: "R", visual: [
-        "***  ",
-        "*  * ",
-        "*  * ",
-        "***  ",
-        "* *  ",
-        "*  * ",
-    ] ),
-    BlockLetter( letter: "G", visual: [
-        " **  ",
-        "*  * ",
-        "*    ",
-        "* ** ",
-        "*  * ",
-        " *** ",
-    ] ),
-    BlockLetter( letter: "P", visual: [
-        "***  ",
-        "*  * ",
-        "*  * ",
-        "***  ",
-        "*    ",
-        "*    ",
-    ] ),
-    BlockLetter( letter: "H", visual: [
-        "*  * ",
-        "*  * ",
-        "**** ",
-        "*  * ",
-        "*  * ",
-        "*  * ",
-    ] ),
-    BlockLetter( letter: "Y", visual: [
-        "*   *",
-        "*   *",
-        " * * ",
-        "  *  ",
-        "  *  ",
-        "  *  ",
-    ] ),
-] )
-
-
 struct Screen {
     let width = 50
     let height = 6
@@ -179,21 +83,6 @@ struct Screen {
         }
         pixels = screen
     }
-    
-    var letters: [[String]] {
-        var result = [[String]]()
-        
-        for x in stride( from: 0, to: pixels[0].count, by: letterWidth ) {
-            var letter = [String]()
-            
-            for y in 0 ..< pixels.count {
-                letter.append( pixels[y][x..<x+letterWidth].map { $0 ? "*" : " " }.joined() )
-            }
-            result.append( letter )
-        }
-        
-        return result
-    }
 }
 
 
@@ -210,8 +99,7 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let screen = parse( input: input )
-    let answer = screen.letters.map { blockLetterDictionary[ makeBlockLetterCode(visual: $0 ) ] ?? "?" }
-    return "\(String(answer))"
+    return blockLettersDictionary5x6x0.makeString( screen: screen.pixels )
 }
 
 
