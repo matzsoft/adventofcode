@@ -35,6 +35,31 @@ struct BlockLetterDictionary {
         self.dictionary = blockLetters.reduce( into: [:], { $0[$1.code] = $1.letter } )
     }
     
+    init( from file: String ) throws {
+        let inputDirectory = try findDirectory( name: "input" )
+        let path = "\(inputDirectory)/\(file)"
+        let contents = try String( contentsOfFile: path )
+        let paragraphs = contents.components( separatedBy: "\n\n" )
+        let headerLines = paragraphs[0].split( separator: "\n" )
+        let words = headerLines[0].split( whereSeparator: { "  x+".contains( $0 ) } )
+        
+        width = Int( words[0] )!
+        height = Int( words[1] )!
+        hSpacing = Int( words[2] )!
+        
+        let keys = Array( headerLines[1] )
+        let letters = paragraphs[1...].map { $0.split( separator: "\n" ).map { String( $0 ) } }
+
+        guard keys.count == letters.count else {
+            throw RuntimeError( "Letter keys don't match letters count" )
+        }
+        
+        dictionary = zip( keys, letters ).reduce( into: [:] ) {
+            let blockLetter = BlockLetter( letter: $1.0, visual: $1.1 )
+            $0[blockLetter.code] = blockLetter.letter
+        }
+    }
+    
     func makeString( screen: [[Bool]] ) -> String {
         guard screen.count == height else { return "Bad Height" }
         guard screen.allSatisfy( { $0.count == screen[0].count } ) else { return "Inconsistent Widths" }

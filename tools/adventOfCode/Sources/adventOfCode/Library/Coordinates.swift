@@ -163,6 +163,10 @@ struct Point2D: Hashable {
         return Point2D( x: left.x + right.x, y: left.y + right.y )
     }
     
+    static func -( left: Point2D, right: Point2D ) -> Point2D {
+        return Point2D( x: left.x - right.x, y: left.y - right.y )
+    }
+    
     static func ==( left: Point2D, right: Point2D ) -> Bool {
         return left.x == right.x && left.y == right.y
     }
@@ -195,6 +199,14 @@ struct Rect2D: Hashable {
         self.width  = width
         self.height = height
         self.area   = width * height
+    }
+    
+    init( points: [Point2D] ) {
+        var bounds = Rect2D( min: points[0], max: points[0] )
+        
+        points[1...].forEach { bounds = bounds.expand( with: $0 ) }
+        
+        self.init( min: bounds.min, max: bounds.max )
     }
     
     func contains( point: Point2D ) -> Bool {
