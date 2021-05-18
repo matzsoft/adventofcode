@@ -74,7 +74,7 @@ func parse( input: AOCinput ) -> [Light] {
 
 func part1( input: AOCinput ) -> String {
     let lights = parse( input: input )
-    let blockLetters = try! BlockLetterDictionary( from: "figlet.txt" )
+    let blockLetters = try! BlockLetterDictionary( from: "6x10+2.txt" )
     var yRangeLast = yRange(lights: lights)
 
     for step in 1 ... Int.max {

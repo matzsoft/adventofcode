@@ -29,8 +29,8 @@ struct BlockLetterDictionary {
     let dictionary: [ Int: Character ]
 
     init( from file: String ) throws {
-        let inputDirectory = try findDirectory( name: "input" )
-        let path = "\(inputDirectory)/\(file)"
+        let inputDirectory = try findDirectory( name: "tools" )
+        let path = "\(inputDirectory)/figlet/\(file)"
         let contents = try String( contentsOfFile: path )
         let paragraphs = contents.components( separatedBy: "\n\n" )
         let headerLines = paragraphs[0].split( separator: "\n" )
