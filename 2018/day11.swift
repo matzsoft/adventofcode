@@ -1,50 +1,39 @@
 //
-//  main.swift
-//  day11
+//         FILE: main.swift
+//  DESCRIPTION: day11 - Chronal Charge
+//        NOTES: --- Although the problem describes coordinates as 1 ... 300, I use 0 ... 299 internally
+//                   to save (significant) memory.  This means that I need to add 1 to x and y in certain
+//                   places to conform to the problem.  These would be in cellsPower and when setting
+//                   coordsOfMax and identifierOfMax. This off by 1 also applies to the first subscript of
+//                   the grid array which represents the size of the mini grid it represents.
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 05/17/21 13:55:26
 //
-//  Created by Mark Johnson on 12/10/18.
-//  Copyright © 2018 matzsoft. All rights reserved.
-//
-// Important note: although the problem describes coordinates as 1 ... 300, I use 0 ... 299 internally
-// to save (significant) memory.  This means that I need to add 1 to x and y in certain places to conform
-// to the problem.  These would be in cellsPower and when setting coordsOfMax and identifierOfMax.
-// This off by 1 also applies to the first subscript of the grid array which represents the size of the
-// mini grid it represents.
 
 import Foundation
 
-let serialNumber = 1788
 let gridSize = 300
 let rackOffset = 10
 let powerDrain = 5
 
-func cellsPower() -> [[Int]] {
-    var grid: [[Int]] = []
-    
-    for y in 0 ..< gridSize {
-        grid.append( [] )
-        for x in 0 ..< gridSize {
+func cellsPower( serialNumber: Int ) -> [[Int]] {
+    return ( 0 ..< gridSize ).map { y in
+        ( 0 ..< gridSize ).map { x in
             let rackID = x + 1 + rackOffset
-            let powerLevel = ( ( y + 1 ) * rackID + serialNumber ) * rackID / 100 % 10 - powerDrain
-            
-            grid[y].append( powerLevel )
+            return ( ( y + 1 ) * rackID + serialNumber ) * rackID / 100 % 10 - powerDrain
         }
     }
-
-    return grid
 }
 
-var grid: [[[Int]]] = [ cellsPower() ]
-
-func gridsPower( depth: Int ) -> [[Int]] {
+func gridsPower( grid: [[[Int]]], depth: Int ) -> [[Int]] {
     let miniBigDepth   = depth / 2
     let miniBigSize    = depth / 2 + 1
     let miniSmallDepth = depth / 2 - 1
-    var depthGrid: [[Int]] = []
     
-    for y in 0 ..< gridSize - depth {
-        depthGrid.append( [] )
-        for x in 0 ..< gridSize - depth {
+    return ( 0 ..< gridSize - depth ).map { y in
+        ( 0 ..< gridSize - depth ).map { x in
             var powerLevel = grid[miniBigDepth][y][x]
 
             if depth % 2 == 1 {
@@ -62,33 +51,25 @@ func gridsPower( depth: Int ) -> [[Int]] {
                     powerLevel += grid[0][y+j][x]
                 }
             }
-            
-            depthGrid[y].append( powerLevel )
+
+            return powerLevel
         }
     }
-    
-    return depthGrid
 }
 
-func totalPowerAt( x: Int, y: Int, miniGridSize: Int ) -> Int {
-    var totalPower = 0
-    
-    for y in y ..< y + miniGridSize {
-        for x in x ..< x + miniGridSize {
-            totalPower += grid[0][y][x]
-        }
+func totalPowerAt( grid: [[[Int]]], x: Int, y: Int, miniGridSize: Int ) -> Int {
+    return ( y ..< y + miniGridSize ).reduce( 0 ) { sum, y in
+        sum + ( x ..< x + miniGridSize ).reduce( 0 ) { sum, x in sum + grid[0][y][x] }
     }
-    
-    return totalPower
 }
 
-func findMax( miniGridSize: Int ) -> String {
+func findMax( grid: [[[Int]]], miniGridSize: Int ) -> String {
     var totalPowerMax = 0
     var coordsOfMax = ""
 
     for y in 0 ..< gridSize - miniGridSize + 1 {
         for x in 0 ..< gridSize - miniGridSize + 1 {
-            let totalPower = totalPowerAt(x: x, y: y, miniGridSize: miniGridSize)
+            let totalPower = totalPowerAt( grid: grid, x: x, y: y, miniGridSize: miniGridSize )
             
             if totalPower > totalPowerMax {
                 totalPowerMax = totalPower
@@ -100,7 +81,7 @@ func findMax( miniGridSize: Int ) -> String {
     return coordsOfMax
 }
 
-func findBiggerMax() -> String {
+func findBiggerMax( grid: [[[Int]]] ) -> String {
     var totalPowerMax = 0
     var identifierOfMax = ""
     
@@ -118,7 +99,29 @@ func findBiggerMax() -> String {
     return identifierOfMax
 }
 
-print( "Part1:", findMax(miniGridSize: 3) )
 
-( 1 ..< gridSize ).forEach { grid.append( gridsPower(depth: $0) ) }
-print( "Part2:", findBiggerMax() )
+func parse( input: AOCinput ) -> Int {
+    return Int( input.line )!
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let serialNumber = parse( input: input )
+    let grid: [[[Int]]] = [ cellsPower( serialNumber: serialNumber ) ]
+
+    return "\(findMax( grid: grid, miniGridSize: 3 ))"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let serialNumber = parse( input: input )
+    var grid: [[[Int]]] = [ cellsPower( serialNumber: serialNumber ) ]
+
+    ( 1 ..< gridSize ).forEach { grid.append( gridsPower( grid: grid, depth: $0) ) }
+
+    return "\(findBiggerMax( grid: grid ))"
+}
+
+
+try runTests( part1: part1, part2: part2 )
+try runSolutions( part1: part1, part2: part2 )
