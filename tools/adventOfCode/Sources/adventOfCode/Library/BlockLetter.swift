@@ -8,18 +8,20 @@
 import Foundation
 
 struct BlockLetter {
-    let letter: Character
     let code: Int
+    let width: Int
+    let height: Int
     
-    init( letter: Character, visual: [String] ) {
-        self.letter = letter
-        code = BlockLetter.makeBlockLetterCode( visual: visual )
+    init( visual: String ) throws {
+        let visual = visual.split( separator: "\n" )
+        guard visual.allSatisfy( { $0.count == visual[0].count } ) else {
+            throw RuntimeError( "Inconsistent widths in BlockLetter definition." )
+        }
+        
+        width = visual[0].count
+        height = visual.count
+        code = visual.joined().reduce( into: 0, { $0 = ( $0 << 1 ) | ( $1 == " " ? 0 : 1 ) } )
     }
-    
-    static func makeBlockLetterCode( visual: [String] ) -> Int {
-        return visual.joined().reduce( into: 0, { $0 = ( $0 << 1 ) | ( $1 == " " ? 0 : 1 ) } )
-    }
-
 }
 
 struct BlockLetterDictionary {
@@ -30,27 +32,31 @@ struct BlockLetterDictionary {
 
     init( from file: String ) throws {
         let inputDirectory = try findDirectory( name: "tools" )
-        let path = "\(inputDirectory)/figlet/\(file)"
-        let contents = try String( contentsOfFile: path )
-        let paragraphs = contents.components( separatedBy: "\n\n" )
-        let headerLines = paragraphs[0].split( separator: "\n" )
-        let words = headerLines[0].split( whereSeparator: { "  x+".contains( $0 ) } )
-        
-        width = Int( words[0] )!
-        height = Int( words[1] )!
-        hSpacing = Int( words[2] )!
-        
-        let keys = Array( headerLines[1] )
-        let letters = paragraphs[1...].map { $0.split( separator: "\n" ).map { String( $0 ) } }
+        let path           = "\(inputDirectory)/figlet/\(file)"
+        let contents       = try String( contentsOfFile: path )
+        let paragraphs     = contents.components( separatedBy: "\n\n" )
+        let headerLines    = paragraphs[0].split( separator: "\n" )
+        let words          = headerLines[0].split( whereSeparator: { "  x+".contains( $0 ) } )
+        let width          = Int( words[0] )!
+        let height         = Int( words[1] )!
+        let hSpacing       = Int( words[2] )!
+        let keys           = Array( headerLines[1] )
+        let letters        = try paragraphs[1...].map { try BlockLetter( visual: $0 ) }
 
         guard keys.count == letters.count else {
             throw RuntimeError( "Letter keys don't match letters count" )
         }
-        
-        dictionary = zip( keys, letters ).reduce( into: [:] ) {
-            let blockLetter = BlockLetter( letter: $1.0, visual: $1.1 )
-            $0[blockLetter.code] = blockLetter.letter
+        guard letters.allSatisfy( { $0.width == width } ) else {
+            throw RuntimeError( "Inconsistent widths in BlockLetterDictionary definition." )
         }
+        guard letters.allSatisfy( { $0.height == height } ) else {
+            throw RuntimeError( "Inconsistent heights in BlockLetterDictionary definition." )
+        }
+
+        self.width = width
+        self.height = height
+        self.hSpacing = hSpacing
+        dictionary = Dictionary( uniqueKeysWithValues: zip( letters.map { $0.code }, keys ) )
     }
     
     func makeString( screen: [[Bool]] ) -> String {
@@ -61,12 +67,12 @@ struct BlockLetterDictionary {
         var letters = Array( repeating: 0, count: letterCount )
         
         for line in screen {
-            for letter in 0 ..< letterCount {
-                let start = letter * ( width + hSpacing )
+            for index in 0 ..< letterCount {
+                let start = index * ( width + hSpacing )
                 let stop = start + width
                 
                 for pixel in line[ start ..< stop ] {
-                    letters[letter] = ( letters[letter] << 1 ) | ( pixel ? 1 : 0 )
+                    letters[index] = ( letters[index] << 1 ) | ( pixel ? 1 : 0 )
                 }
             }
         }
