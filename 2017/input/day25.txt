@@ -1,5 +1,6 @@
 5593
 None
+--------------------
 Begin in state A.
 Perform a diagnostic checksum after 12134527 steps.
 

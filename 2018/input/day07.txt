@@ -1,5 +1,6 @@
 CHILFNMORYKGAQXUVBZPSJWDET
 891
+--------------------
 Step Y must be finished before step J can begin.
 Step C must be finished before step L can begin.
 Step L must be finished before step X can begin.
