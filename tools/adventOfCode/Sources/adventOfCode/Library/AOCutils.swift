@@ -73,6 +73,31 @@ func findDirectory( name: String ) throws -> String {
 }
 
 
+func formatElapsed( startTime: CFAbsoluteTime ) -> String {
+    let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
+    
+    if timeElapsed < 1 {
+        return String( Int( timeElapsed * 1000 ) ) + "ms"
+    }
+    
+    let seconds = String( Int( timeElapsed ) ) + "s"
+    let milliSeconds = String( Int( 1000 * ( timeElapsed - CFAbsoluteTime( Int( timeElapsed ) ) ) ) ) + "ms"
+    
+    return seconds + milliSeconds
+}
+
+
+// MARK: - functions for getting puzzle and test input.
+
+func getAOCinput() throws -> AOCinput {
+    let inputDirectory = try findDirectory( name: "input" )
+    let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
+    let filename = "\(inputDirectory)/\(project).txt"
+    
+    return try AOCinput( filename: filename )
+}
+
+
 func getTests() throws -> [AOCinput] {
     let inputDirectory = try findDirectory( name: "testfiles" )
     let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
@@ -81,6 +106,85 @@ func getTests() throws -> [AOCinput] {
     return try glob( pattern: pattern ).map { try AOCinput( filename: $0 ) }
 }
 
+// MARK: - functions for running solutions and tests.
+
+func runPart1( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
+    let input = try getAOCinput()
+    let label = label == "" ? "Part1" : "Part1 \(label)"
+    
+    runSolution( label: label, function: part1, input: input, expected: input.part1 )
+}
+
+
+func runPart2( part2: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
+    let input = try getAOCinput()
+    let label = label == "" ? "Part2" : "Part2 \(label)"
+    
+    runSolution( label: label, function: part2, input: input, expected: input.part2 )
+}
+
+
+func runSolution( label: String, function: ( AOCinput ) -> String, input: AOCinput, expected: String? ) {
+    let startTime = CFAbsoluteTimeGetCurrent()
+    let result = function( input )
+    let timeElapsed = formatElapsed( startTime: startTime )
+    
+    guard let expected = expected else {
+        print( "\(label): \(result), (\(timeElapsed))" )
+        return
+    }
+    
+    if result == expected {
+        print( "\(label): \(result), Correct! (\(timeElapsed))" )
+    } else {
+        print( "\(label): \(result), should be \(expected) (\(timeElapsed))" )
+    }
+}
+
+
+func runTestsPart1( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
+    let tests = try getTests()
+    let label = label == "" ? "Part1" : "Part1 \(label)"
+    var successes = 0
+    
+    for ( index, test ) in tests.enumerated() {
+        if let expected = test.part1 {
+            let result = part1( test )
+            
+            if result == expected {
+                successes += 1
+            } else {
+                print( "Test \(index) \(label): \(result), should be \(expected)" )
+            }
+        }
+    }
+    
+    print( "\(successes) \(label) tests ran successfully" )
+}
+
+
+func runTestsPart2( part2: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
+    let tests = try getTests()
+    let label = label == "" ? "Part2" : "Part2 \(label)"
+    var successes = 0
+    
+    for ( index, test ) in tests.enumerated() {
+        if let expected = test.part2 {
+            let result = part2( test )
+            
+            if result == expected {
+                successes += 1
+            } else {
+                print( "Test \(index) \(label): \(result), should be \(expected)" )
+            }
+        }
+    }
+    
+    print( "\(successes) \(label) tests ran successfully" )
+}
+
+
+// MARK: - deprecated functions for running solutions and tests.
 
 func runTests( part1: ( ( AOCinput ) -> String )?, part2: ( ( AOCinput ) -> String )? ) throws -> Void {
     let tests = try getTests()
@@ -109,47 +213,6 @@ func runTests( part1: ( ( AOCinput ) -> String )?, part2: ( ( AOCinput ) -> Stri
     }
     
     print( "\(successes) tests ran successfully" )
-}
-
-
-func getAOCinput() throws -> AOCinput {
-    let inputDirectory = try findDirectory( name: "input" )
-    let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
-    let filename = "\(inputDirectory)/\(project).txt"
-    
-    return try AOCinput( filename: filename )
-}
-
-
-func formatElapsed( startTime: CFAbsoluteTime ) -> String {
-    let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
-    
-    if timeElapsed < 1 {
-        return String( Int( timeElapsed * 1000 ) ) + "ms"
-    }
-    
-    let seconds = String( Int( timeElapsed ) ) + "s"
-    let milliSeconds = String( Int( 1000 * ( timeElapsed - CFAbsoluteTime( Int( timeElapsed ) ) ) ) ) + "ms"
-    
-    return seconds + milliSeconds
-}
-
-
-func runSolution( label: String, function: ( AOCinput ) -> String, input: AOCinput, expected: String? ) -> Void {
-    let startTime = CFAbsoluteTimeGetCurrent()
-    let result = function( input )
-    let timeElapsed = formatElapsed( startTime: startTime )
-    
-    guard let expected = expected else {
-        print( "\(label): \(result), (\(timeElapsed))" )
-        return
-    }
-    
-    if result == expected {
-        print( "\(label): \(result), Correct! (\(timeElapsed))" )
-    } else {
-        print( "\(label): \(result), should be \(expected) (\(timeElapsed))" )
-    }
 }
 
 
