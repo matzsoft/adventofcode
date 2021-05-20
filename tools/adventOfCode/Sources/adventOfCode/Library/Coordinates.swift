@@ -241,7 +241,7 @@ struct Point3D: Hashable {
     let z: Int
 
     func distance( other: Point3D ) -> Int {
-        return abs( x - other.x ) + abs( y - other.y + abs( z - other.z ) )
+        return abs( x - other.x ) + abs( y - other.y ) + abs( z - other.z )
     }
     
     static func +( left: Point3D, right: Point3D ) -> Point3D {
