@@ -23,24 +23,32 @@ struct RuntimeError: Error {
 
 
 struct AOCinput {
-    let content: [Substring]
+    let header: [String]
+    let lines:  [String]
 
-    var part1: String? { return content[0] != "" ? String( content[0] ) : nil }
-    var part2: String? { return content[1] != "" ? String( content[1] ) : nil }
-    var line: String { return String( content[2] ) }
-    var lines: [String] { return content[2...].map { String( $0 ) } }
+    var part1:  String?  { header[0] != "" ? header[0] : nil }
+    var part2:  String?  { header[1] != "" ? header[1] : nil }
+    var extras: [String] { Array( header[2...] ) }
+    var line:   String   { lines[0] }
     var paragraphs: [[String]] {
-        return content[2...].split( separator: "" ).map { $0.map { String( $0 ) } }
+        lines.split( separator: "", omittingEmptySubsequences: false ).map { $0.map { String( $0 ) } }
     }
     
     init( filename: String ) throws {
         let contents = try String( contentsOfFile: filename )
         
-        if contents.last! == "\n" {
-            content = contents.dropLast().split( separator: "\n", omittingEmptySubsequences: false )
-        } else {
-            content = contents.split( separator: "\n", omittingEmptySubsequences: false )
-        }
+        // The following is to accomodate Visual Studio Code.  It treats the LF character as a line
+        // separator unlike most programs which treat LF as a line terminator.
+        let rawLines = contents.last! == "\n"
+            ? contents.dropLast().components( separatedBy: "\n" )
+            : contents.components( separatedBy: "\n" )
+
+        let parts = rawLines.split( maxSplits: 1 ) { !$0.isEmpty && $0.allSatisfy { $0 == "-" } }
+        
+        guard parts.count == 2 else { throw RuntimeError( "No header seperator in \(filename)." ) }
+        
+        header = Array( parts[0] )
+        lines = Array( parts[1] )
     }
 }
 
