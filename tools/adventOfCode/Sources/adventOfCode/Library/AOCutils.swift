@@ -74,9 +74,9 @@ func findDirectory( name: String ) throws -> String {
 
 
 func getTests() throws -> [AOCinput] {
-    let inputDirectory = try findDirectory( name: "input" )
+    let inputDirectory = try findDirectory( name: "testfiles" )
     let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
-    let pattern = "\(inputDirectory)/\(project)T*.txt"
+    let pattern = "\(inputDirectory)/\(project)*.txt"
     
     return try glob( pattern: pattern ).map { try AOCinput( filename: $0 ) }
 }
