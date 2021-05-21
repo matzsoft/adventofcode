@@ -11,179 +11,117 @@
 import Foundation
 
 class Pots {
-    var pots: [UInt] = []
-    var range = 0
-    var potBase = 0
+    var pots = [Character]()
+    var range = 0 ..< 0
+    
+    var potBase: Int { range.startIndex }
     
     init( initial: String ) {
-        pots = []
-        range = 0
-        potBase = 0
-        initial.reversed().forEach { extendOnRight( value: ( $0 == "#" ) ? 1 : 0 ) }
-        potBase = 0
+        pots = Array( initial )
+        range = 0 ..< initial.count
     }
     
     init( from other: Pots ) {
         pots = other.pots
         range = other.range
-        potBase = other.potBase
     }
     
     func copy( from other: Pots ) {
         pots = other.pots
         range = other.range
-        potBase = other.potBase
     }
-    
+
+    subscript( index: Int ) -> Character {
+        get {
+            guard range.contains( index ) else { return "." }
+            return pots[ index - range.startIndex ]
+        }
+        set( newValue ) {
+            if range.contains( index ) { pots[ index - range.startIndex ] = newValue }
+        }
+    }
+
     func hashKey() -> String {
-        return pots.map( { String( $0 ) } ).joined( separator: "," )
+        return String( pots )
     }
     
-    func extendOnRight( value: UInt ) -> Void {
-        shiftLeft( count: 1 )
-        pots[0] |= value & 1
+    func extendOnRight( count: Int ) -> Void {
+        pots.append( contentsOf: Array( repeating: ".", count: count ) )
+        range = range.startIndex ..< range.endIndex + count
     }
     
     func extendOnLeft( count: Int ) -> Void {
-        if range % UInt.bitWidth == 0 || range % UInt.bitWidth + count > UInt.bitWidth {
-            pots.append( 0 )
-        }
-        range += count
-    }
-    
-    func shiftLeft( count: Int ) -> Void {
-        extendOnLeft( count: count )
-        if pots.count > 1 {
-            for i in ( 1 ..< pots.count ).reversed() {
-                pots[i] = ( pots[i] << count ) | ( pots[i-1] >> ( UInt.bitWidth - count ) )
-            }
-        }
-        pots[0] <<= count
-        potBase -= count
-    }
-    
-    func shiftRight( count: Int ) -> Void {
-        if range % UInt.bitWidth == 0 || range % UInt.bitWidth + count > UInt.bitWidth {
-            pots.append( 0 )
-        }
-        if pots.count > 1 {
-            for i in 0 ..< pots.count - 1 {
-                pots[i] = ( pots[i] >> count ) | ( pots[i+1] << ( UInt.bitWidth - count ) )
-            }
-        }
-        pots[ pots.count - 1 ] >>= count
-        range -= count
-        if range / UInt.bitWidth < pots.count - 1 {
-            pots.removeLast()
-        }
-        potBase += count
+        pots.insert( contentsOf: Array( repeating: ".", count: count ), at: 0 )
+        range = range.startIndex - count ..< range.endIndex
     }
     
     func potIsLive( potNumber: Int ) -> Bool {
-        guard 0 <= potNumber && potNumber < range else { return false }
-        
-        let index = potNumber / UInt.bitWidth
-        let bit = potNumber % UInt.bitWidth
-        
-        return ( pots[index] >> bit ) & 1 == 1
-    }
-    
-    func potSet( potNumber: Int, to: UInt ) -> Void {
-        guard -2 <= potNumber && potNumber < range + 2 else {
-            print( "Pot number \(potNumber) is out of range" )
-            exit( 1 )
-        }
-        
-        let index = potNumber / UInt.bitWidth
-        let bit = potNumber % UInt.bitWidth
-        let mask = UInt( 1 ) << bit
-        let value = ( to & 1 ) << bit
-        
-        pots[index] = pots[index] & ~mask | value
+        return self[potNumber] == "#"
     }
     
     func normalize() -> Void {
-        if let potNumber = ( 0 ..< range ).first( where: { potIsLive( potNumber: $0 ) } ) {
-            shiftRight( count: potNumber )
-        } else {
-            pots = []
-            range = 0
-            potBase = 0
+        guard let newLeft = pots.firstIndex( where: { $0 == "#" } ) else {
+            self.copy( from: Pots( initial: "" ) )
             return
         }
         
-        if let potNumber = ( 0 ..< range ).reversed().first( where: { potIsLive( potNumber: $0 ) } ) {
-            range = potNumber + 1
-        }
+        let newRight = pots.lastIndex( where: { $0 == "#" } )!
+        let newRange = newLeft + range.startIndex ..< newRight + range.startIndex + 1
+        
+        pots.removeFirst( newRange.startIndex - range.startIndex )
+        pots.removeLast( range.endIndex - newRange.endIndex )
+        range = newRange
     }
     
-    func region( potNumber: Int ) -> UInt {
-        var region: UInt = 0
-        
-        for pot in ( potNumber - 2 ... potNumber + 2 ).reversed() {
-            region <<= 1
-            region |= potIsLive( potNumber: pot ) ? 1 : 0
-        }
-        
-        return region
+    func region( potNumber: Int ) -> String {
+        return String( ( potNumber - 2 ... potNumber + 2 ).map { self[$0] } )
     }
     
     func sumLive() -> Int {
-        let live = ( 0 ..< range ).filter { potIsLive( potNumber: $0 ) }
-        
-        return live.reduce( 0, { $0 + $1 + potBase } )
+        return range.filter { potIsLive( potNumber: $0 ) }.reduce( 0, + )
     }
     
     func printGeneration( generation: Int ) -> Void {
-        var representation = ( -5 ..< range + 5 ).map { potIsLive( potNumber: $0 ) ? "#" : "." }.joined()
-        
-        if potBase < 0 {
-            representation.removeFirst( -potBase )
-        } else if potBase > 0 {
-            representation = String( repeating: ".", count: potBase ) + representation
-        }
+        let representation = range.map { potIsLive( potNumber: $0 ) ? "#" : "." }.joined()
+
+        print("    \(range.startIndex) - \(range.endIndex - 1)")
         print( String( format: "%2d: \(representation)", arguments: [generation] ) )
     }
 }
 
 
-func generations( pots: Pots, rules: Set<UInt>, count: Int ) -> Int {
+func generations( pots: Pots, rules: Set<String>, count: Int ) -> Int {
     var seen = [ pots.hashKey() : ( generation: 0, potBase: pots.potBase ) ]
     
     for generation in 1 ... count {
-        let nextGeneration = Pots( from: pots )
+        pots.extendOnLeft( count: 2 )
+        pots.extendOnRight( count: 2 )
         
-        // Process existing range and extend range to the right
-        nextGeneration.extendOnLeft( count: 2 )
-        for potNumber in 0 ..< pots.range + 2 {
+        let nextGeneration = Pots( from: pots )
+
+        for potNumber in pots.range {
             let region = pots.region( potNumber: potNumber )
             
-            nextGeneration.potSet( potNumber: potNumber, to: rules.contains( region ) ? 1 : 0 )
+            nextGeneration[potNumber] = rules.contains( region ) ? "#" : "."
         }
-        
-        // Extend range to the left
-        let regionLeft1 = pots.region( potNumber: -1 )
-        let regionLeft2 = pots.region( potNumber: -2 )
-        
-        nextGeneration.extendOnRight( value: rules.contains( regionLeft1 ) ? 1 : 0 )
-        nextGeneration.extendOnRight( value: rules.contains( regionLeft2 ) ? 1 : 0 )
-
         nextGeneration.normalize()
+        
         pots.copy( from: nextGeneration )
         // if generation > 152 { pots.printGeneration( generation: generation ) }
-        
+
         if let last = seen[ pots.hashKey() ] {
             let cycle = generation - last.generation
             let deltaPotBase = pots.potBase - last.potBase
             let generationsRemaing = count - generation
             let cycles = generationsRemaing / cycle
             let residual = generationsRemaing % cycle
+            let delta = cycles * deltaPotBase
             
             if residual != 0 {
                 print( "Can't handle partial cycles!" )
                 exit( 1 )
             }
-            pots.potBase += cycles * deltaPotBase
+            pots.range = pots.range.startIndex + delta ..< pots.range.endIndex + delta
             break
             
         } else {
@@ -195,22 +133,16 @@ func generations( pots: Pots, rules: Set<UInt>, count: Int ) -> Int {
 }
 
 
-func parse( input: AOCinput ) -> ( pots: Pots, rules: Set<UInt> ) {
+func parse( input: AOCinput ) -> ( pots: Pots, rules: Set<String> ) {
     let words = input.lines[0].components( separatedBy: " " )
     let pots = Pots( initial: words[2] )
-    var rules = Set<UInt>()
+    var rules = Set<String>()
 
     for line in input.lines[2...] {
-        let words = line.split( separator: " " )
+        let words = line.components( separatedBy: " " )
         
         if words[2] == "#" {
-            var pattern: UInt = 0
-
-            for pot in words[0].reversed() {
-                pattern <<= 1
-                if pot == "#" { pattern |= 1 }
-            }
-            rules.insert( pattern )
+            rules.insert( words[0] )
         }
     }
     
