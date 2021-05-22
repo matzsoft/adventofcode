@@ -7,11 +7,24 @@
 
 import Foundation
 
-protocol Direction2D {
-    var vector: Point2D { get }
-}
+protocol Direction2D { var vector: Point2D { get } }
+protocol Turn2D { var rawValue: Int { get } }
 
-enum Turn: Int { case right = 1, left = -1, back = 2 }
+enum Turn: Int, Turn2D { case right = 1, left = -1, back = 2 }
+enum TurnLSR: Int, CaseIterable, Turn2D {
+    case left = -1, straight = 0, right = 1
+    
+    var next: TurnLSR {
+        switch self {
+        case .left:
+            return .straight
+        case .straight:
+            return .right
+        case .right:
+            return .left
+        }
+    }
+}
 
 /// Important Notice - this enum implements a coordinate system normally used in mathematics.
 /// Positive Y is north and positive X is east.
@@ -31,7 +44,7 @@ enum Direction4: Int, CaseIterable, Direction2D {
         }
     }
     
-    func turn( direction: Turn ) -> Direction4 {
+    func turn( direction: Turn2D ) -> Direction4 {
         let newValue = self.rawValue + direction.rawValue + Direction4.allCases.count
         return Direction4( rawValue: newValue % Direction4.allCases.count )!
     }
@@ -55,9 +68,9 @@ enum DirectionUDLR: String, CaseIterable, Direction2D {
         }
     }
     
-    func turn( _ turn: Turn ) -> DirectionUDLR {
-        switch turn {
-        case .left:
+    func turn( _ turn: Turn2D ) -> DirectionUDLR {
+        switch turn.rawValue {
+        case -1:                            // left
             switch self {
             case .up:
                 return .left
@@ -68,7 +81,7 @@ enum DirectionUDLR: String, CaseIterable, Direction2D {
             case .left:
                 return .down
             }
-        case .right:
+        case 1:                             // right
             switch self {
             case .up:
                 return .right
@@ -79,7 +92,7 @@ enum DirectionUDLR: String, CaseIterable, Direction2D {
             case .left:
                 return .up
             }
-        case .back:
+        case 2:                             // back
             switch self {
             case .up:
                 return .down
@@ -90,6 +103,10 @@ enum DirectionUDLR: String, CaseIterable, Direction2D {
             case .left:
                 return .right
             }
+        case 0:                             // straight
+            fallthrough
+        default:
+            return self
         }
     }
 }
