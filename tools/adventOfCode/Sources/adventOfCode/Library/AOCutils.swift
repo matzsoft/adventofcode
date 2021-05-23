@@ -25,6 +25,7 @@ struct RuntimeError: Error {
 struct AOCinput {
     let header: [String]
     let lines:  [String]
+    let filename: String
 
     var part1:  String?  { header[0] != "" ? header[0] : nil }
     var part2:  String?  { header[1] != "" ? header[1] : nil }
@@ -49,6 +50,7 @@ struct AOCinput {
         
         header = Array( parts[0] )
         lines = Array( parts[1] )
+        self.filename = URL( fileURLWithPath: filename ).deletingPathExtension().lastPathComponent
     }
 }
 
@@ -147,14 +149,14 @@ func runTestsPart1( part1: ( ( AOCinput ) -> String ), label: String = "" ) thro
     let label = label == "" ? "Part1" : "Part1 \(label)"
     var successes = 0
     
-    for ( index, test ) in tests.enumerated() {
+    for test in tests {
         if let expected = test.part1 {
             let result = part1( test )
             
             if result == expected {
                 successes += 1
             } else {
-                print( "Test \(index) \(label): \(result), should be \(expected)" )
+                print( "Test \(test.filename) \(label): \(result), should be \(expected)" )
             }
         }
     }
@@ -168,14 +170,14 @@ func runTestsPart2( part2: ( ( AOCinput ) -> String ), label: String = "" ) thro
     let label = label == "" ? "Part2" : "Part2 \(label)"
     var successes = 0
     
-    for ( index, test ) in tests.enumerated() {
+    for test in tests {
         if let expected = test.part2 {
             let result = part2( test )
             
             if result == expected {
                 successes += 1
             } else {
-                print( "Test \(index) \(label): \(result), should be \(expected)" )
+                print( "Test \(test.filename) \(label): \(result), should be \(expected)" )
             }
         }
     }
