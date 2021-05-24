@@ -145,7 +145,7 @@ func runSolution( label: String, function: ( AOCinput ) -> String, input: AOCinp
 
 
 func runTestsPart1( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
-    let tests = try getTests()
+    let tests = try getTests().filter { $0.part1 != nil }
     let label = label == "" ? "Part1" : "Part1 \(label)"
     var successes = 0
     
@@ -161,12 +161,12 @@ func runTestsPart1( part1: ( ( AOCinput ) -> String ), label: String = "" ) thro
         }
     }
     
-    print( "\(successes) \(label) tests ran successfully" )
+    print( "\(successes) of \(tests.count) \(label) tests ran successfully" )
 }
 
 
 func runTestsPart2( part2: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
-    let tests = try getTests()
+    let tests = try getTests().filter { $0.part2 != nil }
     let label = label == "" ? "Part2" : "Part2 \(label)"
     var successes = 0
     
@@ -182,7 +182,7 @@ func runTestsPart2( part2: ( ( AOCinput ) -> String ), label: String = "" ) thro
         }
     }
     
-    print( "\(successes) \(label) tests ran successfully" )
+    print( "\(successes) of \(tests.count) \(label) tests ran successfully" )
 }
 
 
