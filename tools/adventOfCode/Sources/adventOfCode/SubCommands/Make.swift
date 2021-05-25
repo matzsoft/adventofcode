@@ -26,10 +26,15 @@ extension adventOfCode {
             let fileManager = FileManager.default
             let swiftFile = "\(package).swift"
             let inputFolder = "input"
+            let testsFolder = "testfiles"
             let inputFile = "\(inputFolder)/\(package).txt"
             
             if !fileManager.fileExists( atPath: inputFolder ) {
                 try fileManager.createDirectory( atPath: inputFolder, withIntermediateDirectories: false, attributes: nil )
+            }
+            
+            if !fileManager.fileExists( atPath: testsFolder ) {
+                try fileManager.createDirectory( atPath: testsFolder, withIntermediateDirectories: false, attributes: nil )
             }
             
             if fileManager.fileExists( atPath: inputFile ) {
@@ -45,6 +50,14 @@ extension adventOfCode {
                 try fileManager.moveItem( atPath: swiftFile, toPath: oldFile )
             }
 
+            let swiftFileSource = try createSwiftSource( swiftFile: swiftFile )
+
+            try createInput( inputFile: inputFile )
+            try swiftFileSource.write( toFile: swiftFile, atomically: true, encoding: .utf8 )
+            try performOpen( swiftFile: swiftFile )
+        }
+
+        func createSwiftSource( swiftFile: String ) throws -> String {
             let title = getString( prompt: "Enter puzzle title", preferred: nil )
             let bundleURL = Bundle.module.url( forResource: "mainswift", withExtension: "mustache" )
             guard let templateURL = bundleURL else {
@@ -64,41 +77,68 @@ extension adventOfCode {
                 "date": dateFormatterFull.string( from: Date() ),
                 "year": dateFormatterYear.string( from: Date() )
             ]
-            let rendering = try template.render( templateData )
+            
+            return try template.render( templateData )
+        }
 
-            try createInput( path: inputFile )
-            try rendering.write( toFile: swiftFile, atomically: true, encoding: .utf8 )
-            try performOpen( swiftFile: swiftFile )
+        func createInput( inputFile: String ) throws -> Void {
+            let fileManager = FileManager.default
+            let part1 = getString( prompt: "Enter part1 solution", preferred: "" )
+            let part2 = getString( prompt: "Enter part2 solution", preferred: "" )
+            var extras = [String]()
+            
+            print( "Enter extra header lines -" )
+            while let line = readLine( strippingNewline: true ) {
+                if line == "" { break }
+                extras.append( line )
+            }
+            
+            var inputLines = [ part1, part2 ] + extras + [ "--------------------" ]
+            
+            if try fileManager.fileExists( atPath: inputFile ) || getDataCurl( inputFile: inputFile ) {
+                inputLines.append(
+                    contentsOf: try String( contentsOfFile: inputFile ).components( separatedBy: "\n" ) )
+            } else {
+                print( "Enter the input data -" )
+                while let line = readLine( strippingNewline: true ) {
+                    inputLines.append( line )
+                }
+            }
+            
+            let inputText = inputLines.joined( separator: "\n" )
+            try inputText.write( toFile: inputFile, atomically: true, encoding: .utf8 )
+        }
+
+        func getDataCurl( inputFile: String ) throws -> Bool {
+            let fileManager = FileManager.default
+            let year = URL( fileURLWithPath: fileManager.currentDirectoryPath ).lastPathComponent
+            let sessionFile = ".session"
+            
+            guard package.hasPrefix( "day" ) else {
+                print( "Can't get day number from '\(package)'" )
+                return false
+            }
+            
+            guard fileManager.fileExists(atPath: sessionFile ) else {
+                print( "\(sessionFile) doesn't exist." )
+                return false
+            }
+            
+            let day = package.dropFirst( 3 )
+            let session = try String( contentsOfFile: ".session" )
+                .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
+            let status = shell(
+                "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", inputFile, "https://adventofcode.com/\(year)/day/\(day)/input"
+                )
+            
+            guard status == 0 else {
+                print( "Can't retrieve data from adventofcode.com." )
+                return false
+            }
+            
+            return true
         }
     }
-}
-
-
-func createInput( path: String ) throws -> Void {
-    let fileManager = FileManager.default
-    let part1 = getString( prompt: "Enter part1 solution", preferred: "" )
-    let part2 = getString( prompt: "Enter part2 solution", preferred: "" )
-    var extras = [String]()
-    
-    print( "Enter extra header lines -" )
-    while let line = readLine( strippingNewline: true ) {
-        if line == "" { break }
-        extras.append( line )
-    }
-    
-    var inputLines = [ part1, part2 ] + extras + [ "--------------------" ]
-    
-    if fileManager.fileExists( atPath: path ) {
-        inputLines.append( contentsOf: try String( contentsOfFile: path ).components( separatedBy: "\n" ) )
-    } else {
-        print( "Enter the input data -" )
-        while let line = readLine( strippingNewline: true ) {
-            inputLines.append( line )
-        }
-    }
-    
-    let inputText = inputLines.joined( separator: "\n" )
-    try inputText.write( toFile: path, atomically: true, encoding: .utf8 )
 }
 
 
