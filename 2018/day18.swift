@@ -1,111 +1,54 @@
 //
-//  main.swift
-//  day18
-//
-//  Created by Mark Johnson on 12/18/18.
-//  Copyright © 2018 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day18 - Settlers of The North Pole
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 05/27/21 10:45:28
 //
 
 import Foundation
 
-let test1 = """
-.#.#...|#.
-.....#|##|
-.|..|...#.
-..|#.....#
-#.#|||#|#|
-...#.||...
-.|....|...
-||...#|.#|
-|.||||..|.
-...#.|..|.
-"""
-let input = """
-....||.#|..|...|.#..#...|.|.....|.....##|.....||..
-....#.|..|.....#|....|#|##|...#........|...#.#|.#.
-.#||....|...#####..|.|.#..|..|.|..#.|#....#..||#..
-.....|....|..|....#....#..#...||....|.....#.|#..|#
-.|.#||##.|..#....|#.|..|||#..##.|.#.|..##..|...|.|
-.|.|...|...|#.|.....#...#|.#.....#..|#........###.
-......|#|..#....|.#.#|....||#|.|#.....#|..#.#||...
-.|.......##|..|..#|....|.|.|....#..|#|#.#...#.||##
-##|..#.#..#||.###.|......|#.|....#...#.|...#....#|
-..|###|#....#.|.#|#|.....|..|.||#|.|#.||...|##...#
-...#....|.||||.|.|.##...#..|.||.|....#|#|#.|..|||.
-|#....#...##..#||..|..#|.......|#|....|.|.|..|##..
-|#....|.|..|..|..#.#......|..|.|..|||.#||...#.#.||
-...|.|.....#.##|....|..#.|.....||..##..#..|||.....
-.###.#.|.|||#.#.|.|.|...#..###..#|.........|.....#
-|..#..|#..#........#.#.###.#...|.|.....|.||.|.|.||
-|##.|..#..#...#|.........#|...#||.|..#|#.|.|..||..
-....||.|....#.....|......#.|.|#.#.......|.|...#...
-|.#.#|..#|#..#.#......#||.#..|||.#.#..#.||.####.#.
-|.||.|.|.|#|.#.#|.#.|||..|........|..#..|.......|.
-##..|.#..||............|||..#....|.....###|#...|#.
-#|.|..#.|.|......|#|#.||.|....#...#....|...|...|..
-#.#.#...##...#....|#|#||.#|#...|#||#|....|..|...||
-.|.#.|.|...###.|..##..||#..|.....||.|.|....##..#|#
-..#|#|..##...##|..|||||.|....|.#..|...|...#.#|||..
-..|.|....#.##.##|..|#..|...||...|..||##..##...#.##
-..#|###..##....##|.||.|.|.||#...|.#.#|#.##||.|..|.
-...|#...|#..#.....#|.....##..##.......#...##.|...#
-.|..#.##|....#.#.#...|...##........|##|..#.|...|..
-......|#....#.........#.|.....||...#|.|...#.|#....
-..|.#..###||...#|###...|.|...|.|....#...#..|.|.#.|
-.#|....||#.#|..#.#|..##.........|#.|.....#....|||.
-....#.#....#|.|#.#.#.|#............|.#.#....|#...|
-..|#....#|...#.#..#.#.#||..#.#..|......##.#.||....
-..|#....|#..|.#..#....#.|#.||.....#..#.#|.#...|..#
-.#........|||.......|....|||.#|#..#.#|#........||.
-#..|.....#...#..#.|#....##...##.##...#||.........|
-..|.##.|..|...|..#|#.|.........||...##......###.|.
-.|..|...#....||..#....#||#...#.#......##......#|.#
-.|..#......#.|.#.##.|..|...#.|##..|||...|.......#.
-...#..#..|#.|.....#||.|....#...|##|##.....|.#..|..
-#.....#...#...##.|....|......##...|...#.#.#.|.....
-....#..|.|.|###|.##.|.#|.|.||.|#..|#..#...|.##.#..
-..|.|.#.|#.#...##.#||#...#..||.#.|#..|###....|#...
-|.|..........|.#......#..#|.#...#.....#.#.#|.###.|
-#..#|||....#..|....##|...|.#.|##||.|..|.#|.|...|#|
-.|###..#.....|.#.||.#..|#...#.#|.#|.|.##|....#|#..
-.|...#...##......|..#.|#|.#.##......#.|......|...|
-#.#..|#.#...#.|#|....#|##..#....##|..#.|..|#...|..
-.#.#..|.#..#........##.|#..|##||......|..#...#....
-"""
+enum Acre: String { case open = ".", trees = "|", lumberyard = "#" }
 
-enum Acre: String {
-    case open = ".", trees = "|", lumberyard = "#"
-}
-
-class Area {
+struct Area: Hashable {
     var map: [[Acre]]
     
-    init( input: String ) {
-        let lines = input.split(separator: "\n")
-        
-        map = []
-        for line in lines {
-            var row: [Acre] = []
-            
-            for char in line {
-                switch char {
-                case ".":
-                    row.append(.open)
-                case "|":
-                    row.append(.trees)
-                case "#":
-                    row.append(.lumberyard)
-                default:
-                    print( "Invalid input '\(char)'" )
-                    exit(1)
-                }
+    init( lines: [String] ) {
+        map = lines.map { $0.map {
+            switch $0 {
+            case ".":
+                return .open
+            case "|":
+                return .trees
+            case "#":
+                return .lumberyard
+            default:
+                print( "Invalid input '\($0)'" )
+                exit( 1 )
             }
-            map.append(row)
-        }
+        } }
     }
     
-    init( old: Area ) {
-        map = old.map
+    init( map: [[Acre]] ) {
+        self.map = map
+    }
+    
+    func count( of type: Acre ) -> Int {
+        return map.reduce( 0 ) { $0 + $1.reduce( 0, { if case type = $1 { return $0 + 1 }; return $0 } ) }
+    }
+    
+    func count( adjacent type: Acre, row: Int, col: Int ) -> Int {
+        var count = 0
+
+        for row in max( row - 1, 0 ) ..< min( row + 2, map.count ) {
+            for col in max( col - 1, 0 ) ..< min( col + 2, map[row].count ) {
+                if type == map[row][col] { count += 1 }
+            }
+        }
+
+        return count
     }
     
     func printMap() -> Void {
@@ -113,102 +56,64 @@ class Area {
         print()
     }
     
-    func countAdjacentTrees( row: Int, col: Int ) -> Int {
-        var count = 0
-        
-        for row in max( row - 1, 0 ) ..< min( row + 2, map.count ) {
-            for col in max( col - 1, 0 ) ..< min( col + 2, map[row].count ) {
-                if case .trees = map[row][col] { count += 1 }
-            }
-        }
-        
-        return count
-    }
-    
-    func countAdjacentLumberyards( row: Int, col: Int ) -> Int {
-        var count = 0
-        
-        for row in max( row - 1, 0 ) ..< min( row + 2, map.count ) {
-            for col in max( col - 1, 0 ) ..< min( col + 2, map[row].count ) {
-                if case .lumberyard = map[row][col] { count += 1 }
-            }
-        }
-        
-        return count
-    }
-    
-    func transition() -> Void {
-        let new = Area(old: self)
-        
-        for row in 0 ..< map.count {
-            for col in 0 ..< map[row].count {
+    var transition: Area {
+        let new = ( 0 ..< map.count ).map { row in
+            ( 0 ..< map[row].count ).map { col -> Acre in
                 switch map[row][col] {
                 case .open:
-                    if countAdjacentTrees( row: row, col: col ) >= 3 {
-                        new.map[row][col] = .trees
-                    }
+                    return count( adjacent: .trees, row: row, col: col ) >= 3 ? .trees : map[row][col]
                 case .trees:
-                    if countAdjacentLumberyards( row: row, col: col ) >= 3 {
-                        new.map[row][col] = .lumberyard
-                    }
+                    return count( adjacent: .lumberyard, row: row, col: col ) >= 3 ? .lumberyard : map[row][col]
                 case .lumberyard:
-                    let lumberyards = countAdjacentLumberyards( row: row, col: col )
-                    let trees = countAdjacentTrees( row: row, col: col )
+                    let lumberyards = count( adjacent: .lumberyard, row: row, col: col )
+                    let trees = count( adjacent: .trees, row: row, col: col )
                     
-                    if lumberyards == 1 || trees == 0 {
-                        new.map[row][col] = .open
-                    }
+                    return lumberyards == 1 || trees == 0 ? .open : map[row][col]
                 }
             }
         }
         
-        map = new.map
+        return Area( map: new )
+    }
+}
+
+
+func part1( input: AOCinput ) -> String {
+    var area = Area( lines: input.lines )
+    
+    for _ in 1 ... 10 { area = area.transition }
+    return "\(area.count( of: .trees ) * area.count( of: .lumberyard ))"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let limit = 1000000000
+    var area = Area( lines: input.lines )
+    var history = [ Area : Int ]()
+    var minute = 0
+    
+    while minute < limit {
+        minute += 1
+        area = area.transition
+        
+        if let firstMinute = history.updateValue( minute, forKey: area ) {
+            let remaining = limit - minute
+            let offset = remaining % ( minute - firstMinute )
+            
+            if let final = history.first(where: { $1 == firstMinute + offset } ) {
+                area = final.key
+                break
+            }
+            print( "Unexpected error" )
+            break
+        }
     }
     
-    func countTrees() -> Int {
-        return map.reduce( 0, { $0 + $1.reduce( 0, { if case .trees = $1 { return $0 + 1 }; return $0 } ) } )
-    }
-    
-    func countLumberyards() -> Int {
-        return map.reduce( 0, { $0 + $1.reduce( 0, {
-            if case .lumberyard = $1 { return $0 + 1 }; return $0
-        } ) } )
-    }
+    return "\(area.count( of: .trees ) * area.count( of: .lumberyard ))"
 }
 
 
-let part1 = 10
-let part2 = 1000000000
-let area = Area(input: input)
-
-area.printMap()
-for _ in 1 ... part1 {
-    area.transition()
-}
-area.printMap()
-print( "Part1:", area.countTrees() * area.countLumberyards() )
-
-
-let maxCycle = 100
-var history:[Area] = []
-
-for minute in ( part1 + 1 ) ... part2 {
-    area.transition()
-    if let index = history.lastIndex( where: { $0.map == area.map } ) {
-        print( "Found cycle at minute", minute )
-        print( "Index is \(index), cycle length is \(history.count-index)" )
-        
-        let remaining = part2 - minute
-        let offset = remaining % ( history.count - index )
-        
-        area.map = history[ index + offset ].map
-        break
-    }
-    if history.count == maxCycle {
-        history.removeFirst()
-    }
-    history.append(Area(old: area))
-}
-
-area.printMap()
-print( "Part2:", area.countTrees() * area.countLumberyards() )
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
