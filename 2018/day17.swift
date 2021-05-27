@@ -31,6 +31,7 @@ class Map {
 
     var map: [[Cell]]
     let bounds: Rect2D
+    var filled = Set<Point2D>()
 
     init( lines: [String] ) {
         let descriptions = lines.map { Description( line: $0 ) }
@@ -110,6 +111,7 @@ class Map {
     }
     
     func fill( position: Point2D ) -> Void {
+        guard filled.insert( position ).inserted else { return }
         var position = position
         
         while position.y < bounds.max.y {
