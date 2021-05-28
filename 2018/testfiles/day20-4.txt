@@ -1,0 +1,4 @@
+23
+
+--------------------
+^ESSWWN(E|NNENN(EESS(WNSE|)SSS|WWWSSSSE(SW|NNNE)))$
