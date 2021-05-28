@@ -26,6 +26,41 @@ class Sample {
     }
 }
 
+extension WristDevice {
+    func findMatches( sample: Sample ) -> Set<String> {
+        Set( opcodes.filter { mnemonic, action in
+            registers = sample.before
+            action( sample.instruction.a, sample.instruction.b, sample.instruction.c )
+            return registers == sample.after
+        }.map { $0.key } )
+    }
+    
+    func createOpcodeDictionary( samples: [Sample] ) -> [ Int : String ] {
+        var opcodeDictionary = [ Int : String ]()
+        var working = samples.reduce( into: [ Int: Set<String> ]() ) { dict, sample in
+            let matching = findMatches( sample: sample )
+            if let existing = dict[ sample.instruction.opcode ] {
+                dict[ sample.instruction.opcode ] = existing.intersection( matching )
+            } else {
+                dict[ sample.instruction.opcode ] = matching
+            }
+        }
+        
+        while working.reduce( 0, { $0 + $1.value.count } ) > 0 {
+            let singles = working.filter { $0.value.count == 1 }
+            
+            for single in singles {
+                let mnemonic = single.value.first!
+                
+                opcodeDictionary[single.key] = mnemonic
+                working = working.mapValues { $0.subtracting( [ mnemonic ] ) }
+            }
+        }
+
+        return opcodeDictionary
+    }    
+}
+
 
 func parse( input: AOCinput ) -> ( [Sample], WristDevice ) {
     let samples = input.paragraphs[ ...( input.paragraphs.count-4 ) ].map { Sample( lines: $0 ) }
