@@ -99,6 +99,11 @@ class WristDevice {
             uniqueKeysWithValues: mnemonicActions.keys.enumerated().map { ( $0.offset, $0.element ) } )
     }
     
+    func reset() -> Void {
+        registers = initialRegisters
+        ip = 0
+    }
+    
     func setBreakpoint( address: Int, action: @escaping () -> Bool ) -> Void {
         breakpoint = address
         self.action = action
@@ -117,7 +122,7 @@ class WristDevice {
         
         if cycleTracing || ipTracing {
             let description = memory[ip].description( opcodeMnemonics: opcodeMnemonics )
-            initial = String( format: "ip=%02d \(registers) \(description)", ip )
+            initial = String( format: "ip=%03d \(registers) \(description)", ip )
         }
 
         if let ipBound = ipBound { registers[ipBound] = ip }
@@ -129,11 +134,6 @@ class WristDevice {
         if cycleTracing || ipTracing {
             print( initial, registers )
         }
-    }
-    
-    func run( opcodeDictionary: [ Int : String ] ) -> Void {
-        registers = initialRegisters
-        memory.forEach { mnemonicActions[ opcodeDictionary[ $0.opcode ]! ]!( $0.a, $0.b, $0.c ) }
     }
     
     func run() -> Void {
@@ -149,7 +149,7 @@ class WristDevice {
     var dump: String {
         return ( ipBound == nil ? "" : "#ip \(ipBound!)\n" ) + ( 0 ..< memory.count ).map { addr in
             let description = memory[addr].description( opcodeMnemonics: opcodeMnemonics )
-            return String( format: "%02d \(registers) \(description)", addr )
+            return String( format: "%03d \(registers) \(description)", addr )
         }.joined( separator: "\n" )
     }
 }
