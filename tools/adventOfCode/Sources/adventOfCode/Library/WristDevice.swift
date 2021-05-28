@@ -8,39 +8,72 @@
 import Foundation
 
 class WristDevice {
-    class Opcode {
-        let mnemonic: String
-        let action: ( Int, Int, Int ) -> Void
-        
-        init( mnemonic: String, action: @escaping ( Int, Int, Int ) -> Void ) {
-            self.mnemonic = mnemonic
-            self.action = action
-        }
-    }
-
     class Instruction {
         let opcode: Int
         let a: Int
         let b: Int
         let c: Int
         
-        init( input: String ) {
-            let instruction = input.split(separator: " ")
+        init( machineCode: String ) {
+            let instruction = machineCode.split(separator: " ")
             
             opcode = Int( instruction[0] )!
             a = Int( instruction[1] )!
             b = Int( instruction[2] )!
             c = Int( instruction[3] )!
         }
+        
+        init( assembly: String, mnemonicOpcodes: [ String: Int ] ) {
+            let instruction = assembly.split(separator: " ")
+            
+            opcode = mnemonicOpcodes[ String( instruction[0] ) ]!
+            a = Int( instruction[1] )!
+            b = Int( instruction[2] )!
+            c = Int( instruction[3] )!
+        }
+        
+        func description( opcodeMnemonics: [ Int : String ] ) -> String {
+            return "\(opcodeMnemonics[opcode]!) \(a) \(b) \(c)"
+        }
     }
 
-    var registers = [ 0, 0, 0, 0 ]
-    let memory: [Instruction]
-    var opcodes = [ String: ( Int, Int, Int ) -> Void ]()
+    let initialRegisters: [Int]
+    var registers: [Int]
+    var ip = 0
+    var ipBound: Int?
+    var cycleNumber = 0
+    var memory = [Instruction]()
     
-    init( instructions: [String] ) {
-        memory = instructions.map { Instruction( input: $0 ) }
-        opcodes = [
+    var mnemonicActions = [ String : ( Int, Int, Int ) -> Void ]()
+    var opcodeActions   = [ Int : ( Int, Int, Int ) -> Void ]()
+    var mnemonicOpcodes = [ String : Int ]()
+    var opcodeMnemonics = [ Int : String ]()
+
+    var breakpoint: Int?
+    var action:     () -> Bool = { return true }
+    
+    var cycleTraceStart = Int.max
+    var cycleTraceStop  = Int.max
+    var ipTraceStart    = Int.max
+    var ipTraceStop     = Int.max
+
+    init( machineCode: [String] ) {
+        initialRegisters = [ 0, 0, 0, 0 ]
+        registers = initialRegisters
+        memory = machineCode.map { Instruction( machineCode: $0 ) }
+        setupOpcodes()
+    }
+    
+    init( assembly: [String] ) {
+        initialRegisters = [ 0, 0, 0, 0, 0, 0 ]
+        registers = initialRegisters
+        ipBound = Int( assembly[0].split( separator: " " )[1] )!
+        setupOpcodes()
+        memory = assembly[1...].map { Instruction( assembly: $0, mnemonicOpcodes: mnemonicOpcodes ) }
+    }
+    
+    func setupOpcodes() -> Void {
+        mnemonicActions = [
             "addr" : { self.registers[$2] = self.registers[$0] + self.registers[$1] },
             "addi" : { self.registers[$2] = self.registers[$0] + $1 },
             "mulr" : { self.registers[$2] = self.registers[$0] * self.registers[$1] },
@@ -58,10 +91,65 @@ class WristDevice {
             "eqri" : { self.registers[$2] = self.registers[$0] == $1 ? 1 : 0 },
             "eqrr" : { self.registers[$2] = self.registers[$0] == self.registers[$1] ? 1 : 0 },
         ]
+        opcodeActions = Dictionary(
+            uniqueKeysWithValues: mnemonicActions.values.enumerated().map { ( $0.offset, $0.element ) } )
+        mnemonicOpcodes = Dictionary(
+            uniqueKeysWithValues: mnemonicActions.keys.enumerated().map { ( $0.element, $0.offset ) } )
+        opcodeMnemonics = Dictionary(
+            uniqueKeysWithValues: mnemonicActions.keys.enumerated().map { ( $0.offset, $0.element ) } )
+    }
+    
+    func setBreakpoint( address: Int, action: @escaping () -> Bool ) -> Void {
+        breakpoint = address
+        self.action = action
+    }
+    
+    func setIpTrace( start: Int, stop: Int ) -> Void {
+        ipTraceStart = start
+        ipTraceStop = stop
+    }
+    
+    func cycle() -> Void {
+        let instruction = memory[ip]
+        let cycleTracing = cycleTraceStart <= cycleNumber && cycleNumber <= cycleTraceStop
+        let ipTracing = ipTraceStart <= ip && ip <= ipTraceStop
+        var initial: String = ""
+        
+        if cycleTracing || ipTracing {
+            let description = memory[ip].description( opcodeMnemonics: opcodeMnemonics )
+            initial = String( format: "ip=%02d \(registers) \(description)", ip )
+        }
+
+        if let ipBound = ipBound { registers[ipBound] = ip }
+        opcodeActions[instruction.opcode]!( instruction.a, instruction.b, instruction.c )
+        if let ipBound = ipBound { ip = registers[ipBound] }
+        ip += 1
+        cycleNumber += 1
+
+        if cycleTracing || ipTracing {
+            print( initial, registers )
+        }
     }
     
     func run( opcodeDictionary: [ Int : String ] ) -> Void {
-        registers = [ 0, 0, 0, 0 ]
-        memory.forEach { opcodes[ opcodeDictionary[ $0.opcode ]! ]!( $0.a, $0.b, $0.c ) }
+        registers = initialRegisters
+        memory.forEach { mnemonicActions[ opcodeDictionary[ $0.opcode ]! ]!( $0.a, $0.b, $0.c ) }
+    }
+    
+    func run() -> Void {
+        while 0 <= ip && ip < memory.count {
+            if let breakpoint = breakpoint {
+                if ip == breakpoint && !action() { return }
+            }
+            
+            cycle()
+        }
+    }
+    
+    var dump: String {
+        return ( ipBound == nil ? "" : "#ip \(ipBound!)\n" ) + ( 0 ..< memory.count ).map { addr in
+            let description = memory[addr].description( opcodeMnemonics: opcodeMnemonics )
+            return String( format: "%02d \(registers) \(description)", addr )
+        }.joined( separator: "\n" )
     }
 }
