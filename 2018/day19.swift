@@ -34,20 +34,23 @@ func part1( input: AOCinput ) -> String {
 
 func part1a( input: AOCinput ) -> String {
     let device = WristDevice( assembly: input.lines )
+    let argRegister = device.memory[4].b
     
     device.setBreakpoint( address: 1, action: { return false } )
     device.run()
-    return "\(sumFactors( target: device.registers[5] ))"
+    return "\(sumFactors( target: device.registers[argRegister] ))"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let device = WristDevice( assembly: input.lines )
-    
+    let argRegister = device.memory[4].b
+
     device.registers[0] = 1
+    //print(device.dump)
     device.setBreakpoint( address: 1, action: { return false } )
     device.run()
-    return "\(sumFactors( target: device.registers[5] ))"
+    return "\(sumFactors( target: device.registers[argRegister] ))"
 }
 
 
