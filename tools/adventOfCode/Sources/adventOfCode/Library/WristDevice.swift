@@ -147,9 +147,9 @@ class WristDevice {
     }
     
     var dump: String {
-        return ( ipBound == nil ? "" : "#ip \(ipBound!)\n" ) + ( 0 ..< memory.count ).map { addr in
-            let description = memory[addr].description( opcodeMnemonics: opcodeMnemonics )
-            return String( format: "%03d \(registers) \(description)", addr )
+        return ( ipBound == nil ? "" : "#ip \(ipBound!)\n" ) + memory.enumerated().map {
+            let description = $0.element.description( opcodeMnemonics: opcodeMnemonics )
+            return String( format: "%03d \(description)", $0.offset )
         }.joined( separator: "\n" )
     }
 }
