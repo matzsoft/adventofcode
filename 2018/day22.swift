@@ -1,56 +1,20 @@
 //
-//  main.swift
-//  day22
-//
-//  Created by Mark Johnson on 12/25/18.
-//  Copyright © 2018 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day22 - Mode Maze
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 05/29/21 12:52:09
 //
 
 import Foundation
 
-let input = """
-depth: 10647
-target: 7,770
-"""
-
-struct Position: Hashable {
-    var x: Int
-    var y: Int
-    
-    static func ==( left: Position, right: Position ) -> Bool {
-        return left.x == right.x && left.y == right.y
-    }
-    
-    static func +( left: Position, right: Position ) -> Position {
-        return Position(x: left.x + right.x, y: left.y + right.y)
-    }
-    
-    func move( direction: Direction ) -> Position {
-        switch direction {
-        case .up:
-            return self + Position(x: 0, y: -1)
-        case .right:
-            return self + Position(x: 1, y: 0)
-        case .down:
-            return self + Position(x: 0, y: 1)
-        case .left:
-            return self + Position(x: -1, y: 0)
-        }
-    }
-}
-
-enum Direction: Int, CaseIterable {
-    case up, right, down, left
-}
-
-let test1Depth = 510
-let test1Target = Position( x: 10, y: 10 )
-let inputDepth = 10647
-let inputTarget = Position(x: 7, y: 770)
 let rowGeologicFactor = 16807
 let colGeologicFactor = 48271
-let erosionModulus = 20183
+let erosionModulus    = 20183
 
+enum Equipment: Int, CaseIterable { case none, torch, gear }
 enum RiskLevel: Int, CaseIterable {
     case rocky, wet, narrow
     
@@ -66,9 +30,6 @@ enum RiskLevel: Int, CaseIterable {
     }
 }
 
-enum Equipment: Int, CaseIterable {
-    case none, torch, gear
-}
 
 class Region {
     var type: RiskLevel
@@ -79,7 +40,7 @@ class Region {
     init( depth: Int, geologicIndex: Int ) {
         self.geologicIndex = geologicIndex
         erosionLevel = ( geologicIndex + depth ) % erosionModulus
-        type = RiskLevel(rawValue: erosionLevel % RiskLevel.allCases.count )!
+        type = RiskLevel( rawValue: erosionLevel % RiskLevel.allCases.count )!
     }
     
     func timeIsSet( rescuer: Rescuer ) -> Bool {
@@ -91,47 +52,53 @@ class Region {
     }
     
     func formatTimes( first: Int, second: Int ) -> String {
-        var result = ""
-        
-        if first < Int.max {
-            result += String(format: "%2d,", first)
-        } else {
-            result += "XX,"
-        }
-        
-        if second < Int.max {
-            result += String(format: "%2d", second)
-        } else {
-            result += "XX"
-        }
-        
-        return result
+        return ( first < Int.max ? String( format: "%2d,", first ) : "XX," )
+            + ( second < Int.max ? String( format: "%2d", second ) : "XX" )
     }
     
     func detailValue() -> String {
         switch type {
         case .rocky:
-            return formatTimes(first: times[Equipment.torch.rawValue], second: times[Equipment.gear.rawValue] )
+            return formatTimes(
+                first: times[ Equipment.torch.rawValue ],
+                second: times[ Equipment.gear.rawValue ]
+            )
         case .wet:
-            return formatTimes(first: times[Equipment.gear.rawValue], second: times[Equipment.none.rawValue] )
+            return formatTimes(
+                first: times[ Equipment.gear.rawValue ],
+                second: times[ Equipment.none.rawValue ]
+            )
         case .narrow:
-            return formatTimes(first: times[Equipment.torch.rawValue], second: times[Equipment.none.rawValue] )
+            return formatTimes(
+                first: times[ Equipment.torch.rawValue ],
+                second: times[ Equipment.none.rawValue ]
+            )
         }
     }
 }
 
+
 class Cave {
     let depth: Int
-    let target: Position
-    let limit: Position
+    let target: Point2D
+    let limit: Point2D
     var map: [[Region]]
     
-    init( depth: Int, target: Position ) {
-        let extend = max(target.x, target.y) / 5
+    var riskLevel: Int {
+        return ( 0 ... target.y ).reduce( 0, { ( result: Int, rowIndex: Int ) -> Int in
+            result + ( 0 ... target.x ).reduce( 0, { $0 + map[rowIndex][$1].type.rawValue } )
+        } )
+    }
+    
+    init( lines: [String] ) {
+        let words = lines.flatMap { $0.split(whereSeparator: { ": ,".contains( $0 ) } ) }
         
-        self.depth = depth
-        self.target = target
-        self.limit = target + Position(x: extend, y: extend)
+        depth = Int( words[1] )!
+        target = Point2D( x: Int( words[3] )!, y: Int( words[4] )! )
+
+        let extend = max( target.x, target.y ) / 5
+        
+        limit = target + Point2D( x: extend, y: extend )
         map = []
         
         for y in 0 ... limit.y {
@@ -158,7 +125,7 @@ class Cave {
         }
     }
     
-    subscript( postition: Position ) -> Region? {
+    subscript( postition: Point2D ) -> Region? {
         guard 0 <= postition.x && postition.x <= limit.x else { return nil }
         guard 0 <= postition.y && postition.y <= limit.y else { return nil }
         
@@ -176,22 +143,16 @@ class Cave {
         print()
     }
     
-    func riskLevel() -> Int {
-        return ( 0 ... target.y ).reduce( 0, { ( result: Int, rowIndex: Int ) -> Int in
-            result + ( 0 ... target.x ).reduce( 0, { $0 + map[rowIndex][$1].type.rawValue } )
-        } )
-    }
-    
     func atTargetNow( events: Events, rescuer: Rescuer ) -> Bool {
         if rescuer.position == target {
             if rescuer.equipment == .torch {
                 return true
             } else {
-                let next = Rescuer(cave: rescuer.cave)
+                let next = Rescuer( cave: rescuer.cave )
                 
-                next.replace(with: rescuer)
-                next.change(to: .torch)
-                events.add(new: next)
+                next.replace( with: rescuer )
+                next.change( to: .torch )
+                events.add( new: next )
             }
         }
         
@@ -201,34 +162,34 @@ class Cave {
     
     func traverse() -> Int {
         let events = Events()
-        let rescuer = Rescuer(cave: self)
-        let right = rescuer.move(direction: .right)!
-        let down = rescuer.move(direction: .down)!
+        let rescuer = Rescuer( cave: self )
+        let right = rescuer.move( direction: DirectionUDLR.right )!
+        let down = rescuer.move( direction: DirectionUDLR.down )!
         
-        self[ rescuer.position ]?.setTime(rescuer: rescuer)
-        events.add(new: right)
-        events.add(new: down)
-        //printDetail(time: rescuer.clock)
+        self[ rescuer.position ]?.setTime( rescuer: rescuer )
+        events.add( new: right )
+        events.add( new: down )
+        //printDetail( time: rescuer.clock )
         
         while let queue = events.getNextQueue() {
-            //printDetail(time: queue[0].clock)
+            //printDetail( time: queue[0].clock )
             for next in queue {
-                if !(self[ next.position ]?.timeIsSet(rescuer: next))! {
-                    self[ next.position ]?.setTime(rescuer: next)
+                if !( self[ next.position ]?.timeIsSet( rescuer: next ) )! {
+                    self[ next.position ]?.setTime( rescuer: next )
                     
-                    if atTargetNow(events: events, rescuer: next) {
+                    if atTargetNow( events: events, rescuer: next ) {
                         return next.clock
                     }
-                    if let up = next.move(direction: .up) {
+                    if let up = next.move( direction: DirectionUDLR.up ) {
                         events.add(new: up)
                     }
-                    if let right = next.move(direction: .right) {
+                    if let right = next.move( direction: DirectionUDLR.right ) {
                         events.add(new: right)
                     }
-                    if let down = next.move(direction: .down) {
+                    if let down = next.move( direction: DirectionUDLR.down ) {
                         events.add(new: down)
                     }
-                    if let left = next.move(direction: .left) {
+                    if let left = next.move( direction: DirectionUDLR.left ) {
                         events.add(new: left)
                     }
                 }
@@ -239,20 +200,21 @@ class Cave {
     }
 }
 
+
 class Rescuer {
     var clock = 0
     var equipment: Equipment = .torch
-    var position = Position(x: 0, y: 0)
+    var position = Point2D( x: 0, y: 0 )
     let cave: Cave
     
     init( cave: Cave ) {
         self.cave = cave
     }
     
-    init?( before: Rescuer, direction: Direction ) {
+    init?( before: Rescuer, direction: DirectionUDLR ) {
         self.clock = before.clock + 1
         self.equipment = before.equipment
-        self.position = before.position.move(direction: direction)
+        self.position = before.position.move( direction: direction)
         self.cave = before.cave
         
         guard 0 <= position.x && position.x <= cave.limit.x else { return nil }
@@ -272,7 +234,7 @@ class Rescuer {
         clock += 7
     }
     
-    func move( direction: Direction ) -> Rescuer? {
+    func move( direction: DirectionUDLR ) -> Rescuer? {
         if let after = Rescuer(before: self, direction: direction) {
             if let current = cave[position] {
                 if let next = cave[after.position] {
@@ -282,25 +244,25 @@ class Rescuer {
                         case .rocky:
                             break
                         case .wet:
-                            after.change(to: .gear)
+                            after.change( to: .gear )
                         case .narrow:
-                            after.change(to: .torch)
+                            after.change( to: .torch )
                         }
                     case .wet:
                         switch next.type {
                         case .rocky:
-                            after.change(to: .gear)
+                            after.change( to: .gear )
                         case .wet:
                             break
                         case .narrow:
-                            after.change(to: .none)
+                            after.change( to: .none )
                         }
                     case .narrow:
                         switch next.type {
                         case .rocky:
-                            after.change(to: .torch)
+                            after.change( to: .torch )
                         case .wet:
-                            after.change(to: .none)
+                            after.change( to: .none )
                         case .narrow:
                             break
                         }
@@ -315,7 +277,7 @@ class Rescuer {
 }
 
 class Events {
-    var events: [Int:[Rescuer]] = [:]
+    var events: [ Int : [Rescuer] ] = [:]
     
     func add( new: Rescuer ) -> Void {
         if events[new.clock] == nil {
@@ -326,8 +288,8 @@ class Events {
     }
     
     func getNextQueue() -> [Rescuer]? {
-        if let ( time, queue ) = events.min(by: { $0.key < $1.key }) {
-            events.removeValue(forKey: time)
+        if let ( time, queue ) = events.min( by: { $0.key < $1.key } ) {
+            events.removeValue( forKey: time )
             return queue
         }
         
@@ -336,12 +298,19 @@ class Events {
 }
 
 
-let testCave = Cave(depth: test1Depth, target: test1Target)
-let inputCave = Cave(depth: inputDepth, target: inputTarget)
+func part1( input: AOCinput ) -> String {
+    let cave = Cave( lines: input.lines )
+    return "\(cave.riskLevel)"
+}
 
-//testCave.printMap()
-print( "Test1:", testCave.riskLevel() )
-print( "Part1:", inputCave.riskLevel() )
 
-print( "Test2:", testCave.traverse() )
-print( "Part2:", inputCave.traverse() )
+func part2( input: AOCinput ) -> String {
+    let cave = Cave( lines: input.lines )
+    return "\(cave.traverse())"
+}
+
+
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
