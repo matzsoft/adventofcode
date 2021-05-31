@@ -2,4 +2,3 @@
 1. day11 - Part 2 takes over a minute.  Should be able to speed it up.
 1. day14 - is there a way to speed up Part 2?
 1. day15 - needs cleanup and speedup.
-1. day23 - either fully understand part2 or develop a more general solution.

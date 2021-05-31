@@ -265,12 +265,112 @@ struct Point3D: Hashable {
         return Point3D( x: left.x + right.x, y: left.y + right.y, z: left.z + right.z )
     }
     
+    static func -( left: Point3D, right: Point3D ) -> Point3D {
+        return Point3D( x: left.x - right.x, y: left.y - right.y, z: left.z - right.z )
+    }
+    
     static func ==( left: Point3D, right: Point3D ) -> Bool {
         return left.x == right.x && left.y == right.y && left.z == right.z
     }
     
     func magnitude() -> Int {
         return abs(x) + abs(y) + abs(z)
+    }
+}
+
+struct Rect3D: Hashable {
+    let min:    Point3D
+    let max:    Point3D
+    let width:  Int
+    let length: Int
+    let height: Int
+    let volume: Int
+    
+    init( min: Point3D, max: Point3D ) {
+        self.min    = Point3D(
+            x: Swift.min( min.x, max.x ), y: Swift.min( min.y, max.y ), z: Swift.min( min.z, max.z ) )
+        self.max    = Point3D(
+            x: Swift.max( min.x, max.x ), y: Swift.max( min.y, max.y ), z: Swift.max( min.z, max.z ) )
+        self.width  = max.x - min.x + 1
+        self.length = max.y - min.y + 1
+        self.height = max.z - min.z + 1
+        
+        if width.multipliedReportingOverflow( by: length ).overflow {
+            volume = Int.max
+        } else if ( width * length ).multipliedReportingOverflow( by: height ).overflow {
+            volume = Int.max
+        } else {
+            volume = width * length * height
+        }
+    }
+
+    init?( min: Point3D, width: Int, length: Int, height: Int ) {
+        guard width > 0 && length > 0 && height > 0 else { return nil }
+        
+        self.min    = min
+        self.max    = Point3D( x: min.x + width - 1, y: min.y + length - 1, z: min.z + height - 1 )
+        self.width  = width
+        self.length = length
+        self.height = height
+        
+        if width.multipliedReportingOverflow( by: length ).overflow {
+            volume = Int.max
+        } else if ( width * length ).multipliedReportingOverflow( by: height ).overflow {
+            volume = Int.max
+        } else {
+            volume = width * length * height
+        }
+    }
+    
+    init( points: [Point3D] ) {
+        var bounds = Rect3D( min: points[0], max: points[0] )
+        
+        points[1...].forEach { bounds = bounds.expand( with: $0 ) }
+        
+        self.init( min: bounds.min, max: bounds.max )
+    }
+    
+    init( rects: [Rect3D] ) {
+        var bounds = Rect3D(min: rects[0].min, max: rects[0].max )
+        
+        rects[1...].forEach {
+            bounds = bounds.expand( with: $0.min )
+            bounds = bounds.expand( with: $0.max )
+        }
+        
+        self.init( min: bounds.min, max: bounds.max )
+    }
+    
+    func contains( point: Point3D ) -> Bool {
+        guard min.x <= point.x, point.x <= max.y else { return false }
+        guard min.y <= point.y, point.y <= max.y else { return false }
+        guard min.z <= point.z, point.z <= max.z else { return false }
+
+        return true
+    }
+    
+    func expand( with point: Point3D ) -> Rect3D {
+        let minX = Swift.min( min.x, point.x )
+        let maxX = Swift.max( max.x, point.x )
+        let minY = Swift.min( min.y, point.y )
+        let maxY = Swift.max( max.y, point.y )
+        let minZ = Swift.min( min.z, point.z )
+        let maxZ = Swift.max( max.z, point.z )
+
+        return Rect3D( min: Point3D( x: minX, y: minY, z: minZ ), max: Point3D( x: maxX, y: maxY, z: maxZ ) )
+    }
+    
+    func intersection( with other: Rect3D ) -> Rect3D? {
+        let minX = Swift.max( min.x, other.min.x )
+        let minY = Swift.max( min.y, other.min.y )
+        let minZ = Swift.min( min.z, other.min.z )
+        let maxX = Swift.min( max.x, other.max.x )
+        let maxY = Swift.min( max.y, other.max.y )
+        let maxZ = Swift.max( max.z, other.max.z )
+
+        return Rect3D(
+            min: Point3D( x: minX, y: minY, z: minZ ),
+            width: maxX - minX, length: maxY - minY, height: maxZ - minZ )
     }
 }
 
