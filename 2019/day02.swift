@@ -1,51 +1,67 @@
 //
-//  main.swift
-//  day02
-//
-//  Created by Mark Johnson on 12/1/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day02 - 1202 Program Alarm
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 05/31/21 14:58:04
 //
 
 import Foundation
 
-let inputFile = "/Users/markj/Development/adventofcode/2019/input/day02.txt"
-let input = try String( contentsOfFile: inputFile ).dropLast( 1 )
-let initialMemory = input.split( separator: "," ).map { Int($0)! }
-
-func grind( noun: Int, verb: Int ) -> Int {
-    var pc = 0
+func grind( initialMemory: [Int], noun: Int, verb: Int ) throws -> Int {
+    var ip = 0
     var memory = initialMemory
 
     memory[1] = noun
     memory[2] = verb
     
     while true {
-        switch memory[pc] {
+        switch memory[ip] {
         case 1:
-            memory[memory[pc+3]] = memory[memory[pc+1]] + memory[memory[pc+2]]
+            memory[memory[ip+3]] = memory[memory[ip+1]] + memory[memory[ip+2]]
         case 2:
-            memory[memory[pc+3]] = memory[memory[pc+1]] * memory[memory[pc+2]]
+            memory[memory[ip+3]] = memory[memory[ip+1]] * memory[memory[ip+2]]
         case 99:
             return memory[0]
         default:
-            print("Invalid opcode \(memory[pc]) at \(pc)")
-            exit(1)
+            throw RuntimeError( "Invalid opcode \(memory[ip]) at \(ip)" )
         }
-        pc += 4
+        ip += 4
     }
 }
 
-print( "Part 1: \(grind( noun: 12, verb: 2 ))" )
 
-for noun in 0 ... 99 {
-    for verb in 0 ... 99 {
-        let result = grind( noun: noun, verb: verb )
-        
-        if result == 19690720 {
-            print( "Part 2: \(100 * noun + verb)" )
-            exit(0)
-        }
-    }
+func parse( input: AOCinput ) -> [Int] {
+    return input.line.split( separator: "," ).map { Int( $0 )! }
 }
 
-print( "Gross failure" )
+
+func part1( input: AOCinput ) -> String {
+    let initialMemory = parse( input: input )
+    return "\(try! grind( initialMemory: initialMemory, noun: 12, verb: 2 ))"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let initialMemory = parse( input: input )
+    
+    for noun in 0 ... 99 {
+        for verb in 0 ... 99 {
+            let result = try! grind( initialMemory: initialMemory, noun: noun, verb: verb )
+            
+            if result == 19690720 {
+                return "\(100 * noun + verb)"
+            }
+        }
+    }
+
+    return "Gross failure"
+}
+
+
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
