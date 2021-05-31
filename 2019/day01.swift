@@ -1,15 +1,14 @@
 //
-//  main.swift
-//  day01
-//
-//  Created by Mark Johnson on 11/30/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day01 - The Tyranny of the Rocket Equation
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 05/31/21 14:18:25
 //
 
 import Foundation
-
-let inputFile = "/Users/markj/Development/adventofcode/2019/input/day01.txt"
-let modules = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map { Int($0)! }
 
 func fuel( mass: Int ) -> Int {
     var total = 0
@@ -27,12 +26,19 @@ func fuel( mass: Int ) -> Int {
 }
 
 
-var bareFuel = 0
-var totalFuel = 0
-
-for module in modules {
-    bareFuel += module / 3 - 2
-    totalFuel += fuel( mass: module )
+func part1( input: AOCinput ) -> String {
+    let modules = input.lines.map { Int( $0 )! }
+    return "\(modules.map { $0 / 3 - 2 }.reduce( 0, + ))"
 }
-print( "Part 1: \(bareFuel)" )
-print( "Part 2: \(totalFuel)" )
+
+
+func part2( input: AOCinput ) -> String {
+    let modules = input.lines.map { Int( $0 )! }
+    return "\(modules.map { fuel( mass: $0 ) }.reduce( 0, + ))"
+}
+
+
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
