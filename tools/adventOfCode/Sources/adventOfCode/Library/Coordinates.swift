@@ -374,3 +374,29 @@ struct Rect3D: Hashable {
     }
 }
 
+struct Point4D: Hashable {
+    let x: Int
+    let y: Int
+    let z: Int
+    let t: Int
+
+    func distance( other: Point4D ) -> Int {
+        return abs( x - other.x ) + abs( y - other.y ) + abs( z - other.z ) + abs( t - other.t )
+    }
+    
+    static func +( left: Point4D, right: Point4D ) -> Point4D {
+        return Point4D( x: left.x + right.x, y: left.y + right.y, z: left.z + right.z, t: left.t + right.t )
+    }
+    
+    static func -( left: Point4D, right: Point4D ) -> Point4D {
+        return Point4D( x: left.x - right.x, y: left.y - right.y, z: left.z - right.z, t: left.t - right.t )
+    }
+    
+    static func ==( left: Point4D, right: Point4D ) -> Bool {
+        return left.x == right.x && left.y == right.y && left.z == right.z && left.t == right.t
+    }
+    
+    func magnitude() -> Int {
+        return abs( x ) + abs( y ) + abs( z ) + abs( t )
+    }
+}
