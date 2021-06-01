@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day06
-//
-//  Created by Mark Johnson on 12/6/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day06 - Universal Orbit Map
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/01/21 11:42:17
 //
 
 import Foundation
@@ -22,18 +24,16 @@ class TreeNode {
 
 struct Tree {
     let head: TreeNode
-    var nodes: [ String : TreeNode ]
+    var nodes = [ String : TreeNode ]()
     
-    init( input: String ) {
-        let lines = input.split( separator: "\n" )
+    init( lines: [String] ) {
         let names = lines.first!.split( separator: ")" ).map { String( $0 ) }
 
-        nodes = [:]
         head = TreeNode( name: names[0] )
         nodes[names[0]] = head
         
         for line in lines {
-            let names = line.split( separator: ")" ).map { String( $0 ) }
+            let names = line.components( separatedBy: ")" )
             let major = add( name: names[0] )
             let minor = add( name: names[1] )
             
@@ -66,20 +66,34 @@ struct Tree {
     }
 }
 
-let inputFile = "/Users/markj/Development/adventofcode/2019/input/day06.txt"
-let tree = Tree( input: try String( contentsOfFile: inputFile ) )
 
-print( "Part 1: \( tree.nodes.keys.reduce( 0, { $0 + tree.path( name: $1 ).count - 1 } ) )" )
-
-let pathToMe = tree.path( name: "YOU" )
-let pathToSanta = tree.path( name: "SAN" )
-
-for index in 0 ..< min( pathToMe.count, pathToSanta.count ) {
-    if pathToMe[index] !== pathToSanta[index] {
-        print( "Part 2: \( pathToMe.count - index - 1 + pathToSanta.count - index - 1 )" )
-        exit(0)
-    }
+func parse( input: AOCinput ) -> Tree {
+    return Tree( lines: input.lines )
 }
 
-print( "Part 2: failed" )
-exit(1)
+
+func part1( input: AOCinput ) -> String {
+    let tree = parse( input: input )
+    return "\( tree.nodes.keys.reduce( 0, { $0 + tree.path( name: $1 ).count - 1 } ) )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let tree = parse( input: input )
+    let pathToMe = tree.path( name: "YOU" )
+    let pathToSanta = tree.path( name: "SAN" )
+
+    for index in 0 ..< min( pathToMe.count, pathToSanta.count ) {
+        if pathToMe[index] !== pathToSanta[index] {
+            return "\( pathToMe.count - index - 1 + pathToSanta.count - index - 1 )"
+        }
+    }
+
+    return "Failure"
+}
+
+
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
