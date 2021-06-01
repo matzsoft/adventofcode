@@ -209,10 +209,10 @@ struct Rect2D: Hashable {
     let area:   Int
     
     init( min: Point2D, max: Point2D ) {
-        self.min    = min
-        self.max    = max
-        self.width  = abs( max.x - min.x )
-        self.height = abs( max.y - min.y )
+        self.min    = Point2D( x: Swift.min( min.x, max.x ), y: Swift.min( min.y, max.y ) )
+        self.max    = Point2D( x: Swift.max( min.x, max.x ), y: Swift.max( min.y, max.y ) )
+        self.width  = self.max.x - self.min.x + 1
+        self.height = self.max.y - self.min.y + 1
         self.area   = width * height
     }
 
@@ -220,7 +220,7 @@ struct Rect2D: Hashable {
         guard width > 0 && height > 0 else { return nil }
         
         self.min    = min
-        self.max    = Point2D( x: min.x + width, y: min.y + height )
+        self.max    = Point2D( x: min.x + width - 1, y: min.y + height - 1 )
         self.width  = width
         self.height = height
         self.area   = width * height
@@ -235,7 +235,7 @@ struct Rect2D: Hashable {
     }
     
     func contains( point: Point2D ) -> Bool {
-        guard min.x <= point.x, point.x <= max.y else { return false }
+        guard min.x <= point.x, point.x <= max.x else { return false }
         guard min.y <= point.y, point.y <= max.y else { return false }
 
         return true
@@ -295,13 +295,13 @@ struct Rect3D: Hashable {
     let volume: Int
     
     init( min: Point3D, max: Point3D ) {
-        self.min    = Point3D(
+        self.min = Point3D(
             x: Swift.min( min.x, max.x ), y: Swift.min( min.y, max.y ), z: Swift.min( min.z, max.z ) )
-        self.max    = Point3D(
+        self.max = Point3D(
             x: Swift.max( min.x, max.x ), y: Swift.max( min.y, max.y ), z: Swift.max( min.z, max.z ) )
-        self.width  = max.x - min.x + 1
-        self.length = max.y - min.y + 1
-        self.height = max.z - min.z + 1
+        self.width  = self.max.x - self.min.x + 1
+        self.length = self.max.y - self.min.y + 1
+        self.height = self.max.z - self.min.z + 1
         
         if width.multipliedReportingOverflow( by: length ).overflow {
             volume = Int.max
@@ -350,7 +350,7 @@ struct Rect3D: Hashable {
     }
     
     func contains( point: Point3D ) -> Bool {
-        guard min.x <= point.x, point.x <= max.y else { return false }
+        guard min.x <= point.x, point.x <= max.x else { return false }
         guard min.y <= point.y, point.y <= max.y else { return false }
         guard min.z <= point.z, point.z <= max.z else { return false }
 

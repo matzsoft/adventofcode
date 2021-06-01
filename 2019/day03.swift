@@ -11,49 +11,42 @@
 import Foundation
 
 struct Line {
-    let start: Point2D
-    let end: Point2D
-    
-    var vertical: Bool { start.x == end.x }
-    var horizontal: Bool { start.y == end.y }
-    
-    func containsX( value: Int ) -> Bool {
-        let minX = min( start.x, end.x )
-        let maxX = max( start.x, end.x )
-        
-        return minX <= value && value <= maxX
+    let bounds: Rect2D
+
+    var vertical: Bool { bounds.min.x == bounds.max.x }
+    var horizontal: Bool { bounds.min.y == bounds.max.y }
+
+    init( start: Point2D, end: Point2D ) {
+        bounds = Rect2D( min: start, max: end )
+    }
+
+    func contains( x: Int ) -> Bool {
+        return bounds.min.x <= x && x <= bounds.max.x
     }
     
-    func containsY( value: Int ) -> Bool {
-        let minY = min( start.y, end.y )
-        let maxY = max( start.y, end.y )
-        
-        return minY <= value && value <= maxY
+    func contains( y: Int ) -> Bool {
+        return bounds.min.y <= y && y <= bounds.max.y
     }
     
     func contains( point: Point2D ) -> Bool {
-        return containsX( value: point.x ) && containsY( value: point.y )
+        return bounds.contains( point: point )
     }
-    
+
     func intersection( other: Line ) -> Point2D? {
-        guard start.x != other.start.x || start.y != other.start.y else { return nil }
-        
+        guard bounds.min.x != other.bounds.min.x || bounds.min.y != other.bounds.min.y else { return nil }
+
         if vertical && other.horizontal {
-            if other.containsX( value: start.x ) {
-                if containsY( value: other.start.y ) {
-                    let result = Point2D( x: start.x, y: other.start.y )
-                    return result
-                }
+            if contains( y: other.bounds.min.y ) && other.contains( x: bounds.min.x ) {
+                let result = Point2D( x: bounds.min.x, y: other.bounds.min.y )
+                return result
             }
         } else if horizontal && other.vertical {
-            if other.containsY( value: start.y ) {
-                if containsX( value: other.start.x ) {
-                    let result = Point2D( x: other.start.x, y: start.y )
-                    return result
-                }
+            if contains( x: other.bounds.min.x ) && other.contains( y: bounds.min.y ) {
+                let result = Point2D( x: other.bounds.min.x, y: bounds.min.y )
+                return result
             }
         }
-        
+
         return nil
     }
 }
@@ -115,8 +108,9 @@ func parse( input: AOCinput ) -> ( [Wire], [Point2D] ) {
 
 
 func part1( input: AOCinput ) -> String {
+    let origin = Point2D( x: 0, y: 0 )
     let ( _, intersections ) = parse( input: input )
-    let closest = intersections.min {
+    let closest = intersections.filter { $0 != origin }.min {
         $0.distance( other: Point2D( x: 0, y: 0) ) < $1.distance( other: Point2D( x: 0, y: 0 ) )
     }!
     
@@ -125,8 +119,11 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
+    let origin = Point2D( x: 0, y: 0 )
     let ( wires, intersections ) = parse( input: input )
-    let steps = intersections.map { wires[0].steps( point: $0 ) + wires[1].steps( point: $0 ) }.sorted()
+    let steps = intersections.filter { $0 != origin }.map {
+        wires[0].steps( point: $0 ) + wires[1].steps( point: $0 )
+    }.sorted()
     
     return "\(steps[0])"
 }
