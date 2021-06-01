@@ -1,5 +1,5 @@
 5 x 6 + 0
-ABCEFGHJLOPRUYZ
+ABCEFGHJKLOPRUYZ
 
  ##  
 #  # 
@@ -56,6 +56,13 @@ ABCEFGHJLOPRUYZ
    # 
 #  # 
  ##  
+
+#  # 
+# #  
+##   
+# #  
+# #  
+#  # 
 
 #    
 #    

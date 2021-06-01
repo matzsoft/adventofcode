@@ -1,77 +1,74 @@
 //
-//  main.swift
-//  day08
-//
-//  Created by Mark Johnson on 12/7/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day08 - Space Image Format
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/01/21 13:48:27
 //
 
 import Foundation
 
-extension StringProtocol {
-    func split( by length: Int ) -> [Substring] {
-        var startIndex = self.startIndex
-        var results = [Substring]()
-
-        while startIndex < self.endIndex {
-            let endIndex = self.index( startIndex, offsetBy: length, limitedBy: self.endIndex ) ?? self.endIndex
-            
-            results.append( self[ startIndex ..< endIndex ] as! Substring )
-            startIndex = endIndex
-        }
-
-        return results
-    }
-    
-    func countChar( _ char: Character ) -> Int {
-        return self.reduce( 0, { $0 + ( ( $1 == char ) ? 1 : 0 ) } )
-    }
-}
-
-
-guard CommandLine.arguments.count > 1 else {
-    print( "No input file specified" )
-    exit( 1 )
-}
-
-let input = try String( contentsOfFile: CommandLine.arguments[1] ).dropLast( 1 )
 let width = 25
 let height = 6
 let layerSize = width * height
-let layers = String( input ).split( by: layerSize )
 
-var min0Count = Int.max
-var part1 = 0
-
-for layer in layers {
-    let count0 = layer.countChar( "0" )
-
-    if count0 < min0Count {
-        min0Count = count0
-        part1 = layer.countChar( "1" ) * layer.countChar( "2" )
-    }
-}
-
-print( "Part 1: \(part1)" )
-
-var image = ""
-
-for offset in 0 ..< layerSize {
-    for layer in layers {
-        let index = layer.index( layer.startIndex, offsetBy: offset )
-        if layer[index] != "2" {
-            switch layer[index] {
-            case "0":
-                image.append( " " )
-            case "1":
-                image.append( "█" )
-            default:
-                break
-            }
-            break
+extension Array {
+    func split( by length: Int ) -> [[Element]] {
+        return stride( from: startIndex, to: endIndex, by: length ).map {
+            return Array( self[ $0 ..< $0 + length ] )
         }
     }
 }
 
-print( "Part 2:" )
-image.split( by: width ).forEach { print( $0 ) }
+
+extension Array where Element: Equatable {
+    func count( char: Element ) -> Int {
+        return self.filter { $0 == char }.count
+    }
+}
+
+
+func parse( input: AOCinput ) -> [[Character]] {
+    return Array( input.line ).split( by: layerSize )
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let layers = parse( input: input )
+    let targetLayer = layers.min( by: { $0.count( char: "0" ) < $1.count( char: "0") } )!
+
+    return "\(targetLayer.count( char: "1" ) * targetLayer.count( char: "2" ))"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let layers = parse( input: input )
+    let blockLetters = try! BlockLetterDictionary( from: "5x6+0.txt" )
+    
+    let image = ( 0 ..< layerSize ).map { index -> Bool in
+        for layer in layers {
+            if layer[index] != "2" {
+                switch layer[index] {
+                case "0":
+                    return false
+                case "1":
+                    return true
+                default:
+                    break
+                }
+                break
+            }
+        }
+        return false
+    }.split( by: width )
+    
+    return "\(blockLetters.makeString( screen: image ) )"
+}
+
+
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
