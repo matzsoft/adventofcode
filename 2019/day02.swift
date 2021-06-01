@@ -11,11 +11,11 @@
 import Foundation
 
 func grind( initialMemory: [Int], noun: Int, verb: Int ) throws -> Int {
-    let computer = Intcode( memory: initialMemory )
+    let computer = Intcode( name: "Ship", memory: initialMemory )
 
     computer.memory[1] = noun
     computer.memory[2] = verb
-    computer.execute()
+    _ = computer.execute()
     return computer.memory[0]
 }
 

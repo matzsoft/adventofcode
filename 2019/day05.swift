@@ -12,7 +12,7 @@ import Foundation
 
 
 func parse( input: AOCinput ) -> Intcode {
-    return Intcode( memory: input.line.split( separator: "," ).map { Int($0)! } )
+    return Intcode( name: "TEST", memory: input.line.split( separator: "," ).map { Int($0)! } )
 }
 
 
@@ -20,7 +20,7 @@ func part1( input: AOCinput ) -> String {
     let computer = parse( input: input )
     
     computer.inputs = [ 1 ]
-    computer.execute()
+    _ = computer.execute()
     return "\(computer.outputs.last!)"
 }
 
@@ -29,7 +29,7 @@ func part2( input: AOCinput ) -> String {
     let computer = parse( input: input )
     
     computer.inputs = [ 5 ]
-    computer.execute()
+    _ = computer.execute()
     return "\(computer.outputs.last!)"
 }
 
