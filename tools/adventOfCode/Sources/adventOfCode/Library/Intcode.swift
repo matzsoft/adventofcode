@@ -28,12 +28,15 @@ class Intcode {
         }
     }
 
+    let name: String
     var ip: Int
     var memory: [Int]
     var inputs: [Int]
     var outputs: [Int]
-    
-    init( memory: [Int] ) {
+    var debug = false
+
+    init( name: String, memory: [Int] ) {
+        self.name = name
         ip = 0
         self.memory = memory
         self.inputs = []
@@ -51,7 +54,7 @@ class Intcode {
         }
     }
 
-    func execute() -> Void {
+    func execute() -> Int? {
         while true {
             let instruction = Instruction( instruction: memory[ip] )
             
@@ -69,6 +72,7 @@ class Intcode {
                 memory[memory[ip+3]] = operand1 * operand2
                 ip += 4
             case .input:
+                if debug { print( "\(name): inputs \(inputs.first!)" ) }
                 memory[memory[ip+1]] = inputs.removeFirst()
                 ip += 2
             case .output:
@@ -76,6 +80,8 @@ class Intcode {
                 
                 outputs.append( operand1 )
                 ip += 2
+                if debug { print( "\(name): outputs \(operand1)" ) }
+                return operand1
             case .jumptrue:
                 let operand1 = fetchOperand( address: ip + 1, mode: instruction.parameter1Mode )
                 let operand2 = fetchOperand( address: ip + 2, mode: instruction.parameter2Mode )
@@ -99,7 +105,8 @@ class Intcode {
                 memory[memory[ip+3]] = operand1 == operand2 ? 1 : 0
                 ip += 4
             case .halt:
-                return
+                if debug { print( "\(name): halts" ) }
+                return nil
             }
         }
     }
