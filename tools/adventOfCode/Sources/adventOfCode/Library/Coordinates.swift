@@ -184,10 +184,18 @@ struct Point2D: Hashable {
         return Point2D( x: left.x - right.x, y: left.y - right.y )
     }
     
+    static func *( left: Int, right: Point2D ) -> Point2D {
+        return Point2D( x: left * right.x, y: left * right.y )
+    }
+    
     static func ==( left: Point2D, right: Point2D ) -> Bool {
         return left.x == right.x && left.y == right.y
     }
     
+    var magnitude: Int {
+        return abs( x ) + abs( y )
+    }
+
     func move( direction: Direction2D ) -> Point2D {
         return self + direction.vector
     }
@@ -273,8 +281,8 @@ struct Point3D: Hashable {
         return left.x == right.x && left.y == right.y && left.z == right.z
     }
     
-    func magnitude() -> Int {
-        return abs(x) + abs(y) + abs(z)
+    var magnitude: Int {
+        return abs( x ) + abs( y ) + abs( z )
     }
 }
 
@@ -396,7 +404,7 @@ struct Point4D: Hashable {
         return left.x == right.x && left.y == right.y && left.z == right.z && left.t == right.t
     }
     
-    func magnitude() -> Int {
+    var magnitude: Int {
         return abs( x ) + abs( y ) + abs( z ) + abs( t )
     }
 }
