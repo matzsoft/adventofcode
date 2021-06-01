@@ -11,25 +11,12 @@
 import Foundation
 
 func grind( initialMemory: [Int], noun: Int, verb: Int ) throws -> Int {
-    var ip = 0
-    var memory = initialMemory
+    let computer = Intcode( memory: initialMemory )
 
-    memory[1] = noun
-    memory[2] = verb
-    
-    while true {
-        switch memory[ip] {
-        case 1:
-            memory[memory[ip+3]] = memory[memory[ip+1]] + memory[memory[ip+2]]
-        case 2:
-            memory[memory[ip+3]] = memory[memory[ip+1]] * memory[memory[ip+2]]
-        case 99:
-            return memory[0]
-        default:
-            throw RuntimeError( "Invalid opcode \(memory[ip]) at \(ip)" )
-        }
-        ip += 4
-    }
+    computer.memory[1] = noun
+    computer.memory[2] = verb
+    computer.execute()
+    return computer.memory[0]
 }
 
 
