@@ -18,10 +18,14 @@ func parse( input: AOCinput ) -> Intcode {
 
 func part1( input: AOCinput ) -> String {
     let computer = parse( input: input )
+    var lastOutput = Int.max
     
     computer.inputs = [ 1 ]
-    _ = computer.execute()
-    return "\(computer.outputs.last!)"
+    while let output = try! computer.execute() {
+        lastOutput = output
+    }
+
+    return "\(lastOutput)"
 }
 
 
@@ -29,8 +33,11 @@ func part2( input: AOCinput ) -> String {
     let computer = parse( input: input )
     
     computer.inputs = [ 5 ]
-    _ = computer.execute()
-    return "\(computer.outputs.last!)"
+    while let output = try! computer.execute() {
+        return "\(output)"
+    }
+
+    return "Failure"
 }
 
 

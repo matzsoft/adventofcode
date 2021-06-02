@@ -15,7 +15,7 @@ func grind( initialMemory: [Int], noun: Int, verb: Int ) throws -> Int {
 
     computer.memory[1] = noun
     computer.memory[2] = verb
-    _ = computer.execute()
+    _ = try! computer.execute()
     return computer.memory[0]
 }
 

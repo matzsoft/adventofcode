@@ -41,7 +41,7 @@ func part1( input: AOCinput ) -> String {
             let ampflifier = Intcode( name: "A", memory: initialMemory )
             
             ampflifier.inputs = [ phase, lastOutput ]
-            lastOutput = ampflifier.execute()!
+            lastOutput = try! ampflifier.execute()!
         }
         result = max( result, lastOutput )
     }
@@ -68,7 +68,7 @@ func part2( input: AOCinput ) -> String {
         while !done {
             for amplifier in amplifiers {
                 amplifier.inputs.append( lastOutput )
-                if let output = amplifier.execute() {
+                if let output = try! amplifier.execute() {
                     lastOutput = output
                 } else {
                     done = true
