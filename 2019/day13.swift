@@ -1,278 +1,77 @@
 //
-//  main.swift
-//  day13
-//
-//  Created by Mark Johnson on 12/12/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day13 - Care Package
+//        NOTES: Should be run in Teminal as Xcode does not support terminal emulation
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/03/21 12:08:06
 //
 
 import Foundation
 
-extension String: Error {}
-
-enum Opcode: Int {
-    case add                = 1
-    case multiply           = 2
-    case input              = 3
-    case output             = 4
-    case jumpIfTrue         = 5
-    case jumpIfFalse        = 6
-    case lessThan           = 7
-    case equals             = 8
-    case relativeBaseOffset = 9
-    case halt               = 99
-}
-
-enum ParameterMode: Int {
-    case position  = 0
-    case immediate = 1
-    case relative  = 2
-}
-
-struct Instruction {
-    let opcode: Opcode
-    let modes: [ParameterMode]
-
-    init( instruction: Int ) {
-        opcode = Opcode( rawValue: instruction % 100 )!
-        modes = [
-            ParameterMode( rawValue: instruction /   100 % 10 )!,
-            ParameterMode( rawValue: instruction /  1000 % 10 )!,
-            ParameterMode( rawValue: instruction / 10000 % 10 )!,
-        ]
-    }
-    
-    func mode( operand: Int ) -> ParameterMode {
-        return modes[ operand - 1 ]
-    }
-}
-
-class IntcodeComputer {
-    let name: String
-    var memory: [Int]
-    var inputs: [Int]
-    var pc = 0
-    var relativeBase = 0
-    var halted = true
-    var debug = false
-    
-    init( name: String, memory: [Int], inputs: [Int] ) {
-        self.name = name
-        self.memory = memory
-        self.inputs = inputs
-    }
-
-    func fetch( _ instruction: Instruction, operand: Int ) throws -> Int {
-        var location = memory[ pc + operand ]
+struct ArcadeCabinet {
+    enum TileID: Int {
+        case empty = 0, wall = 1, block = 2, paddle = 3, ball = 4
         
-        switch instruction.mode( operand: operand ) {
-        case .position:
-            break
-        case .immediate:
-            return location
-        case .relative:
-            location += relativeBase
-        }
-
-        if location < 0 {
-            throw "Negative memory fetch (\(location)) at address \(pc)"
-        } else if location >= memory.count {
-            return 0
-        }
-        return memory[location]
-    }
-    
-    func store( _ instruction: Instruction, operand: Int, value: Int ) throws -> Void {
-        var location = memory[ pc + operand ]
-        
-        switch instruction.mode( operand: operand ) {
-        case .position:
-            break
-        case .immediate:
-            throw "Immediate mode invalid for address \(pc)"
-        case .relative:
-            location += relativeBase
-        }
-
-        if location < 0 {
-            throw "Negative memory store (\(location)) at address \(pc)"
-        } else if location >= memory.count {
-            memory.append( contentsOf: Array( repeating: 0, count: location - memory.count + 1 ) )
-        }
-        memory[location] = value
-    }
-
-    func grind() -> Int? {
-        halted = false
-        while true {
-            let instruction = Instruction( instruction: memory[pc] )
-            
-            switch instruction.opcode {
-            case .add:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-                
-                try! store( instruction, operand: 3, value: operand1 + operand2 )
-                pc += 4
-            case .multiply:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-
-                try! store( instruction, operand: 3, value: operand1 * operand2 )
-                pc += 4
-            case .input:
-                if debug { print( "\(name): inputs \(inputs.first!)" ) }
-                try! store( instruction, operand: 1, value: inputs.removeFirst() )
-                pc += 2
-            case .output:
-                let operand1 = try! fetch( instruction, operand: 1 )
-
-                pc += 2
-                if debug { print( "\(name): outputs \(operand1)" ) }
-                return operand1
-            case .jumpIfTrue:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-
-                if operand1 != 0 {
-                    pc = operand2
-                } else {
-                    pc += 3
-                }
-            case .jumpIfFalse:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-
-                if operand1 == 0 {
-                    pc = operand2
-                } else {
-                    pc += 3
-                }
-            case .lessThan:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-
-                if operand1 < operand2 {
-                    try! store( instruction, operand: 3, value: 1 )
-                } else {
-                    try! store( instruction, operand: 3, value: 0 )
-                }
-                pc += 4
-            case .equals:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-
-                if operand1 == operand2 {
-                    try! store( instruction, operand: 3, value: 1 )
-                } else {
-                    try! store( instruction, operand: 3, value: 0 )
-                }
-                pc += 4
-            case .relativeBaseOffset:
-                let operand1 = try! fetch( instruction, operand: 1 )
-
-                relativeBase += operand1
-                pc += 2
-            case .halt:
-                if debug { print( "\(name): halts" ) }
-                halted = true
-                return nil
+        func asString() -> String {
+            switch self {
+            case .empty:
+                return " "
+            case .wall:
+                return "█"
+            case .block:
+                return "▒"
+            case .paddle:
+                return "▁"
+            case .ball:
+                return "●"
             }
         }
     }
-}
+    enum Joystick: Int { case left = -1, neutral = 0, right = 1 }
 
-struct Point: Hashable {
-    let x: Int
-    let y: Int
-    
-    static func +( lhs: Point, rhs: Point ) -> Point {
-        return Point( x: lhs.x + rhs.x, y: lhs.y + rhs.y )
-    }
-    
-    static func -( lhs: Point, rhs: Point ) -> Point {
-        return Point( x: lhs.x - rhs.x, y: lhs.y - rhs.y )
-    }
-    
-    func hash( into hasher: inout Hasher ) {
-        hasher.combine( x )
-        hasher.combine( y )
-    }
-    
-    func min( other: Point ) -> Point {
-        return Point( x: Swift.min( x, other.x ), y: Swift.min( y, other.y ) )
-    }
-    
-    func max( other: Point ) -> Point {
-        return Point( x: Swift.max( x, other.x ), y: Swift.max( y, other.y ) )
-    }
-}
-
-enum TileID: Int {
-    case empty = 0, wall = 1, block = 2, paddle = 3, ball = 4
-    
-    func asString() -> String {
-        switch self {
-        case .empty:
-            return " "
-        case .wall:
-            return "█"
-        case .block:
-            return "▒"
-        case .paddle:
-            return "▁"
-        case .ball:
-            return "●"
-        }
-    }
-}
-
-enum Joystick: Int {
-    case left = -1, neutral = 0, right = 1
-}
-
-struct ArcadeCabinet {
-    let computer: IntcodeComputer
+    let computer: Intcode
     var map: [[TileID]] = []
+    var paddlePos = Point2D( x: 0, y: 0 )
+    var ballPos = Point2D( x: 0, y: 0 )
     var score = 0
-    var paddlePos = Point( x: 0, y: 0 )
-    var ballPos = Point( x: 0, y: 0 )
-    
+    var computerHalted = false
+
     var width: Int { return map.count == 0 ? 0 : map[0].count }
     var height: Int { return map.count }
     var asString: String { return map.map { $0.map { $0.asString() }.joined() }.joined( separator: "\n" ) }
 
-    init( initialMemory: [Int] ) {
-        var tiles: [ Point : TileID ] = [:]
+    init( initialMemory: [Int] ) throws {
+        var tiles: [ Point2D : TileID ] = [:]
         
-        computer = IntcodeComputer( name: "BreakOut", memory: initialMemory, inputs: [] )
+        computer = Intcode( name: "BreakOut", memory: initialMemory )
         
         computer.memory[0] = 2
-        while let ( position, type ) = move() {
+        while let ( position, type ) = try move() {
             tiles[ position ] = type
         }
         
-        let pMax = tiles.keys.reduce( Point( x: 0, y: 0 ), { $0.max( other: $1 ) } )
-        let width = pMax.x + 1
-        let height = pMax.y + 1
+        let bounds = Rect2D( points: tiles.map { $0.key } )
         
-        map = Array( repeating: Array( repeating: TileID.empty, count: width ), count: height )
+        map = Array( repeating: Array( repeating: TileID.empty, count: bounds.width ), count: bounds.height )
         for ( position, type ) in tiles {
             map[position.y][position.x] = type
         }
     }
     
-    mutating func move() -> ( Point, TileID )? {
-        guard let x = computer.grind() else { return nil }
-        guard let y = computer.grind() else { return nil }
-        guard let value = computer.grind() else { return nil }
+    mutating func move() throws -> ( Point2D, TileID )? {
+        computerHalted = false
+        guard let x = try computer.execute() else { computerHalted = true; return nil }
+        guard let y = try computer.execute() else { computerHalted = true; return nil }
+        guard let value = try computer.execute() else { computerHalted = true; return nil }
         
         if x == -1 {
             score = value
             return nil
         }
         
-        let position = Point( x: x, y: y )
+        let position = Point2D( x: x, y: y )
 
         guard let type = TileID( rawValue: value ) else { return nil }
         
@@ -288,14 +87,14 @@ struct ArcadeCabinet {
         return ( position, type )
     }
     
-    func countOf( type: TileID ) -> Int {
+    func count( of type: TileID ) -> Int {
         return map.reduce( 0, { $0 + $1.filter( { $0 == type } ).count } )
     }
     
-    mutating func play() -> Int {
+    mutating func play() throws -> Int {
         computer.inputs = [ ( ballPos.x - paddlePos.x ).signum() ]
-        while !computer.halted {
-            while let ( position, type ) = move() {
+        while !computerHalted {
+            while let ( position, type ) = try move() {
                 map[position.y][position.x] = type
                 Terminal.move( to: position )
                 switch type {
@@ -309,11 +108,11 @@ struct ArcadeCabinet {
                 case .empty:
                     print( type.asString(), separator: "", terminator: "" )
                 default:
-                    Terminal.move( to: Point( x: 0, y: height + 2 ) )
+                    Terminal.move( to: Point2D( x: 0, y: height + 2 ) )
                     print( "Unexpected \(type) at \(position)" )
                 }
             }
-            Terminal.move(to: Point( x: 0, y: height ) )
+            Terminal.move(to: Point2D( x: 0, y: height ) )
             print( "Score: \(score)" )
         }
         
@@ -328,28 +127,40 @@ class Terminal {
         print( escape, "[2J", separator: "", terminator: "" )
     }
     
-    static func move( to position: Point ) -> Void {
+    static func move( to position: Point2D ) -> Void {
         print( escape, "[\(position.y+1);\(position.x+1)H", separator: "", terminator: "" )
     }
 }
 
 
-guard CommandLine.arguments.count > 1 else {
-    print( "No input file specified" )
-    exit( 1 )
+func parse( input: AOCinput ) -> ArcadeCabinet {
+    let initialMemory = input.line.split( separator: "," ).map { Int( $0 )! }
+    return try! ArcadeCabinet( initialMemory: initialMemory )
 }
 
-let input = try String( contentsOfFile: CommandLine.arguments[1] ).dropLast( 1 )
-let initialMemory = input.split( separator: "," ).map { Int($0)! }
-var cabinet = ArcadeCabinet( initialMemory: initialMemory )
 
-Terminal.clearScreen()
-Terminal.move( to: Point(x: 0, y: 0 ) )
-print( cabinet.asString )
-print( "Score: \(cabinet.score)" )
-print( "Part 1: \( cabinet.countOf( type: .block ) )" )
+func part1( input: AOCinput ) -> String {
+    let cabinet = parse( input: input )
+    return "\( cabinet.count( of: .block ) )"
+}
 
-let part2 = cabinet.play()
 
-Terminal.move(to: Point( x: 0, y: cabinet.height + 2 ) )
-print( "Part 2: \(part2)" )
+func part2( input: AOCinput ) -> String {
+    var cabinet = parse( input: input )
+    
+    Terminal.clearScreen()
+    Terminal.move( to: Point2D(x: 0, y: 0 ) )
+    print( cabinet.asString )
+    print( "Score: \(cabinet.score)" )
+
+    let finalScore = try! cabinet.play()
+
+    Terminal.move(to: Point2D( x: 0, y: cabinet.height + 2 ) )
+    return "\(finalScore)"
+}
+
+
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
