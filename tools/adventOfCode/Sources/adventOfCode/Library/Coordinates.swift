@@ -10,7 +10,20 @@ import Foundation
 protocol Direction2D { var vector: Point2D { get } }
 protocol Turn2D { var rawValue: Int { get } }
 
-enum Turn: Int, Turn2D { case right = 1, left = -1, back = 2 }
+enum Turn: Int, Turn2D {
+    case right = 1, left = -1, back = 2
+    
+    var toLRB: String {
+        switch self {
+        case .right:
+            return "R"
+        case .left:
+            return "L"
+        case .back:
+            return "B"
+        }
+    }
+}
 enum TurnLSR: Int, CaseIterable, Turn2D {
     case left = -1, straight = 0, right = 1
     
@@ -65,6 +78,34 @@ enum DirectionUDLR: String, CaseIterable, Direction2D {
             return Point2D( x: 0, y: 1 )
         case .left:
             return Point2D( x: -1, y: 0 )
+        }
+    }
+    
+    static func fromArrows( char: String ) -> DirectionUDLR? {
+        switch char {
+        case "^":
+            return .up
+        case "v":
+            return .down
+        case "<":
+            return .left
+        case ">":
+            return .right
+        default:
+            return nil
+        }
+    }
+    
+    var toArrow: String {
+        switch self {
+        case .up:
+            return "^"
+        case .down:
+            return "v"
+        case .left:
+            return "<"
+        case .right:
+            return ">"
         }
     }
     
