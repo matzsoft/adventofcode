@@ -38,7 +38,7 @@ func parse( input: AOCinput ) -> [Point2D] {
 
 func part1( input: AOCinput ) -> String {
     let path = parse( input: input )
-    return "\(abs(path.last!.x) + abs(path.last!.y))"
+    return "\(path.last!.magnitude)"
 }
 
 
@@ -46,17 +46,13 @@ func part2( input: AOCinput ) -> String {
     let path = parse( input: input )
     var seen = Set<Point2D>()
     
-    guard let point = path.first( where: {
-        if seen.contains( $0 ) { return true }
-        seen.insert( $0 )
-        return false
-    } ) else {
-        return ""
-    }
+    guard let point = path.first( where: { !seen.insert( $0 ).inserted } ) else { return "" }
 
     return "\(abs(point.x) + abs(point.y))"
 }
 
 
-try runTests( part1: part1, part2: part2 )
-try runSolutions( part1: part1, part2: part2 )
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )

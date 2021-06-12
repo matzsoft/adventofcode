@@ -8,36 +8,8 @@
 import Foundation
 
 protocol Direction2D { var vector: Point2D { get } }
-protocol Turn2D { var rawValue: Int { get } }
 
-enum Turn: Int, Turn2D {
-    case right = 1, left = -1, back = 2
-    
-    var toLRB: String {
-        switch self {
-        case .right:
-            return "R"
-        case .left:
-            return "L"
-        case .back:
-            return "B"
-        }
-    }
-}
-enum TurnLSR: Int, CaseIterable, Turn2D {
-    case left = -1, straight = 0, right = 1
-    
-    var next: TurnLSR {
-        switch self {
-        case .left:
-            return .straight
-        case .straight:
-            return .right
-        case .right:
-            return .left
-        }
-    }
-}
+enum Turn: String { case left = "L", right = "R", straight = "S", back = "B" }
 
 /// Important Notice - this enum implements a coordinate system normally used in mathematics.
 /// Positive Y is north and positive X is east.
@@ -57,9 +29,44 @@ enum Direction4: Int, CaseIterable, Direction2D {
         }
     }
     
-    func turn( direction: Turn2D ) -> Direction4 {
-        let newValue = self.rawValue + direction.rawValue + Direction4.allCases.count
-        return Direction4( rawValue: newValue % Direction4.allCases.count )!
+    func turn( direction: Turn ) -> Direction4 {
+        switch direction {
+        case .straight:
+            return self
+        case .left:
+            switch self {
+            case .north:
+                return .west
+            case .east:
+                return .north
+            case .south:
+                return .east
+            case .west:
+                return .south
+            }
+        case .right:
+            switch self {
+            case .north:
+                return .east
+            case .east:
+                return .south
+            case .south:
+                return .west
+            case .west:
+                return .north
+            }
+        case .back:
+            switch self {
+            case .north:
+                return .south
+            case .east:
+                return .west
+            case .south:
+                return .north
+            case .west:
+                return .east
+            }
+        }
     }
 }
 
@@ -109,45 +116,43 @@ enum DirectionUDLR: String, CaseIterable, Direction2D {
         }
     }
     
-    func turn( _ turn: Turn2D ) -> DirectionUDLR {
-        switch turn.rawValue {
-        case -1:                            // left
-            switch self {
-            case .up:
-                return .left
-            case .right:
-                return .up
-            case .down:
-                return .right
-            case .left:
-                return .down
-            }
-        case 1:                             // right
-            switch self {
-            case .up:
-                return .right
-            case .right:
-                return .down
-            case .down:
-                return .left
-            case .left:
-                return .up
-            }
-        case 2:                             // back
-            switch self {
-            case .up:
-                return .down
-            case .right:
-                return .left
-            case .down:
-                return .up
-            case .left:
-                return .right
-            }
-        case 0:                             // straight
-            fallthrough
-        default:
+    func turn( _ turn: Turn ) -> DirectionUDLR {
+        switch turn {
+        case .straight:
             return self
+        case .left:
+            switch self {
+            case .up:
+                return .left
+            case .right:
+                return .up
+            case .down:
+                return .right
+            case .left:
+                return .down
+            }
+        case .right:
+            switch self {
+            case .up:
+                return .right
+            case .right:
+                return .down
+            case .down:
+                return .left
+            case .left:
+                return .up
+            }
+        case .back:
+            switch self {
+            case .up:
+                return .down
+            case .right:
+                return .left
+            case .down:
+                return .up
+            case .left:
+                return .right
+            }
         }
     }
 }
