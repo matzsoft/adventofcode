@@ -77,10 +77,10 @@ class Grid {
             switch self[current] {
             case .infected:
                 nextState = .clean
-                points = points.turn( .right )
+                points = points.turn( Turn.right )
             case .clean:
                 nextState = .infected
-                points = points.turn( .left )
+                points = points.turn( Turn.left )
             case .weakened:
                 break
             case .flagged:
@@ -101,16 +101,16 @@ class Grid {
             switch self[current] {
             case .infected:
                 nextState = .flagged
-                points = points.turn( .right )
+                points = points.turn( Turn.right )
             case .clean:
                 nextState = .weakened
-                points = points.turn( .left )
+                points = points.turn( Turn.left )
             case .weakened:
                 nextState = .infected
                 break
             case .flagged:
                 nextState = .clean
-                points = points.turn( .back )
+                points = points.turn( Turn.back )
                 break
             }
             
