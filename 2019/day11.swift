@@ -11,7 +11,6 @@
 import Foundation
 
 struct Robot {
-    enum Turn: Int { case left = 0, right = 1 }
     enum Color: Int {
         case black = 0, white = 1
         
@@ -56,13 +55,13 @@ struct Robot {
                 map[position] = color
             }
             
-            if let turn = Turn( rawValue: turn ) {
-                switch turn {
-                case .left:
-                    direction = direction.turn( TurnLSR.left )
-                case .right:
-                    direction = direction.turn( TurnLSR.right )
-                }
+            switch turn {
+            case 0:
+                direction = direction.turn( Turn.left )
+            case 1:
+                direction = direction.turn( Turn.right )
+            default:
+                break
             }
             position = position + direction.vector
         }
