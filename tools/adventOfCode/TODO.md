@@ -1,0 +1,1 @@
+1. Coordinates.swift is a prime example of how organic growth can lead to a tangled mess.  In particular the Turn mechanism is ugly and harder to work with than it should be. And the Direction mechanism that uses it should also get an overhaul.
