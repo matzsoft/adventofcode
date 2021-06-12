@@ -12,8 +12,8 @@ import Foundation
 
 extension Rect2D {
     var setOfPoints: Set<Point2D> {
-        return ( min.x ..< max.x ).reduce( into: Set<Point2D>() ) { set, x  in
-            ( min.y ..< max.y ).forEach { set.insert( Point2D( x: x, y: $0 ) ) }
+        return ( min.x ... max.x ).reduce( into: Set<Point2D>() ) { set, x  in
+            ( min.y ... max.y ).forEach { set.insert( Point2D( x: x, y: $0 ) ) }
         }
     }
 }

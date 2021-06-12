@@ -297,7 +297,7 @@ struct Rect2D: Hashable {
         let maxX = Swift.min( max.x, other.max.x )
         let maxY = Swift.min( max.y, other.max.y )
         
-        return Rect2D( min: Point2D( x: minX, y: minY ), width: maxX - minX, height: maxY - minY )
+        return Rect2D( min: Point2D( x: minX, y: minY ), width: maxX - minX + 1, height: maxY - minY + 1 )
     }
 }
 
