@@ -11,20 +11,6 @@
 
 import Foundation
 
-extension Array where Element == Point2D {
-    var boundingBox: Rect2D {
-        guard !isEmpty else { return Rect2D( min: Point2D( x: 0, y: 0 ), max: Point2D(x: 0, y: 0 ) ) }
-        
-        let minX = self.min { $0.x < $1.x }!.x
-        let minY = self.min { $0.y < $1.y }!.y
-        let maxX = self.max { $0.x < $1.x }!.x
-        let maxY = self.max { $0.y < $1.y }!.y
-        
-        return Rect2D( min: Point2D( x: minX, y: minY ), max: Point2D( x: maxX, y: maxY ) )
-    }
-}
-
-
 func parse( input: AOCinput ) -> [Point2D] {
     let lines = input.lines.map  { $0.split( whereSeparator: { ", ".contains($0) } ).map { Int($0)! } }
     return lines.map { Point2D( x: $0[0], y: $0[1] ) }
@@ -33,7 +19,7 @@ func parse( input: AOCinput ) -> [Point2D] {
 
 func part1( input: AOCinput ) -> String {
     let coordinates = parse( input: input )
-    let bounds = coordinates.boundingBox
+    let bounds = Rect2D( points: coordinates )
     let grid = ( bounds.min.y ... bounds.max.y ).map { y in
         ( bounds.min.x ... bounds.max.x ).map { ( x ) -> Int? in
             let distances = coordinates.map { $0.distance( other: Point2D( x: x, y: y ) ) }
@@ -43,8 +29,9 @@ func part1( input: AOCinput ) -> String {
             return closest.count == 1 ? closest[0] : nil
         }
     }
-    let edges = ( 1 ..< grid.count - 1 ).flatMap { [ grid[$0][0], grid[$0][grid[$0].count-1] ] }
-    let borders = Set( ( grid[0] + grid.last! + edges ).compactMap { $0 } )
+    let leftEdge = ( 1 ..< grid.count - 1 ).map { grid[$0][0] }
+    let rightEdge = ( 1 ..< grid.count - 1 ).map { grid[$0].last }
+    let borders = Set( ( grid[0] + grid.last! + leftEdge + rightEdge ).compactMap { $0 } )
     let histogram = grid.reduce( into: [Int:Int]() ) { dict, row in
         row.forEach {
             if let closest = $0, !borders.contains( closest ) { dict[closest] = ( dict[closest] ?? 0 ) + 1 }
@@ -57,7 +44,7 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let coordinates = parse( input: input )
-    let bounds = coordinates.boundingBox
+    let bounds = Rect2D( points: coordinates )
     let grid = ( bounds.min.y ... bounds.max.y ).map { y in
         ( bounds.min.x ... bounds.max.x ).map { ( x ) -> Int in
             let distances = coordinates.map { $0.distance( other: Point2D( x: x, y: y ) ) }
@@ -71,7 +58,7 @@ func part2( input: AOCinput ) -> String {
 
 func part3( input: AOCinput ) -> String {
     let points = parse( input: input )
-    let bounds = points.boundingBox
+    let bounds = Rect2D( points: points )
     var hitsEdge = Set<Int>();
     let grid = ( bounds.min.y ... bounds.max.y ).map { ( y ) ->[Int?] in
         let onEdge = y == bounds.min.y || y == bounds.max.y
@@ -99,7 +86,7 @@ func part3( input: AOCinput ) -> String {
 
 func part4( input: AOCinput ) -> String {
     let coordinates = parse( input: input )
-    let bounds = coordinates.boundingBox
+    let bounds = Rect2D( points: coordinates )
     var size = 0
     
     for y in ( bounds.min.y ... bounds.max.y ) {
@@ -114,6 +101,11 @@ func part4( input: AOCinput ) -> String {
 }
 
 
-try runTests( part1: part1, part2: part2 )
-try runSolutions( part1: part1, part2: part2 )
-try runSolutions( part1: part3, part2: part4 )
+try runTestsPart1( part1: part1 )
+try runTestsPart1( part1: part3, label: "Experimental" )
+try runTestsPart2( part2: part2 )
+try runTestsPart2( part2: part4, label: "Experimental" )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
+try runPart1( part1: part3, label: "Experimental" )
+try runPart2( part2: part4, label: "Experimental" )
