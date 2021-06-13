@@ -89,7 +89,7 @@ struct Mapping {
             if rigging.contains( endPos + direction.vector ) { return true }
             for turn in [ Turn.left, Turn.right ] {
                 if rigging.contains( endPos + direction.turn( turn ).vector ) {
-                    path.append( turn.toLRB )
+                    path.append( turn.rawValue )
                     direction = direction.turn( turn )
                     return true
                 }
