@@ -10,6 +10,21 @@
 
 import Foundation
 
+extension Turn {
+    var next: Turn {
+        switch self {
+        case .left:
+            return .straight
+        case .straight:
+            return .right
+        case .right:
+            return .left
+        case .back:
+            return .back
+        }
+    }
+}
+
 enum Location: Character {
     case horizontal      = "-"
     case vertical        = "|"
@@ -22,7 +37,7 @@ enum Location: Character {
 class Cart {
     var position: Point2D
     var points: DirectionUDLR
-    var nextTurn: TurnLSR
+    var nextTurn: Turn
     var nextPosition: Point2D
 
     init( position: Point2D, points: DirectionUDLR ) {
@@ -40,18 +55,18 @@ class Cart {
     func slashTurn() -> Void {
         switch points {
         case .up, .down:
-            points = points.turn( TurnLSR.right )
+            points = points.turn( Turn.right )
         case .left, .right:
-            points = points.turn( TurnLSR.left )
+            points = points.turn( Turn.left )
         }
     }
     
     func backSlashTurn() -> Void {
         switch points {
         case .up, .down:
-            points = points.turn( TurnLSR.left )
+            points = points.turn( Turn.left )
         case .left, .right:
-            points = points.turn( TurnLSR.right )
+            points = points.turn( Turn.right )
         }
     }
     
