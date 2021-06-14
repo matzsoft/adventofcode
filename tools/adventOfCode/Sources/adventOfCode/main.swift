@@ -39,7 +39,7 @@ struct adventOfCode: ParsableCommand {
         // With language support for type-level introspection, this could be
         // provided by automatically finding nested `ParsableCommand` types.
         subcommands: [
-            Make.self, Open.self, Close.self
+            Make.self, Open.self, Close.self, Retrofit.self
         ]
         
         // A default subcommand, when provided, is automatically selected if a
