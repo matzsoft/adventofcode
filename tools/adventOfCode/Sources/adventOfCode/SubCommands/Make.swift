@@ -39,6 +39,8 @@ extension adventOfCode {
             
             if fileManager.fileExists( atPath: inputFile ) {
                 if !askYN( prompt: "\(inputFile) already exists, add header", expected: true ) {
+                    var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                    print( "Unable to proceed.", to: &stderr )
                     throw ExitCode.failure
                 }
             }
@@ -61,7 +63,8 @@ extension adventOfCode {
             let title = getString( prompt: "Enter puzzle title", preferred: nil )
             let bundleURL = Bundle.module.url( forResource: "mainswift", withExtension: "mustache" )
             guard let templateURL = bundleURL else {
-                print( "Can't find template for \(swiftFile)" )
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "Can't find template for \(swiftFile)", to: &stderr )
                 throw ExitCode.failure
             }
             let template = try Template( URL: templateURL )

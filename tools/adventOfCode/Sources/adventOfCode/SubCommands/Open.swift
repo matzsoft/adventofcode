@@ -31,7 +31,9 @@ extension adventOfCode {
         
         func validate() throws {
             guard swiftFile.hasSuffix( ".swift" ) else {
-                throw RuntimeError( "Must specify a .swift file" )
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "Must specify a .swift file", to: &stderr )
+                throw ExitCode.failure
             }
         }
         
@@ -52,23 +54,29 @@ func performOpen( swiftFile: String ) throws -> Void {
     let libraryFiles = glob( pattern: pattern )
 
     guard fileManager.fileExists( atPath: swiftFile ) else {
-        print( "\(swiftFile) does not exist" )
+        var stderr = FileHandlerOutputStream( FileHandle.standardError )
+        print( "\(swiftFile) does not exist", to: &stderr )
         throw ExitCode.failure
     }
     
     if fileManager.fileExists( atPath: package ) {
-        print( "\(package) already exists" )
+        var stderr = FileHandlerOutputStream( FileHandle.standardError )
+        print( "\(package) already exists", to: &stderr )
         throw ExitCode.failure
     }
     
     try fileManager.createDirectory( atPath: package, withIntermediateDirectories: false, attributes: nil )
     
     guard fileManager.changeCurrentDirectoryPath( package ) else {
-        throw RuntimeError( "Can't change directory to \(package)." )
+        var stderr = FileHandlerOutputStream( FileHandle.standardError )
+        print( "Can't change directory to \(package).", to: &stderr )
+        throw ExitCode.failure
     }
     
     guard shell( "swift", "package", "init", "--type", "executable" ) == 0 else {
-        throw RuntimeError( "Can't create swift package." )
+        var stderr = FileHandlerOutputStream( FileHandle.standardError )
+        print( "Can't create swift package.", to: &stderr )
+        throw ExitCode.failure
     }
 
     try fileManager.removeItem( atPath: mainSwift )
@@ -79,18 +87,24 @@ func performOpen( swiftFile: String ) throws -> Void {
         try fileManager.copyItem( atPath: file, toPath: "\(sourcesFolder)/\(filename)" )
     }
     guard shell( "swift", "package", "generate-xcodeproj" ) == 0 else {
-        throw RuntimeError( "Can't create Xcode project." )
+        var stderr = FileHandlerOutputStream( FileHandle.standardError )
+        print( "Can't create Xcode project.", to: &stderr )
+        throw ExitCode.failure
     }
     print( "Waiting for 5 seconds..." )
     sleep( 5 )
     
     guard shell( "open", "\(package).xcodeproj" ) == 0 else {
-        throw RuntimeError( "Can't open Xcode." )
+        var stderr = FileHandlerOutputStream( FileHandle.standardError )
+        print( "Can't open Xcode.", to: &stderr )
+        throw ExitCode.failure
     }
     print( "Waiting for 5 seconds..." )
     sleep( 5 )
     
     guard shell( "open", mainSwift ) == 0 else {
-        throw RuntimeError( "Can't open \(mainSwift)." )
+        var stderr = FileHandlerOutputStream( FileHandle.standardError )
+        print( "Can't open \(mainSwift).", to: &stderr )
+        throw ExitCode.failure
     }
 }

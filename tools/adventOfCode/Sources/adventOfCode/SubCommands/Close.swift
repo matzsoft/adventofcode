@@ -32,15 +32,21 @@ extension adventOfCode {
             var isDir: ObjCBool = false
 
             guard fileManager.fileExists( atPath: package, isDirectory: &isDir ) else {
-                throw RuntimeError( "File \(package) doesn't exist" )
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "File \(package) doesn't exist", to: &stderr )
+                throw ExitCode.failure
             }
             
             guard isDir.boolValue else {
-                throw RuntimeError( "File \(package) is not a directory" )
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "File \(package) is not a directory", to: &stderr )
+                throw ExitCode.failure
             }
             
             guard fileManager.fileExists( atPath: mainSwift ) else {
-                throw RuntimeError( "Can't find main.swift in the \(package) directory" )
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "Can't find main.swift in the \(package) directory", to: &stderr )
+                throw ExitCode.failure
             }
 
             if !fileManager.fileExists( atPath: swiftFile ) {
