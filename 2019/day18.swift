@@ -1,72 +1,14 @@
 //
-//  main.swift
-//  day18n
-//
-//  Created by Mark Johnson on 12/30/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day18 - Many-Worlds Interpretation
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/12/21 20:29:47
 //
 
 import Foundation
-
-struct Point: Hashable {
-    let x: Int
-    let y: Int
-    
-    static func +( lhs: Point, rhs: Point ) -> Point {
-        return Point( x: lhs.x + rhs.x, y: lhs.y + rhs.y )
-    }
-    
-    static func -( lhs: Point, rhs: Point ) -> Point {
-        return Point( x: lhs.x - rhs.x, y: lhs.y - rhs.y )
-    }
-    
-    func distance( other: Point ) -> Int {
-        return abs( x - other.x ) + abs( y - other.y )
-    }
-    
-    func hash( into hasher: inout Hasher ) {
-        hasher.combine( x )
-        hasher.combine( y )
-    }
-    
-    func min( other: Point ) -> Point {
-        return Point( x: Swift.min( x, other.x ), y: Swift.min( y, other.y ) )
-    }
-    
-    func max( other: Point ) -> Point {
-        return Point( x: Swift.max( x, other.x ), y: Swift.max( y, other.y ) )
-    }
-}
-
-enum Direction: Int, CaseIterable {
-    case north = 1, south = 2, west = 3, east = 4
-    
-    var vector: Point {
-        switch self {
-        case .north:
-            return Point( x: 0, y: -1 )
-        case .south:
-            return Point( x: 0, y: 1 )
-        case .west:
-            return Point( x: -1, y: 0 )
-        case .east:
-            return Point( x: 1, y: 0 )
-        }
-    }
-    
-    var reverse: Direction {
-        switch self {
-        case .north:
-            return .south
-        case .south:
-            return .north
-        case .west:
-            return .east
-        case .east:
-            return .west
-        }
-    }
-}
 
 struct Path: CustomStringConvertible {
     let distance: Int
@@ -145,13 +87,13 @@ struct Path: CustomStringConvertible {
 }
 
 struct Vault: CustomStringConvertible {
-    let map: Set<Point>
-    let entry: Point
+    let map: Set<Point2D>
+    let entry: Point2D
     let keys: Set<Character>
-    let keysByName: [ Character : Point ]
-    let keysByLocation: [ Point : Character ]
-    let doorsByName: [ Character : Point ]
-    let doorsByLocation: [ Point : Character ]
+    let keysByName: [ Character : Point2D ]
+    let keysByLocation: [ Point2D : Character ]
+    let doorsByName: [ Character : Point2D ]
+    let doorsByLocation: [ Point2D : Character ]
     
     var description: String {
         var result: [String] = []
@@ -165,18 +107,18 @@ struct Vault: CustomStringConvertible {
         return result.joined( separator: "\n" )
     }
     
-    init( input: String ) {
-        let grid = input.split( separator: "\n" ).map { Array( $0 ) }
-        var map = Set<Point>()
-        var entry = Point( x: 0, y: 0 )
-        var keysByName: [ Character : Point ] = [:]
-        var keysByLocation: [ Point : Character ] = [:]
-        var doorsByName: [ Character : Point ] = [:]
-        var doorsByLocation: [ Point : Character ] = [:]
+    init( lines: [String] ) {
+        let grid = lines.map { Array( $0 ) }
+        var map = Set<Point2D>()
+        var entry = Point2D( x: 0, y: 0 )
+        var keysByName: [ Character : Point2D ] = [:]
+        var keysByLocation: [ Point2D : Character ] = [:]
+        var doorsByName: [ Character : Point2D ] = [:]
+        var doorsByLocation: [ Point2D : Character ] = [:]
         
         for y in 0 ..< grid.count {
             for x in 0 ..< grid[y].count {
-                let position = Point( x: x, y: y )
+                let position = Point2D( x: x, y: y )
                 switch grid[y][x] {
                 case "#":
                     break
@@ -218,15 +160,15 @@ struct Vault: CustomStringConvertible {
         self.doorsByLocation = doorsByLocation
     }
     
-    init( from: Vault, map: Set<Point>, entry: Point ) {
+    init( from: Vault, map: Set<Point2D>, entry: Point2D ) {
         var queue = [ entry ]
-        var seen = Set<Point>()
+        var seen = Set<Point2D>()
         
         while !queue.isEmpty {
             let current = queue.removeFirst()
             
             seen.insert( current )
-            for move in Direction.allCases {
+            for move in Direction4.allCases {
                 let next = current + move.vector
                 
                 if map.contains( next ) && !seen.contains( next ) {
@@ -246,14 +188,14 @@ struct Vault: CustomStringConvertible {
     
     func getConnections( symbol: Character ) -> [ Character : Path ] {
         var queue = [ ( symbol == "@" ? entry : keysByName[symbol]!, Path.empty ) ]
-        var seen = Set<Point>()
+        var seen = Set<Point2D>()
         var network: [ Character : Path ] = [:]
         
         while !queue.isEmpty {
             let ( current, path ) = queue.removeFirst()
             
             seen.insert( current )
-            for move in Direction.allCases {
+            for move in Direction4.allCases {
                 let next = current + move.vector
                 
                 if map.contains( next ) && !seen.contains( next ) {
@@ -420,13 +362,13 @@ struct MultiNetwork: CustomStringConvertible {
     init( vault: Vault ) {
         var map = vault.map
         let newEntries = [
-            vault.entry + Direction.north.vector + Direction.west.vector,
-            vault.entry + Direction.north.vector + Direction.east.vector,
-            vault.entry + Direction.south.vector + Direction.east.vector,
-            vault.entry + Direction.south.vector + Direction.west.vector,
+            vault.entry + Direction4.north.vector + Direction4.west.vector,
+            vault.entry + Direction4.north.vector + Direction4.east.vector,
+            vault.entry + Direction4.south.vector + Direction4.east.vector,
+            vault.entry + Direction4.south.vector + Direction4.west.vector,
         ]
         
-        Direction.allCases.map { vault.entry + $0.vector }.forEach {
+        Direction4.allCases.map { vault.entry + $0.vector }.forEach {
             guard map.remove( $0 ) != nil else {
                 print( "Unable to build wall at \($0)" )
                 exit(1)
@@ -519,20 +461,28 @@ struct MultiNetwork: CustomStringConvertible {
 }
 
 
-guard CommandLine.arguments.count > 1 else {
-    print( "No input file specified" )
-    exit( 1 )
+func parse( input: AOCinput ) -> Vault {
+    return Vault( lines: input.lines )
 }
 
-let input = try String( contentsOfFile: CommandLine.arguments[1] )
-let vault = Vault( input: input )
-let network = Network( vault: vault )
 
-//print( network )
-print( "Part 1:" )
-print( network.gatherAll() )
+func part1( input: AOCinput ) -> String {
+    let vault = parse( input: input )
+    let network = Network( vault: vault )
+    
+    return "\(network.gatherAll().distance)"
+}
 
-let multiNetwork = MultiNetwork(vault: vault )
-//print( multiNetwork )
-print( "Part 2:" )
-print( multiNetwork.gatherAll() )
+
+func part2( input: AOCinput ) -> String {
+    let vault = parse( input: input )
+    let network = MultiNetwork( vault: vault )
+    
+    return "\(network.gatherAll().distance)"
+}
+
+
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
