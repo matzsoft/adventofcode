@@ -114,5 +114,8 @@ func part2( input: AOCinput ) -> String {
     return ""
 }
 
-try runTests( part1: part1, part2: part2 )
-try runSolutions( part1: part1, part2: part2 )
+
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )

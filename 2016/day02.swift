@@ -39,8 +39,7 @@ let pad13: [ Character : [ Character : Character ] ] = [
 ]
 
 
-func process( input: AOCinput, pad: [ Character: [ Character : Character ] ] ) -> String {
-    let lines = parse( input: input )
+func process( lines: [String], pad: [ Character: [ Character : Character ] ] ) -> String {
     var current: Character = "5"
     var result = ""
 
@@ -60,14 +59,16 @@ func parse( input: AOCinput ) -> [String] {
 
 
 func part1( input: AOCinput ) -> String {
-    return process( input: input, pad: pad9 )
+    return process( lines: parse( input: input ), pad: pad9 )
 }
 
 
 func part2( input: AOCinput ) -> String {
-    return process( input: input, pad: pad13 )
+    return process( lines: parse( input: input ), pad: pad13 )
 }
 
 
-try runTests( part1: part1, part2: part2 )
-try runSolutions( part1: part1, part2: part2 )
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
