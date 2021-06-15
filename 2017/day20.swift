@@ -131,8 +131,8 @@ struct Particle {
 }
 
 func findSlowest( particles: [Particle] ) -> ( offset: Int, element: Particle ) {
-    let sorted = particles.enumerated().sorted { $0.element.a.magnitude() < $1.element.a.magnitude() }
-    var candidates = sorted.filter { $0.element.a.magnitude() == sorted[0].element.a.magnitude() }
+    let sorted = particles.enumerated().sorted { $0.element.a.magnitude < $1.element.a.magnitude }
+    var candidates = sorted.filter { $0.element.a.magnitude == sorted[0].element.a.magnitude }
     
     while true {
         let next = candidates.map { ( particle ) -> ( offset: Int, element: Particle ) in
@@ -143,14 +143,14 @@ func findSlowest( particles: [Particle] ) -> ( offset: Int, element: Particle ) 
         }
         
         let done = ( 0 ..< next.count ).allSatisfy {
-            candidates[$0].element.v.magnitude() < next[$0].element.v.magnitude()
+            candidates[$0].element.v.magnitude < next[$0].element.v.magnitude
         }
         
         candidates = next
         if done { break }
     }
     
-    return candidates.min { $0.element.v.magnitude() < $1.element.v.magnitude() }!
+    return candidates.min { $0.element.v.magnitude < $1.element.v.magnitude }!
 }
 
 
@@ -202,5 +202,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
-try runTests( part1: part1, part2: part2 )
-try runSolutions( part1: part1, part2: part2 )
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
