@@ -39,12 +39,22 @@ extension adventOfCode {
         }
 
         func updateSwiftSource( swiftFile: String ) throws -> String {
-            let oldSource = try String( contentsOfFile: swiftFile )
-            let bundleURL = Bundle.module.url( forResource: "retrofit", withExtension: "mustache" )
-            guard let templateURL = bundleURL else {
+            var oldSource = try String( contentsOfFile: swiftFile )
+            let templateURL = Bundle.module.url( forResource: "retrofit", withExtension: "mustache" )
+            guard let templateURL = templateURL else {
                 var stderr = FileHandlerOutputStream( FileHandle.standardError )
                 print( "Can't find template for \(swiftFile)", to: &stderr )
                 throw ExitCode.failure
+            }
+            let oldtailURL = Bundle.module.url( forResource: "oldtail", withExtension: "swift" )
+            guard let oldtailURL = oldtailURL else {
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "Can't find template for oldtail", to: &stderr )
+                throw ExitCode.failure
+            }
+            let oldtail = try String( contentsOf: oldtailURL )
+            if oldSource.hasSuffix( oldtail ) {
+                oldSource.removeLast( oldtail.count )
             }
             let template = try Template( URL: templateURL )
             let templateData: [String: Any] = [ "oldSource": oldSource ]

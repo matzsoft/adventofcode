@@ -26,7 +26,8 @@ let package = Package(
             ],
             resources: [
                 .process( "Resources/mainswift.mustache" ),
-                .process( "Resources/retrofit.mustache" )
+                .process( "Resources/retrofit.mustache" ),
+                .process( "Resources/oldtail.swift" ),
             ]
         ),
         .testTarget(
