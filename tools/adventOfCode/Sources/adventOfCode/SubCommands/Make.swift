@@ -24,7 +24,37 @@ extension adventOfCode {
         
         func run() throws -> Void {
             let fileManager = FileManager.default
+            let currentDirectory = fileManager.currentDirectoryPath
             let swiftFile = "\(package).swift"
+            let oldFile = "old-\(swiftFile)"
+            let inputFile = try setupInput()
+            
+            if fileManager.fileExists( atPath: swiftFile ) {
+                print( "\(swiftFile) already exists, moving it to \(oldFile)" )
+                try fileManager.moveItem( atPath: swiftFile, toPath: oldFile )
+            }
+
+            let swiftFileSource = try createSwiftSource( swiftFile: swiftFile )
+
+            try createInput( inputFile: inputFile )
+            try swiftFileSource.write( toFile: swiftFile, atomically: true, encoding: .utf8 )
+            try performOpen( swiftFile: swiftFile )
+            
+            guard fileManager.changeCurrentDirectoryPath( currentDirectory ) else {
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "Can't change back to initial directory.", to: &stderr )
+                throw ExitCode.failure
+            }
+            
+            if fileManager.fileExists( atPath: oldFile ) {
+                print( "Moving \(oldFile) back to \(swiftFile)" )
+                try fileManager.removeItem( atPath: swiftFile )
+                try fileManager.moveItem( atPath: oldFile, toPath: swiftFile )
+            }
+        }
+
+        func setupInput() throws -> String {
+            let fileManager = FileManager.default
             let inputFolder = "input"
             let testsFolder = "testfiles"
             let inputFile = "\(inputFolder)/\(package).txt"
@@ -45,20 +75,9 @@ extension adventOfCode {
                 }
             }
             
-            if fileManager.fileExists( atPath: swiftFile ) {
-                let oldFile = "old-\(swiftFile)"
-                
-                print( "\(swiftFile) already exists, moving it to \(oldFile)" )
-                try fileManager.moveItem( atPath: swiftFile, toPath: oldFile )
-            }
-
-            let swiftFileSource = try createSwiftSource( swiftFile: swiftFile )
-
-            try createInput( inputFile: inputFile )
-            try swiftFileSource.write( toFile: swiftFile, atomically: true, encoding: .utf8 )
-            try performOpen( swiftFile: swiftFile )
+            return inputFile
         }
-
+        
         func createSwiftSource( swiftFile: String ) throws -> String {
             let title = getString( prompt: "Enter puzzle title", preferred: nil )
             let bundleURL = Bundle.module.url( forResource: "mainswift", withExtension: "mustache" )
