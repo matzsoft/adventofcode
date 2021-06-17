@@ -1,189 +1,14 @@
 //
-//  main.swift
-//  day21a
-//
-//  Created by Mark Johnson on 1/3/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day21a - Springdroid Adventure
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/16/21 20:26:14
 //
 
 import Foundation
-
-// MARK: - Intcode Computer
-
-extension String: Error {}
-
-enum Opcode: Int {
-    case add                = 1
-    case multiply           = 2
-    case input              = 3
-    case output             = 4
-    case jumpIfTrue         = 5
-    case jumpIfFalse        = 6
-    case lessThan           = 7
-    case equals             = 8
-    case relativeBaseOffset = 9
-    case halt               = 99
-}
-
-enum ParameterMode: Int {
-    case position  = 0
-    case immediate = 1
-    case relative  = 2
-}
-
-struct Instruction {
-    let opcode: Opcode
-    let modes: [ParameterMode]
-
-    init( instruction: Int ) {
-        opcode = Opcode( rawValue: instruction % 100 )!
-        modes = [
-            ParameterMode( rawValue: instruction /   100 % 10 )!,
-            ParameterMode( rawValue: instruction /  1000 % 10 )!,
-            ParameterMode( rawValue: instruction / 10000 % 10 )!,
-        ]
-    }
-    
-    func mode( operand: Int ) -> ParameterMode {
-        return modes[ operand - 1 ]
-    }
-}
-
-class IntcodeComputer {
-    let name: String
-    var memory: [Int]
-    var inputs: [Int]
-    var pc = 0
-    var relativeBase = 0
-    var halted = true
-    var debug = false
-    
-    init( name: String, memory: [Int], inputs: [Int] ) {
-        self.name = name
-        self.memory = memory
-        self.inputs = inputs
-    }
-
-    func fetch( _ instruction: Instruction, operand: Int ) throws -> Int {
-        var location = memory[ pc + operand ]
-        
-        switch instruction.mode( operand: operand ) {
-        case .position:
-            break
-        case .immediate:
-            return location
-        case .relative:
-            location += relativeBase
-        }
-
-        if location < 0 {
-            throw "Negative memory fetch (\(location)) at address \(pc)"
-        } else if location >= memory.count {
-            return 0
-        }
-        return memory[location]
-    }
-    
-    func store( _ instruction: Instruction, operand: Int, value: Int ) throws -> Void {
-        var location = memory[ pc + operand ]
-        
-        switch instruction.mode( operand: operand ) {
-        case .position:
-            break
-        case .immediate:
-            throw "Immediate mode invalid for address \(pc)"
-        case .relative:
-            location += relativeBase
-        }
-
-        if location < 0 {
-            throw "Negative memory store (\(location)) at address \(pc)"
-        } else if location >= memory.count {
-            memory.append( contentsOf: Array( repeating: 0, count: location - memory.count + 1 ) )
-        }
-        memory[location] = value
-    }
-
-    func grind() -> Int? {
-        halted = false
-        while true {
-            let instruction = Instruction( instruction: memory[pc] )
-            
-            switch instruction.opcode {
-            case .add:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-                
-                try! store( instruction, operand: 3, value: operand1 + operand2 )
-                pc += 4
-            case .multiply:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-
-                try! store( instruction, operand: 3, value: operand1 * operand2 )
-                pc += 4
-            case .input:
-                if debug { print( "\(name): inputs \(inputs.first!)" ) }
-                try! store( instruction, operand: 1, value: inputs.removeFirst() )
-                pc += 2
-            case .output:
-                let operand1 = try! fetch( instruction, operand: 1 )
-
-                pc += 2
-                if debug { print( "\(name): outputs \(operand1)" ) }
-                return operand1
-            case .jumpIfTrue:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-
-                if operand1 != 0 {
-                    pc = operand2
-                } else {
-                    pc += 3
-                }
-            case .jumpIfFalse:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-
-                if operand1 == 0 {
-                    pc = operand2
-                } else {
-                    pc += 3
-                }
-            case .lessThan:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-
-                if operand1 < operand2 {
-                    try! store( instruction, operand: 3, value: 1 )
-                } else {
-                    try! store( instruction, operand: 3, value: 0 )
-                }
-                pc += 4
-            case .equals:
-                let operand1 = try! fetch( instruction, operand: 1 )
-                let operand2 = try! fetch( instruction, operand: 2 )
-
-                if operand1 == operand2 {
-                    try! store( instruction, operand: 3, value: 1 )
-                } else {
-                    try! store( instruction, operand: 3, value: 0 )
-                }
-                pc += 4
-            case .relativeBaseOffset:
-                let operand1 = try! fetch( instruction, operand: 1 )
-
-                relativeBase += operand1
-                pc += 2
-            case .halt:
-                if debug { print( "\(name): halts" ) }
-                halted = true
-                return nil
-            }
-        }
-    }
-}
-
 
 // MARK: - Useful for handling and displaying bits
 
@@ -211,17 +36,6 @@ extension Int {
 }
 
 
-// MARK: - Get and parse the input
-
-guard CommandLine.arguments.count > 1 else {
-    print( "No input file specified" )
-    exit( 1 )
-}
-
-let input = try String( contentsOfFile: CommandLine.arguments[1] ).dropLast( 1 )
-let initialMemory = input.split( separator: "," ).map { Int($0)! }
-
-
 // MARK: - Common to Part 1 and Part 2
 
 func walkOrJump( scan: Int, range: Int ) -> String {
@@ -244,7 +58,7 @@ func walkOrJump( scan: Int, range: Int ) -> String {
 }
 
 struct Controller {
-    let computer: IntcodeComputer
+    let computer: Intcode
     let commands: [ String ]
     
     init( memory: [Int], commands: String ) {
@@ -264,7 +78,7 @@ struct Controller {
             return lines.filter { $0 != "" }
         }
 
-        computer = IntcodeComputer( name: "Robby", memory: memory, inputs: [] )
+        computer = Intcode( name: "Robby", memory: memory )
         self.commands = assemble( code: commands )
     }
     
@@ -273,13 +87,13 @@ struct Controller {
         computer.inputs.append( Int( Character( "\n" ).asciiValue! ) )
     }
     
-    func trial( quietly: Bool = false ) -> Int {
+    func trial( quietly: Bool = false ) throws -> Int {
         var buffer = ""
         var final = 0
         
         commands.forEach { command( value: $0 ) }
         
-        while let output = computer.grind() {
+        while let output = try computer.execute() {
             if let code = UnicodeScalar( output ) {
                 let char = Character( code )
                 
@@ -553,29 +367,6 @@ func toTruthTable( expression: String, inputs: Int ) -> [Bool?] {
 }
 
 
-#if false
-// The standard truth table created by Generator will not reduce to 15 springscript instructions for part 2.
-// Converting all the "X" and "K" entries into don't cares also will not reduce to 15 springscript
-// instructions.  So when this code is enabled it simply prints out the part 2 truth table for hand analysis.
-// It's pretty obvious that the truth table falls into groups based on the first 4 bits (A, B, C, and D).
-// Using that information I created the makeTruthTable function which selectively converts some of the "X"
-// and "K" entries into don't cares.  This them allows the truth table to reduce to less than 15 springscript
-// instructions.
-do {
-    let inputs = 9
-    let generator = Generator( inputs: inputs )
-
-    for index in generator.truthTable.indices {
-        let call = walkOrJump( scan: index, range: inputs )
-
-        if index >= generator.halfTerm {
-            print( index.asBinary( bits: inputs ), call, generator.truthTable[index]! )
-        }
-    }
-}
-#endif
-
-
 func makeTruthTable( index: Int, inputs: Int ) -> Bool? {
     let call = walkOrJump( scan: index, range: inputs )
     let masks = [
@@ -595,22 +386,60 @@ func makeTruthTable( index: Int, inputs: Int ) -> Bool? {
 }
 
 
-#if true
-do {
-    let generator1 = Generator( inputs: 4 )
-    let part1Commands = generator1.springscript( final: "WALK" )
-    let part1Controller = Controller( memory: initialMemory, commands: part1Commands )
+func parse( input: AOCinput ) -> [Int] {
+    return input.line.split( separator: "," ).map { Int( $0 )! }
+}
 
-    print( "Part 1: \( part1Controller.trial( quietly: true ) )" )
 
-    let generator2 = Generator( inputs: 9 )
-    let truthTable = generator2.truthTable.indices.map {
-        makeTruthTable( index: $0, inputs: generator2.inputs )
+func part1( input: AOCinput ) -> String {
+    let initialMemory = parse( input: input )
+    let generator = Generator( inputs: 4 )
+    let commands = generator.springscript( final: "WALK" )
+    let controller = Controller( memory: initialMemory, commands: commands )
+
+    return "\( try! controller.trial( quietly: true ) )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let initialMemory = parse( input: input )
+    let truthTableGenerator = Generator( inputs: 9 )
+    let truthTable = truthTableGenerator.truthTable.indices.map {
+        makeTruthTable( index: $0, inputs: truthTableGenerator.inputs )
     }
-    let generator3 = Generator( inputs: generator2.inputs, truthTable: truthTable )
-    let part2Commands = generator3.springscript( final: "RUN" )
-    let part2Controller = Controller( memory: initialMemory, commands: part2Commands )
+    let commandGenerator = Generator( inputs: truthTableGenerator.inputs, truthTable: truthTable )
+    let commands = commandGenerator.springscript( final: "RUN" )
+    let controller = Controller( memory: initialMemory, commands: commands )
 
-    print( "Part 2: \( part2Controller.trial( quietly: false ) )" )
+    return "\( try! controller.trial( quietly: false ) )"
+}
+
+
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
+
+
+#if false
+// The standard truth table created by Generator will not reduce to 15 springscript instructions for part 2.
+// Converting all the "X" and "K" entries into don't cares also will not reduce to 15 springscript
+// instructions.  So when this code is enabled it simply prints out the part 2 truth table for hand analysis.
+// It's pretty obvious that the truth table falls into groups based on the first 4 bits (A, B, C, and D).
+// Using that information I created the makeTruthTable function which selectively converts some of the "X"
+// and "K" entries into don't cares.  This then allows the truth table to reduce to less than 15 springscript
+// instructions.
+do {
+    let inputs = 9
+    let generator = Generator( inputs: inputs )
+
+    for index in generator.truthTable.indices {
+        let call = walkOrJump( scan: index, range: inputs )
+
+        if index >= generator.halfTerm {
+            print( index.asBinary( bits: inputs ), call, generator.truthTable[index]! )
+        }
+    }
 }
 #endif
+
