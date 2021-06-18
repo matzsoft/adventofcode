@@ -1,59 +1,57 @@
 //
-//  main.swift
-//  day22
-//
-//  Created by Mark Johnson on 12/21/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day22 - Slam Shuffle
+//        NOTES: Requires https://github.com/attaswift/BigInt
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/17/21 15:10:08
 //
 
 import Foundation
 import BigInt
 
-guard CommandLine.arguments.count > 1 else {
-    print( "No input file specified" )
-    exit( 1 )
-}
-
-let input = try String( contentsOfFile: CommandLine.arguments[1] )
-let lines = input.split(separator: "\n" )
-
-
-enum Command {
-    case reverse, cut, dealBy
-}
-
-func parse( line: Substring ) -> ( Command, Int ) {
-    let words = line.split( separator: " " )
+struct Command {
+    enum Command { case reverse, cut, dealBy }
     
-    switch true {
-    case line.hasPrefix( "deal into" ):
-        return ( .reverse, 0 )
-    case line.hasPrefix( "cut" ):
-        return ( .cut, Int( words[1] )! )
-    case line.hasPrefix( "deal with" ):
-        return ( .dealBy, Int( words[3] )! )
-    default:
-        print( "Invalid command '\(line)'" )
-        exit(1)
+    let type: Command
+    let count: Int
+    
+    init( line: String ) throws {
+        let words = line.split( separator: " " )
+        
+        switch true {
+        case line.hasPrefix( "deal into" ):
+            type = .reverse
+            count = 0
+        case line.hasPrefix( "cut" ):
+            type = .cut
+            count = Int( words[1] )!
+        case line.hasPrefix( "deal with" ):
+            type = .dealBy
+            count = Int( words[3] )!
+        default:
+            throw RuntimeError( "Invalid command '\(line)'" )
+        }
     }
 }
 
-func compose( lines: [Substring], cardCount: Int ) -> ( Int, Int ) {
-    let ( a, b ) = lines.reduce( ( BigInt( 1 ), BigInt( 0 ) ), { lcd, line -> ( BigInt, BigInt ) in
-        let ( command, amount ) = parse( line: line )
+
+func compose( commands: [Command], cardCount: Int ) -> ( Int, Int ) {
+    let ( a, b ) = commands.reduce( ( BigInt( 1 ), BigInt( 0 ) ), { lcd, command -> ( BigInt, BigInt ) in
         let ( a, b ) = lcd
         var c: BigInt
         var d: BigInt
 
-        switch command {
+        switch command.type {
         case .reverse:
             c = -1
             d = BigInt( cardCount - 1 )
         case .cut:
             c = 1
-            d = BigInt( cardCount - amount )
+            d = BigInt( cardCount - command.count )
         case .dealBy:
-            c = BigInt( amount )
+            c = BigInt( command.count )
             d = 0
         }
         return ( a * c % BigInt( cardCount ), ( b * c + d ) % BigInt( cardCount ) )
@@ -61,6 +59,7 @@ func compose( lines: [Substring], cardCount: Int ) -> ( Int, Int ) {
     
     return ( Int( a ), Int( b ) )
 }
+
 
 func powerMod( x: Int, n: Int, m: Int ) -> Int {
     guard n > 0 else { return 1 }
@@ -81,6 +80,7 @@ func powerMod( x: Int, n: Int, m: Int ) -> Int {
     return Int( x * y % m )
 }
 
+
 func invert( lcd: ( Int, Int), x: Int, m: Int ) -> Int {
     let a = lcd.0
     let b = BigInt( lcd.1 )
@@ -89,6 +89,7 @@ func invert( lcd: ( Int, Int), x: Int, m: Int ) -> Int {
     
     return Int( ( x - b + bigM ) * BigInt( powerMod( x: a, n: m - 2, m: m ) ) % bigM )
 }
+
 
 func powerCompose( lcd: ( Int, Int ), power: Int, cardCount: Int ) -> ( Int, Int ) {
     let a = lcd.0
@@ -100,143 +101,45 @@ func powerCompose( lcd: ( Int, Int ), power: Int, cardCount: Int ) -> ( Int, Int
     return ( newA, Int( newB ) )
 }
 
-func forward( start: Int, cardCount: Int, commands: [Substring] ) -> Int {
-    var position = start
 
-    for line in commands {
-        let ( command, amount ) = parse( line: line )
-        
-        switch command {
-        case .reverse:
-            position = cardCount - position - 1
-        case .cut:
-            position = ( position + cardCount - amount ) % cardCount
-        case .dealBy:
-            position = position * amount % cardCount
-        }
-    }
-    
-    return position
+func parse( input: AOCinput ) -> [Command] {
+    return input.lines.map { try! Command( line: $0 ) }
 }
 
 
-do {
+func part1( input: AOCinput ) -> String {
+    let commands = parse( input: input )
     let cardCount = 10007
     let final = 2019
-    let ( a, b ) = compose( lines: lines, cardCount: cardCount )
+    let ( a, b ) = compose( commands: commands, cardCount: cardCount )
     let result = ( a * final + b ) % cardCount
     let inverted = invert( lcd: ( a, b ), x: result, m: cardCount )
 
-    print( "Part1:", result )
-    
     if inverted != final {
         print( "Inverse got wrong result:", inverted )
     }
+    return "\(result)"
 }
 
-do {
+
+func part2( input: AOCinput ) -> String {
+    let commands = parse( input: input )
     let cardCount = 119315717514047
     let repititions = 101741582076661
     let final = 2020
-    let ( a, b ) = compose( lines: lines, cardCount: cardCount )
+    let ( a, b ) = compose( commands: commands, cardCount: cardCount )
     let ( c, d ) = powerCompose( lcd: ( a, b ), power: repititions, cardCount: cardCount )
     let result = invert( lcd: ( c, d ), x: final, m: cardCount )
     let inverted = ( BigInt( c ) * BigInt( result ) + BigInt( d ) ) % BigInt( cardCount )
 
-    print( "Part2:", result )
-    
     if inverted != final {
         print( "Inverse got wrong result:", inverted )
     }
+    return "\(result)"
 }
 
 
-
-// MARK: - Obsolete functions
-func compiler( lines: [Substring], cardCount: Int, forward: Bool = true ) -> [ ( _ position: Int ) -> Int ] {
-    let buffer = forward ? lines : lines.reversed()
-    
-    return buffer.map { line in
-        let ( command, amount ) = parse( line: line )
-
-        switch command {
-        case .reverse:
-            return { ( _ position: Int ) -> Int in cardCount - position - 1 }
-        case .cut:
-            if forward {
-                return { ( _ position: Int ) -> Int in ( position + cardCount - amount ) % cardCount }
-            }
-            return { ( _ position: Int ) -> Int in ( position + cardCount + amount ) % cardCount }
-        case .dealBy:
-            if forward {
-                return { ( _ position: Int ) -> Int in position * amount % cardCount }
-            }
-            
-            guard let multiplier = ( 0 ..< amount ).first( where: {
-                ( 1 + cardCount * $0 ) % amount == 0
-            } )  else {
-                print( "Unexpectedly can't find multiplier" )
-                exit(1)
-            }
-            return { ( _ position: Int ) -> Int in
-                return ( position + cardCount * ( position * multiplier % amount ) ) / amount
-            }
-        }
-    }
-}
-
-func backward( start: Int, cardCount: Int, commands: [Substring] ) -> Int {
-    var position = start
-
-    for line in commands {
-        let ( command, amount ) = parse( line: line )
-        
-        switch command {
-        case .reverse:
-            position = cardCount - position - 1
-        case .cut:
-            position = ( position + cardCount + amount ) % cardCount
-        case .dealBy:
-            guard let multiplier = ( 0 ..< amount ).first( where: {
-                ( position + cardCount * $0 ) % amount == 0
-            } )  else {
-                print( "Unexpected x is unknown" )
-                exit(1)
-            }
-            position = ( position + cardCount * multiplier ) / amount
-        }
-    }
-    
-    return position
-}
-
-func oldSchool( cardCount: Int, commands: [Substring] ) -> [Int] {
-    var deck = ( 0 ..< cardCount ).map { $0 }
-    
-    for line in commands {
-        let ( command, amount ) = parse( line: line )
-        
-        switch command {
-        case .reverse:
-            deck.reverse()
-        case .cut:
-            if amount > 0 {
-                deck = Array( deck[ amount ..< deck.count ] ) + deck[ 0 ..< amount ]
-            } else {
-                deck = Array( deck[ deck.count + amount ..< deck.count ] ) + deck[ 0 ..< deck.count + amount ]
-            }
-        case .dealBy:
-            var stack = deck
-            var position = 0
-            
-            while !stack.isEmpty {
-                let card = stack.removeFirst()
-                
-                deck[position] = card
-                position = ( position + amount ) % deck.count
-            }
-        }
-    }
-    
-    return deck
-}
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
