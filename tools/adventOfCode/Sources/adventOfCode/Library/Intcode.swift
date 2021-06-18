@@ -39,6 +39,10 @@ class Intcode {
     var memory: [Int]
     var inputs: [Int]
     var debug = false
+    
+    var nextInstruction: Instruction {
+        return Instruction( instruction: memory[ip] )
+    }
 
     init( name: String, memory: [Int] ) {
         self.name = name
@@ -88,64 +92,70 @@ class Intcode {
         memory[location] = value
     }
 
+    func step() throws -> Int? {
+        let instruction = Instruction( instruction: memory[ip] )
+        
+        switch instruction.opcode {
+        case .add:
+            let operand1 = try fetch( instruction, operand: 1 )
+            let operand2 = try fetch( instruction, operand: 2 )
+            
+            try store( instruction, operand: 3, value: operand1 + operand2 )
+            ip += 4
+        case .multiply:
+            let operand1 = try fetch( instruction, operand: 1 )
+            let operand2 = try fetch( instruction, operand: 2 )
+            
+            try store( instruction, operand: 3, value: operand1 * operand2 )
+            ip += 4
+        case .input:
+            if debug { print( "\(name): inputs \(inputs.first!)" ) }
+            try store( instruction, operand: 1, value: inputs.removeFirst() )
+            ip += 2
+        case .output:
+            let operand1 = try fetch( instruction, operand: 1 )
+            
+            ip += 2
+            if debug { print( "\(name): outputs \(operand1)" ) }
+            return operand1
+        case .jumpIfTrue:
+            let operand1 = try fetch( instruction, operand: 1 )
+            let operand2 = try fetch( instruction, operand: 2 )
+            
+            ip = operand1 != 0 ? operand2 : ip + 3
+        case .jumpIfFalse:
+            let operand1 = try fetch( instruction, operand: 1 )
+            let operand2 = try fetch( instruction, operand: 2 )
+            
+            ip = operand1 == 0 ? operand2 : ip + 3
+        case .lessThan:
+            let operand1 = try fetch( instruction, operand: 1 )
+            let operand2 = try fetch( instruction, operand: 2 )
+            
+            try store( instruction, operand: 3, value: operand1 < operand2 ? 1 : 0 )
+            ip += 4
+        case .equals:
+            let operand1 = try fetch( instruction, operand: 1 )
+            let operand2 = try fetch( instruction, operand: 2 )
+            
+            try store( instruction, operand: 3, value: operand1 == operand2 ? 1 : 0 )
+            ip += 4
+        case .relativeBaseOffset:
+            let operand1 = try fetch( instruction, operand: 1 )
+            
+            relativeBase += operand1
+            ip += 2
+        case .halt:
+            if debug { print( "\(name): halts" ) }
+        }
+
+        return nil
+    }
+    
     func execute() throws -> Int? {
         while true {
-            let instruction = Instruction( instruction: memory[ip] )
-            
-            switch instruction.opcode {
-            case .add:
-                let operand1 = try fetch( instruction, operand: 1 )
-                let operand2 = try fetch( instruction, operand: 2 )
-                
-                try store( instruction, operand: 3, value: operand1 + operand2 )
-                ip += 4
-            case .multiply:
-                let operand1 = try fetch( instruction, operand: 1 )
-                let operand2 = try fetch( instruction, operand: 2 )
-
-                try store( instruction, operand: 3, value: operand1 * operand2 )
-                ip += 4
-            case .input:
-                if debug { print( "\(name): inputs \(inputs.first!)" ) }
-                try store( instruction, operand: 1, value: inputs.removeFirst() )
-                ip += 2
-            case .output:
-                let operand1 = try fetch( instruction, operand: 1 )
-                
-                ip += 2
-                if debug { print( "\(name): outputs \(operand1)" ) }
-                return operand1
-            case .jumpIfTrue:
-                let operand1 = try fetch( instruction, operand: 1 )
-                let operand2 = try fetch( instruction, operand: 2 )
-                
-                ip = operand1 != 0 ? operand2 : ip + 3
-            case .jumpIfFalse:
-                let operand1 = try fetch( instruction, operand: 1 )
-                let operand2 = try fetch( instruction, operand: 2 )
-
-                ip = operand1 == 0 ? operand2 : ip + 3
-            case .lessThan:
-                let operand1 = try fetch( instruction, operand: 1 )
-                let operand2 = try fetch( instruction, operand: 2 )
-
-                try store( instruction, operand: 3, value: operand1 < operand2 ? 1 : 0 )
-                ip += 4
-            case .equals:
-                let operand1 = try fetch( instruction, operand: 1 )
-                let operand2 = try fetch( instruction, operand: 2 )
-
-                try store( instruction, operand: 3, value: operand1 == operand2 ? 1 : 0 )
-                ip += 4
-            case .relativeBaseOffset:
-                let operand1 = try fetch( instruction, operand: 1 )
-                
-                relativeBase += operand1
-                ip += 2
-            case .halt:
-                if debug { print( "\(name): halts" ) }
-                return nil
-            }
+            if let output = try step() { return output }
+            if nextInstruction.opcode == .halt { return nil }
         }
     }
 }

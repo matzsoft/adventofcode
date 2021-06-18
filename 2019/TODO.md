@@ -4,3 +4,4 @@
 1. day 19 - compute commands in part 2 instead of hard coding them.
 1. day 21 - the solution essentially hard codes the answers.  There is support code in there to help determine what the hard coding should be.  day21a is a step in the direction of computing the required commands.  It would be nice to get that to work.
 1. day 22 - requires referencing a BigInt package from github.  Need a way to have that work through the adventOfCode tool.
+2. day 23 - part 2 takes 30+ seconds.  Can that be reduced?
