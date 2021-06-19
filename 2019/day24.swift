@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day24
-//
-//  Created by Mark Johnson on 12/23/19.
-//  Copyright © 2019 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day24 - Planet of Discord
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/18/21 19:47:26
 //
 
 import Foundation
@@ -11,8 +13,8 @@ import Foundation
 struct Bugs {
     let grid: [[Int]]
     
-    init<T: StringProtocol>( input: T ) {
-        grid = input.split( separator: "\n" ).map { $0.map { $0 == "#" ? 1 : 0 } }
+    init( lines: [String] ) {
+        grid = lines.map { $0.map { $0 == "#" ? 1 : 0 } }
     }
     
     init( grid: [[Int]] ) {
@@ -54,13 +56,14 @@ struct Bugs {
     }
 }
 
+
 struct BugsLevel {
     let grid: [[Int]]
 
-    init<T: StringProtocol>( input: T ) {
-        grid = input.split( separator: "\n" ).map { $0.map { $0 == "#" ? 1 : 0 } }
+    init( lines: [String] ) {
+        grid = lines.map { $0.map { $0 == "#" ? 1 : 0 } }
     }
-    
+
     init( grid: [[Int]] ) {
         self.grid = grid
     }
@@ -133,9 +136,10 @@ struct BugsLevel {
     }
 }
 
-func BugsMultiverse<T: StringProtocol>( input: T, minutes: Int ) -> Int {
+
+func BugsMultiverse( lines: [String], minutes: Int ) -> Int {
     let offset = ( minutes + 3 ) / 2
-    let level0 = BugsLevel( input: input )
+    let level0 = BugsLevel( lines: lines )
     let empty = BugsLevel( width: level0.width, height: level0.height )
     var verse = Array( repeating: empty, count: 2 * offset + 1 )
     
@@ -156,26 +160,29 @@ func BugsMultiverse<T: StringProtocol>( input: T, minutes: Int ) -> Int {
 }
 
 
-guard CommandLine.arguments.count > 1 else {
-    print( "No input file specified" )
-    exit( 1 )
-}
+func part1( input: AOCinput ) -> String {
+    let bugs = Bugs( lines: input.lines )
 
-let input = try String( contentsOfFile: CommandLine.arguments[1] ).dropLast( 1 )
-let bugs = Bugs( input: input )
+    //print( bugs.asString )
 
-print( bugs.asString )
+    var evolution = bugs
+    var seen = Set<Int>()
 
-var evolution = bugs
-var seen = Set<Int>( [ evolution.biodiversity ] )
-
-while true {
-    evolution = evolution.nextMinute
-    if seen.contains( evolution.biodiversity ) {
-        break
+    while seen.insert( evolution.biodiversity ).inserted {
+        evolution = evolution.nextMinute
     }
-    seen.insert( evolution.biodiversity )
+
+    return "\( evolution.biodiversity )"
 }
 
-print( "Part 1: \( evolution.biodiversity )" )
-print( "Part 2: \( BugsMultiverse( input: input, minutes: 200 ) )" )
+
+func part2( input: AOCinput ) -> String {
+    let minutes = Int( input.extras[0] )!
+    return "\( BugsMultiverse( lines: input.lines, minutes: minutes ) )"
+}
+
+
+try runTestsPart1( part1: part1 )
+try runTestsPart2( part2: part2 )
+try runPart1( part1: part1 )
+try runPart2( part2: part2 )
