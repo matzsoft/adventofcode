@@ -19,6 +19,11 @@ extension adventOfCode {
         var package: String
         
         func validate() throws {
+            if package.hasSuffix( ".swift" )  {
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "Must specify package name not a .swift file", to: &stderr )
+                throw ExitCode.failure
+            }
         }
         
         func run() throws -> Void {

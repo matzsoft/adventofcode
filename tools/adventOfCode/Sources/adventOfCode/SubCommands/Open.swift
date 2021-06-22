@@ -26,27 +26,27 @@ extension adventOfCode {
             abstract: "Create the Swift Package Manager structure for a solution."
         )
         
-        @Argument( help: "Name of the Swift file to create the package for." )
-        var swiftFile: String
+        @Argument( help: "Name of the solution package to create." )
+        var package: String
         
         func validate() throws {
-            guard swiftFile.hasSuffix( ".swift" ) else {
+            if package.hasSuffix( ".swift" )  {
                 var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Must specify a .swift file", to: &stderr )
+                print( "Must specify package name not a .swift file", to: &stderr )
                 throw ExitCode.failure
             }
         }
         
         func run() throws -> Void {
-            try performOpen( swiftFile: swiftFile )
+            try performOpen( package: package )
         }
     }
 }
 
 
-func performOpen( swiftFile: String ) throws -> Void {
+func performOpen( package: String ) throws -> Void {
     let fileManager = FileManager.default
-    let package = String( swiftFile.dropLast( 6 ) )
+    let swiftFile = package + ".swift"
     let sourcesFolder = "Sources/\(package)"
     let mainSwift = "\(sourcesFolder)/main.swift"
     let libraryFolder = try findDirectory( name: "Library" )

@@ -20,6 +20,11 @@ extension adventOfCode {
         var package: String
         
         func validate() throws {
+            if package.hasSuffix( ".swift" )  {
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "Must specify package name not a .swift file", to: &stderr )
+                throw ExitCode.failure
+            }
         }
         
         func run() throws -> Void {
@@ -38,7 +43,7 @@ extension adventOfCode {
 
             try createInput( inputFile: inputFile )
             try swiftFileSource.write( toFile: swiftFile, atomically: true, encoding: .utf8 )
-            try performOpen( swiftFile: swiftFile )
+            try performOpen( package: package )
             
             guard fileManager.changeCurrentDirectoryPath( currentDirectory ) else {
                 var stderr = FileHandlerOutputStream( FileHandle.standardError )
