@@ -13,58 +13,59 @@ import Mustache
 extension adventOfCode {
     struct Retrofit: ParsableCommand {
         static var configuration = CommandConfiguration(
-            abstract: "Help with retrofit of new Run* methods into a package."
+            abstract: "Convert all .swift files in a directory to use new Run* method names."
         )
         
-        @Argument( help: "Name of the solution package to retrofit." )
-        var package: String
-        
         func validate() throws {
-            if package.hasSuffix( ".swift" )  {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Must specify package name not a .swift file", to: &stderr )
-                throw ExitCode.failure
-            }
         }
         
         func run() throws -> Void {
-            let fileManager = FileManager.default
-            let swiftFile = "\(package).swift"
-            
-            guard fileManager.fileExists( atPath: swiftFile ) else {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "\(swiftFile) does not exist.", to: &stderr )
-                throw ExitCode.failure
+            for file in glob( pattern: "*.swift" ) {
+                try updateSwiftSource( swiftFile: file )
             }
-            
-            let swiftFileSource = try updateSwiftSource( swiftFile: swiftFile )
-
-            try swiftFileSource.write( toFile: swiftFile, atomically: true, encoding: .utf8 )
-            try performOpen( package: package )
         }
 
-        func updateSwiftSource( swiftFile: String ) throws -> String {
-            var oldSource = try String( contentsOfFile: swiftFile )
-            let templateURL = Bundle.module.url( forResource: "retrofit", withExtension: "mustache" )
-            guard let templateURL = templateURL else {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Can't find template for \(swiftFile)", to: &stderr )
-                throw ExitCode.failure
+        func updateSwiftSource( swiftFile: String ) throws -> Void {
+            var oldSource = try String( contentsOfFile: swiftFile ).components( separatedBy: "\n" )
+            var oldLines = [String]()
+            var newLines = [String]()
+
+            for ( index, line ) in oldSource.enumerated() {
+                func replace( target: String, with replacement: String ) {
+                    if let range = line.range( of: target ) {
+                        let newLine = line.replacingCharacters( in: range, with: replacement )
+                        
+                        oldLines.append( line )
+                        newLines.append( newLine )
+                        oldSource[index] = newLine
+                    }
+                }
+                    
+                replace( target: "runTestsPart1", with: "runTests" )
+                replace( target: "runTestsPart2", with: "runTests" )
+                replace( target: "runPart1", with: "solve" )
+                replace( target: "runPart2", with: "solve" )
             }
-            let oldtailURL = Bundle.module.url( forResource: "oldtail", withExtension: "swift" )
-            guard let oldtailURL = oldtailURL else {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Can't find template for oldtail", to: &stderr )
-                throw ExitCode.failure
-            }
-            let oldtail = try String( contentsOf: oldtailURL )
-            if oldSource.hasSuffix( oldtail ) {
-                oldSource.removeLast( oldtail.count )
-            }
-            let template = try Template( URL: templateURL )
-            let templateData: [String: Any] = [ "oldSource": oldSource ]
             
-            return try template.render( templateData )
+            if oldLines.isEmpty {
+                print("\(swiftFile): no change")
+            } else {
+                let prefix = String( repeating: "-", count: ( 79 - swiftFile.count ) / 2 )
+                let suffix = String( repeating: "-", count: ( 78 - swiftFile.count ) / 2 )
+                
+                print( prefix, swiftFile, suffix )
+                oldLines.forEach { print( $0 ) }
+                print( String( repeating: "-", count: 40 ) )
+                newLines.forEach { print( $0 ) }
+                
+                if askYN( prompt: "Proceed", expected: true ) {
+                    let swiftFileSource = oldSource.joined( separator: "\n" )
+                    try swiftFileSource.write( toFile: swiftFile, atomically: true, encoding: .utf8 )
+                }
+                else {
+                    throw ExitCode.failure
+                }
+            }
         }
     }
 }
