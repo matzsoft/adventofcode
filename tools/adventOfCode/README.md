@@ -12,7 +12,7 @@ The tools directory which currently has one tool **adventOfCode** and a support 
 
 ### Year Subdirectories
 
-The year subdirectories should ultimately contain one file for each problem (day01.swift through day25.swift), a directory named input, and a directory named tests.  The input directory contains the problem data for each problem.  For example the problem data for day07.swift is in input/day07.txt.  The tests directory contains any test data for each problem.  For example any test data for day07.swift would be in tests/day07*.txt.
+The year subdirectories should ultimately contain one file for each problem (day01.swift through day25.swift), a directory named input, and a directory named testfiles.  The input directory contains the problem data for each problem.  For example the problem data for day07.swift is in input/day07.txt.  The testfiles directory contains any test data for each problem.  For example any test data for day07.swift would be in testfiles/day07*.txt.
 
 The format of the problem and test data is the same.  They consist of a header, a separator, and the problem data from the Advent of Code website.
 
@@ -41,11 +41,11 @@ The make subcommand is used to create a new problem solution skeleton.  It takes
 
 1. Creates the day12.swift file.
 1. Creates the input/day12.txt file.
-1. Simulates an `adventOfCode open day12.swift` command.
+1. Simulates an `adventOfCode open day12` command.
 
 ### Open subcommand
 
-The open subcommand takes a problem solution Swift file and creates a Swift Package Manager setup for it.  Then Xcode is opened for that package.  To continue the example from above, the command `adventOfCode open day12.swift` performs the following actions:
+The open subcommand takes a problem solution name and creates a Swift Package Manager setup for it.  Then Xcode is opened for that package.  To continue the example from above, the command `adventOfCode open day12` performs the following actions:
 
 1. Creates a subdirectory called day12.
 1. Creates a Swift Package Manager structure within the day12 directory.
