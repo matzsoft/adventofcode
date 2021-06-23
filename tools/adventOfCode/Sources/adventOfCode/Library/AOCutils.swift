@@ -110,7 +110,7 @@ func getTests() throws -> [AOCinput] {
 
 // MARK: - functions for running solutions and tests.
 
-func runPart1( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
+func solve( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
     let input = try getAOCinput()
     let label = label == "" ? "Part1" : "Part1 \(label)"
     
@@ -118,7 +118,7 @@ func runPart1( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws ->
 }
 
 
-func runPart2( part2: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
+func solve( part2: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
     let input = try getAOCinput()
     let label = label == "" ? "Part2" : "Part2 \(label)"
     
@@ -144,7 +144,7 @@ func runSolution( label: String, function: ( AOCinput ) -> String, input: AOCinp
 }
 
 
-func runTestsPart1( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
+func runTests( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
     let tests = try getTests().filter { $0.part1 != nil }
     let label = label == "" ? "Part1" : "Part1 \(label)"
     var successes = 0
@@ -165,7 +165,7 @@ func runTestsPart1( part1: ( ( AOCinput ) -> String ), label: String = "" ) thro
 }
 
 
-func runTestsPart2( part2: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
+func runTests( part2: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
     let tests = try getTests().filter { $0.part2 != nil }
     let label = label == "" ? "Part2" : "Part2 \(label)"
     var successes = 0

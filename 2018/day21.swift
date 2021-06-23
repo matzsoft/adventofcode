@@ -90,9 +90,9 @@ func part2e( input: AOCinput ) -> String {
 }
 
 
-try runTestsPart1( part1: part1 )
-try runTestsPart2( part2: part2e, label: "Emulator" )
-try runPart1( part1: part1 )
-try runPart1( part1: part1e, label: "Emulator" )
-try runPart2( part2: part2e, label: "Emulator" )
-//try runPart2( part2: part2 )      // Takes 27 minutes to run.
+try runTests( part1: part1 )
+try runTests( part2: part2e, label: "Emulator" )
+try solve( part1: part1 )
+try solve( part1: part1e, label: "Emulator" )
+try solve( part2: part2e, label: "Emulator" )
+//try solve( part2: part2 )      // Takes 27 minutes to run.

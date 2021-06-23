@@ -55,12 +55,12 @@ func part2( input: AOCinput ) -> String {
 }
 
 
-try runTestsPart1( part1: part1Slow )
-try runTestsPart2( part2: part2 )
-try runPart1( part1: part1 )
-try runPart2( part2: part2 )
-//try runPart1( part1: part1Slow )
-//try runPart2( part2: part2Slow )
+try runTests( part1: part1Slow )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
+//try solve( part1: part1Slow )
+//try solve( part2: part2Slow )
 
 
 /*
