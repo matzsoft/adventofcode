@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day01
-//
-//  Created by Mark Johnson on 12/04/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day01 - Report Repair
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/23/21 16:21:42
 //
 
 import Foundation
@@ -14,7 +16,7 @@ extension Array {
             var result: [ ( Element, Element ) ] = []
             for index1 in 0 ..< count - 1 {
                 for index2 in index1 + 1 ..< count {
-                    result.append( (self[index1], self[index2] ) )
+                    result.append( ( self[index1], self[index2] ) )
                 }
             }
             return result
@@ -27,7 +29,7 @@ extension Array {
             for index1 in 0 ..< count - 2 {
                 for index2 in index1 + 1 ..< count - 1 {
                     for index3 in index2 + 1 ..< count {
-                        result.append( (self[index1], self[index2], self[index3] ) )
+                        result.append( ( self[index1], self[index2], self[index3] ) )
                     }
                 }
             }
@@ -36,35 +38,35 @@ extension Array {
     }
 }
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day01.txt"
-let expenses = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map { Int($0)! }
 
-for ( index1, value1 ) in expenses.enumerated() {
-    for index2 in (index1+1) ..< expenses.count {
-        let value2 = expenses[index2]
-        
-        if value1 + value2 == 2020 {
-            print( "Part 1: \(value1 * value2)" )
-        } else if value1 + value2 < 2020 {
-            for value3 in expenses[(index2+1)...] {
-                if value1 + value2 + value3 == 2020 {
-                    print( "Part 2: \(value1 * value2 * value3)" )
-                }
-            }
-        }
-    }
+func parse( input: AOCinput ) -> [Int] {
+    return input.lines.map { Int( $0 )! }
 }
 
-for ( value1, value2 ) in expenses.pairs {
-    if value1 + value2 == 2020 {
-        print( "Part 1: \(value1 * value2)" )
-        break
+
+func part1( input: AOCinput ) -> String {
+    let expenses = parse( input: input )
+    
+    if let ( value1, value2 ) = expenses.pairs.first( where: { $0.0 + $0.1 == 2020 } ) {
+        return "\( value1 * value2 )"
     }
+
+    return ""
 }
 
-for ( value1, value2, value3 ) in expenses.triples {
-    if value1 + value2 + value3 == 2020 {
-        print( "Part 2: \(value1 * value2 * value3)" )
-        break
+
+func part2( input: AOCinput ) -> String {
+    let expenses = parse( input: input )
+    
+    if let ( value1, value2, value3 ) = expenses.triples.first( where: { $0.0 + $0.1 + $0.2 == 2020 } ) {
+        return "\( value1 * value2 * value3 )"
     }
+    
+    return ""
 }
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
