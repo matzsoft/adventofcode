@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day04
-//
-//  Created by Mark Johnson on 12/04/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day04 - Passport Processing
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/23/21 19:46:39
 //
 
 import Foundation
@@ -12,7 +14,7 @@ struct Pair {
     let key: String
     let value: String
     
-    init( input: Substring ) {
+    init( input: String ) {
         let fields = input.split( separator: ":" )
         
         key = String( fields[0] )
@@ -67,8 +69,8 @@ struct Batch {
     let present: Bool
     let valid: Bool
     
-    init( input: String ) {
-        let pairs = input.split( whereSeparator: { " \n".contains( $0 ) } ).map { Pair( input: $0 ) }
+    init( lines: [String] ) {
+        let pairs = lines.joined( separator: " " ).components( separatedBy: " " ).map { Pair( input: $0 ) }
         var present = true
         var valid = true
         var found = Set<String>()
@@ -87,10 +89,25 @@ struct Batch {
     }
 }
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day04.txt"
-let batches = try String( contentsOfFile: inputFile ).components( separatedBy: "\n\n" ).map {
-    Batch( input: $0 )
+
+func parse( input: AOCinput ) -> [Batch] {
+    return input.paragraphs.map { Batch( lines: $0 ) }
 }
 
-print( "Part 1: \(batches.filter { $0.present }.count)" )
-print( "Part 2: \(batches.filter { $0.present && $0.valid }.count)" )
+
+func part1( input: AOCinput ) -> String {
+    let batches = parse( input: input )
+    return "\( batches.filter { $0.present }.count )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let batches = parse( input: input )
+    return "\( batches.filter { $0.present && $0.valid }.count )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
