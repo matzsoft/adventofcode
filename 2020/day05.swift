@@ -1,26 +1,46 @@
 //
-//  main.swift
-//  day05
-//
-//  Created by Mark Johnson on 12/04/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day05 - Binary Boarding
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/24/21 12:06:30
 //
 
 import Foundation
 
 func seatID<T>( input: T ) -> Int where T: StringProtocol {
-    let noF = input.replacingOccurrences( of: "F", with: "0" )
-    let noB = noF.replacingOccurrences(   of: "B", with: "1" )
-    let noL = noB.replacingOccurrences(   of: "L", with: "0" )
-    let noR = noL.replacingOccurrences(   of: "R", with: "1" )
+    let binary = input
+        .replacingOccurrences( of: "F", with: "0" )
+        .replacingOccurrences( of: "B", with: "1" )
+        .replacingOccurrences( of: "L", with: "0" )
+        .replacingOccurrences( of: "R", with: "1" )
     
-    return Int( noR, radix: 2 )!
+    return Int( binary, radix: 2 )!
 }
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day05.txt"
-let seats = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map {
-    seatID( input: $0 ) }.sorted()
-let myIndex = ( 0 ..< seats.count - 1 ).first { seats[$0] + 1 != seats[$0+1] }!
 
-print( "Part 1: \(seats.last!)" )
-print( "Part 2: \(seats[myIndex]+1)" )
+func parse( input: AOCinput ) -> [Int] {
+    return input.lines.map { seatID( input: $0 ) }.sorted()
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let seats = parse( input: input )
+    return "\( seats.last! )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let seats = parse( input: input )
+    let myIndex = seats.indices.first { seats[$0] + 1 != seats[$0+1] }!
+    
+    return "\( seats[myIndex] + 1 )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
