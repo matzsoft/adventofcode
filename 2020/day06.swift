@@ -1,29 +1,44 @@
 //
-//  main.swift
-//  day06
-//
-//  Created by Mark Johnson on 12/05/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day06 - Custom Customs
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/24/21 12:35:36
 //
 
 import Foundation
 
 struct Group {
-    let anyone: Set<String.Element>
-    let everyone: Set<String.Element>
+    let people: [Set<String.Element>]
 
-    init( input: String ) {
-        let people = input.split( separator: "\n" ).map { $0.map { $0 } }.map { Set( $0 ) }
-        
-        anyone = people.reduce( people[0] ) { $0.union( $1 ) }
-        everyone = people.reduce( people[0] ) { $0.intersection( $1 ) }
+    init( lines: [String] ) {
+        people = lines.map { $0.map { $0 } }.map { Set( $0 ) }
     }
 }
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day06.txt"
-let groups = try String( contentsOfFile: inputFile ).components( separatedBy: "\n\n" ).map {
-    Group( input: $0 )
+
+func parse( input: AOCinput ) -> [Group] {
+    return input.paragraphs.map { Group( lines: $0 ) }
 }
 
-print( "Part 1: \(groups.map { $0.anyone.count }.reduce( 0 ) { $0 + $1 })" )
-print( "Part 2: \(groups.map { $0.everyone.count }.reduce( 0 ) { $0 + $1 })" )
+
+func part1( input: AOCinput ) -> String {
+    let groups = parse( input: input )
+    let anyone = groups.map { $0.people.reduce( $0.people[0] ) { $0.union( $1 ) }.count }
+    return "\( anyone.reduce( 0, + ) )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let groups = parse( input: input )
+    let everyone = groups.map { $0.people.reduce( $0.people[0] ) { $0.intersection( $1 ) }.count }
+    return "\( everyone.reduce( 0, + ) )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
