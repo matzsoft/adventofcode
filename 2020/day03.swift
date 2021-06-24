@@ -10,19 +10,22 @@
 
 import Foundation
 
-struct Traversal {
-    let slope: Point2D
+struct Forest {
+    let grid: [[Character]]
     
-    func downhill( grid: [[Character]] ) -> Int {
+    init( lines: [String] ) {
+        grid = lines.map { $0.map { $0 } }
+    }
+    
+    func traverse( slope: Point2D ) -> Int {
         var position = Point2D( x: 0, y: 0 )
         var treeCount = 0
         
         while position.y < grid.count {
-            if grid[position.y][position.x] == "#" {
+            if grid[position.y][ position.x % grid[0].count ] == "#" {
                 treeCount += 1
             }
             position = position + slope
-            position = Point2D( x: position.x % grid[0].count, y: position.y )
         }
         
         return treeCount
@@ -30,29 +33,28 @@ struct Traversal {
 }
 
 
-func parse( input: AOCinput ) -> [[Character]] {
-    return input.lines.map { $0.map { $0 } }
+func parse( input: AOCinput ) -> Forest {
+    return Forest( lines: input.lines )
 }
 
 
 func part1( input: AOCinput ) -> String {
-    let grid = parse( input: input )
-    let traversal = Traversal( slope: Point2D( x: 3, y: 1 ) )
+    let forest = parse( input: input )
     
-    return "\( traversal.downhill( grid: grid ) )"
+    return "\( forest.traverse( slope: Point2D( x: 3, y: 1 ) ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let grid = parse( input: input )
-    let traversals = [
-        Traversal( slope: Point2D( x: 1, y: 1 ) ),
-        Traversal( slope: Point2D( x: 3, y: 1 ) ),
-        Traversal( slope: Point2D( x: 5, y: 1 ) ),
-        Traversal( slope: Point2D( x: 7, y: 1 ) ),
-        Traversal( slope: Point2D( x: 1, y: 2 ) ),
+    let forest = parse( input: input )
+    let slopes = [
+        Point2D( x: 1, y: 1 ),
+        Point2D( x: 3, y: 1 ),
+        Point2D( x: 5, y: 1 ),
+        Point2D( x: 7, y: 1 ),
+        Point2D( x: 1, y: 2 ),
     ]
-    let treeCounts = traversals.map { $0.downhill( grid: grid ) }
+    let treeCounts = slopes.map { forest.traverse( slope: $0 ) }
 
     return "\( treeCounts.reduce( 1, * ) )"
 }
