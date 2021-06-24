@@ -1,51 +1,64 @@
 //
-//  main.swift
-//  day03
-//
-//  Created by Mark Johnson on 12/04/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day03 - Toboggan Trajectory
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/23/21 19:07:20
 //
 
 import Foundation
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day03.txt"
-let grid = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map { $0.map { $0 } }
-
-struct Position {
-    let x: Int
-    let y: Int
-
-    func move( slope: Position ) -> Position {
-        return Position( x: ( x + slope.x ) % grid[0].count, y: y + slope.y )
-    }
-}
-
 struct Traversal {
-    let slope: Position
-    var position = Position( x: 0, y: 0 )
-    var treeCount = 0
+    let slope: Point2D
     
-    mutating func downhill() -> Void {
+    func downhill( grid: [[Character]] ) -> Int {
+        var position = Point2D( x: 0, y: 0 )
+        var treeCount = 0
+        
         while position.y < grid.count {
             if grid[position.y][position.x] == "#" {
                 treeCount += 1
             }
-            position = position.move( slope: slope )
+            position = position + slope
+            position = Point2D( x: position.x % grid[0].count, y: position.y )
         }
+        
+        return treeCount
     }
 }
 
-var traversals = [
-    Traversal( slope: Position( x: 1, y: 1 ) ),
-    Traversal( slope: Position( x: 3, y: 1 ) ),
-    Traversal( slope: Position( x: 5, y: 1 ) ),
-    Traversal( slope: Position( x: 7, y: 1 ) ),
-    Traversal( slope: Position( x: 1, y: 2 ) ),
-]
 
-for index in 0 ..< traversals.count {
-    traversals[index].downhill()
+func parse( input: AOCinput ) -> [[Character]] {
+    return input.lines.map { $0.map { $0 } }
 }
 
-print( "Part 1: \(traversals[1].treeCount)" )
-print( "Part 2: \(traversals.reduce( 1, { $0 * $1.treeCount } ))" )
+
+func part1( input: AOCinput ) -> String {
+    let grid = parse( input: input )
+    let traversal = Traversal( slope: Point2D( x: 3, y: 1 ) )
+    
+    return "\( traversal.downhill( grid: grid ) )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let grid = parse( input: input )
+    let traversals = [
+        Traversal( slope: Point2D( x: 1, y: 1 ) ),
+        Traversal( slope: Point2D( x: 3, y: 1 ) ),
+        Traversal( slope: Point2D( x: 5, y: 1 ) ),
+        Traversal( slope: Point2D( x: 7, y: 1 ) ),
+        Traversal( slope: Point2D( x: 1, y: 2 ) ),
+    ]
+    let treeCounts = traversals.map { $0.downhill( grid: grid ) }
+
+    return "\( treeCounts.reduce( 1, * ) )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
