@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day07
-//
-//  Created by Mark Johnson on 12/06/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day07 - Handy Haversacks
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/24/21 18:01:36
 //
 
 import Foundation
@@ -17,20 +19,16 @@ struct BagRule {
     let color: String
     let contents: [Content]
     
-    init( input: Substring ) {
+    init( input: String ) {
         let words = input.split( separator: " " )
         
         color = "\(words[0]) \(words[1])"
         if words[4] == "no" {
             contents = []
         } else {
-            var contents = Array<Content>()
-            
-            for startIndex in stride( from: 4, to: words.count, by: 4 ) {
-                let color = "\(words[startIndex+1]) \(words[startIndex+2])"
-                contents.append( Content( color: color, quantity: Int( words[startIndex] )! ) )
+            contents = stride( from: 4, to: words.count, by: 4 ).map {
+                Content( color: "\(words[$0+1]) \(words[$0+2])", quantity: Int( words[$0] )! )
             }
-            self.contents = contents
         }
     }
 }
@@ -52,18 +50,30 @@ func containsCount( children: [ String : [BagRule.Content] ], color: String ) ->
 }
 
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day07.txt"
-let rules = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map { BagRule( input: $0 ) }
-let children = rules.reduce( into: [ String : [BagRule.Content] ]() ) { $0[$1.color] = $1.contents }
-let parents = rules.reduce( into: [String : Set<String>]() ) { dict, rule in
-    rule.contents.forEach { content in
-        if dict[content.color] == nil {
-            dict[content.color] = Set<String>( [ rule.color ] )
-        } else {
-            dict[content.color]?.insert( rule.color )
-        }
-    }
+func parse( input: AOCinput ) -> [BagRule] {
+    return input.lines.map { BagRule( input: $0 ) }
 }
 
-print( "Part 1: \(ancestors( parents: parents, color: "shiny gold" ).count)" )
-print( "Part 2: \(containsCount( children: children, color: "shiny gold" ))" )
+
+func part1( input: AOCinput ) -> String {
+    let rules = parse( input: input )
+    let parents = rules.reduce( into: [ String : Set<String> ]() ) { dict, rule in
+        rule.contents.forEach { dict[ $0.color, default: Set() ].insert( rule.color ) }
+    }
+
+    return "\( ancestors( parents: parents, color: "shiny gold" ).count )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let rules = parse( input: input )
+    let children = rules.reduce( into: [ String : [BagRule.Content] ]() ) { $0[$1.color] = $1.contents }
+    
+    return "\( containsCount( children: children, color: "shiny gold" ) )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
