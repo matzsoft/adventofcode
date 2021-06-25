@@ -1,0 +1,1 @@
+1. day 08 - if the Console type is used in future problems, move it to the library.

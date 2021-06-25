@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day08
-//
-//  Created by Mark Johnson on 12/07/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day08 - Handheld Halting
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/24/21 19:07:01
 //
 
 import Foundation
@@ -22,12 +24,11 @@ struct Console {
             self.operand = operand
         }
         
-        init( input: Substring ) {
-            let opcode = input[ input.startIndex ... input.index( input.startIndex, offsetBy: 2 ) ]
-            let value = input[ input.index( input.startIndex, offsetBy: 4 ) ..< input.endIndex ]
+        init( input: String ) {
+            let words = input.components( separatedBy: " " )
             
-            self.opcode = Opcode( rawValue: String( opcode ) )!
-            self.operand = Int( value )!
+            self.opcode = Opcode( rawValue: words[0] )!
+            self.operand = Int( words[1] )!
         }
     }
     
@@ -35,8 +36,8 @@ struct Console {
     var pc: Int
     var accumulator: Int
     
-    init( input: String ) {
-        memory = input.split( separator: "\n" ).map { Instruction( input: $0 ) }
+    init( lines: [String] ) {
+        memory = lines.map { Instruction( input: $0 ) }
         pc = 0
         accumulator = 0
     }
@@ -92,16 +93,32 @@ struct Console {
 }
 
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day08.txt"
-var console = try Console( input: String( contentsOfFile: inputFile ) )
+func parse( input: AOCinput ) -> Console {
+    return Console( lines: input.lines )
+}
 
-print( "Part 1: \(console.runUntilLoop()!)" )
 
-for address in 0 ..< console.memory.count {
-    if var newConsole = console.fixed( address: address ) {
-        if newConsole.runUntilLoop() == nil {
-            print( "Part 2: \(newConsole.accumulator)" )
-            break
+func part1( input: AOCinput ) -> String {
+    var console = parse( input: input )
+    return "\( console.runUntilLoop()! )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let console = parse( input: input )
+    
+    for address in 0 ..< console.memory.count {
+        if var newConsole = console.fixed( address: address ) {
+            if newConsole.runUntilLoop() == nil {
+                return "\( newConsole.accumulator )"
+            }
         }
     }
+    return ""
 }
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
