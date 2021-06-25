@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day09
-//
-//  Created by Mark Johnson on 12/08/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day09 - Encoding Error
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/25/21 11:50:28
 //
 
 import Foundation
@@ -27,11 +29,21 @@ extension Collection {
 }
 
 
-func findSequence( input: [Int], invalid: Int ) -> Int {
-    var sum = 0
+func findInvalid( numbers: [Int], preambleLength: Int ) -> Int {
+    let index = ( preambleLength ..< numbers.count ).first( where: { index in
+        return numbers[ index - preambleLength ..< index ].pairs.first( where: { pair in
+            return pair.0 + pair.1 == numbers[index]
+        } ) == nil
+    } )!
+
+    return numbers[index]
+}
+
+
+func findSequence( input: [Int], invalid: Int ) -> [Int] {
     var lastIndex = 0
     let firstIndex = input.indices.first( where: { index1 in
-        sum = input[index1]
+        var sum = input[index1]
         
         if sum < invalid {
             for index2 in index1 + 1 ..< input.count {
@@ -43,26 +55,34 @@ func findSequence( input: [Int], invalid: Int ) -> Int {
         return sum == invalid
     } )!
 
-    let sequence = input[ firstIndex ... lastIndex ]
-        
-    return sequence.min()! + sequence.max()!
+    return Array( input[ firstIndex ... lastIndex ] )
 }
 
 
-let preambleLength = 25
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day09.txt"
-let input = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map { Int($0)! }
-var preambleStart = 0
-let invalid = input[ preambleLength ..< input.count ].first( where: { candidate in
-    if input[ preambleStart ..< preambleStart + preambleLength ].pairs.first( where: { pair in
-        return pair.0 + pair.1 == candidate
-    } ) == nil {
-        return true
-    }
-    
-    preambleStart += 1
-    return false
-} )!
+func parse( input: AOCinput ) -> [Int] {
+    return input.lines.map { Int( $0 )! }
+}
 
-print( "Part 1: \(invalid)" )
-print( "Part 2: \(findSequence( input: input, invalid: invalid ))" )
+
+func part1( input: AOCinput ) -> String {
+    let numbers = parse( input: input )
+    let preambleLength = Int( input.extras[0] )!
+    
+    return "\( findInvalid( numbers: numbers, preambleLength: preambleLength ) )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let numbers = parse( input: input )
+    let preambleLength = Int( input.extras[0] )!
+    let invalid = findInvalid( numbers: numbers, preambleLength: preambleLength )
+    let sequence = findSequence( input: numbers, invalid: invalid )
+    
+    return "\( sequence.min()! + sequence.max()! )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
