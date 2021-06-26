@@ -1,34 +1,54 @@
 //
-//  main.swift
-//  day15
-//
-//  Created by Mark Johnson on 12/14/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day15 - Rambunctious Recitation
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/26/21 13:24:38
 //
 
 import Foundation
 
-let part1Limit = 2020
-let part2Limit = 30000000
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day15.txt"
-let starting = try String( contentsOfFile: inputFile ).split( separator: "\n" )[0].split( separator: "," )
-    .map { Int( $0 )! }
-var spoken = Array( starting.dropLast() )
-var already = Dictionary( zip( spoken, spoken.indices ), uniquingKeysWith: { (_, last) in last } )
-var speakNext = starting.last!
+func speak( starting: [Int], limit: Int ) -> Int {
+    var spoken = Array( starting.dropLast() )
+    var already = Dictionary( zip( spoken, spoken.indices ), uniquingKeysWith: { (_, last) in last } )
+    var speakNext = starting.last!
 
-for index in spoken.count ... part2Limit {
-    let speakNow = speakNext
-    spoken.append( speakNext )
-    
-    if let prevIndex = already[speakNow] {
-        speakNext = index - prevIndex
-    } else {
-        speakNext = 0
+    for index in spoken.count ..< limit {
+        let speakNow = speakNext
+        spoken.append( speakNext )
+        
+        if let prevIndex = already[speakNow] {
+            speakNext = index - prevIndex
+        } else {
+            speakNext = 0
+        }
+        already[speakNow] = index
     }
-    already[speakNow] = index
+    
+    return spoken.last!
 }
 
 
-print( "Part 1: \(spoken[part1Limit-1])" )
-print( "Part 2: \(spoken[part2Limit-1])" )
+func parse( input: AOCinput ) -> [Int] {
+    return input.line.split( separator: "," ).map { Int( $0 )! }
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let starting = parse( input: input )
+    return "\( speak( starting: starting, limit: 2020 ) )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let starting = parse( input: input )
+    return "\( speak( starting: starting, limit: 30000000 ) )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
