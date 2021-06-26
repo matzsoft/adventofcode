@@ -1,154 +1,109 @@
 //
-//  main.swift
-//  day11
-//
-//  Created by Mark Johnson on 12/10/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day11 - Seating System
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/25/21 16:06:56
 //
 
 import Foundation
 
-struct SeatLayout {
-    enum State: String {
-        case floor = ".", occupied = "#", empty = "L"
-    }
-    
-    enum Direction: CaseIterable {
-        case north, northeast, east, southeast, south, southwest, west, northwest
-        
-        var row: Int {
-            switch self {
-            case .northwest, .north, .northeast:
-                return -1
-            case .west, .east:
-                return 0
-            case .southwest, .south, .southeast:
-                return 1
-            }
-        }
-        
-        var col: Int {
-            switch self {
-            case .northwest, .west, .southwest:
-                return -1
-            case .north, .south:
-                return 0
-            case .northeast, .east, .southeast:
-                return 1
-            }
-        }
-    }
-    
-    struct Position {
-        let row: Int
-        let col: Int
-        
-        func offset( by: Direction ) -> Position {
-            return Position( row: row + by.row, col: col + by.col )
-        }
-    }
+struct SeatLayout: CustomStringConvertible {
+    enum State: String { case floor = ".", occupied = "#", empty = "L" }
     
     var grid: [[State]]
     
-    init( input: String ) {
-        grid = input.split( separator: "\n" ).map { $0.map { State( rawValue: String( $0 ) )! } }
+    init( lines: [String] ) {
+        grid = lines.map { $0.map { State( rawValue: String( $0 ) )! } }
     }
 
-    subscript( position: Position ) -> State {
+    subscript( position: Point2D ) -> State {
         get {
-            return grid[position.row][position.col]
+            return grid[position.y][position.x]
         }
-        set(newValue) {
-            grid[position.row][position.col] = newValue
+        set( newValue ) {
+            grid[position.y][position.x] = newValue
         }
     }
     
-    func isValid( position: Position ) -> Bool {
-        guard 0 <= position.row && position.row < grid.count else { return false }
-        guard 0 <= position.col && position.col < grid[position.row].count else { return false }
+    func isValid( position: Point2D ) -> Bool {
+        guard 0 <= position.y && position.y < grid.count else { return false }
+        guard 0 <= position.x && position.x < grid[position.y].count else { return false }
         
         return true
     }
+    
+    var description: String {
+        grid.map { $0.map { $0.rawValue }.joined() }.joined( separator: "\n" )
+    }
+    
+    func occupiedCount( position: Point2D, isOccupied: ( SeatLayout, Point2D, Direction8 ) -> Bool ) -> Int {
+        return Direction8.allCases.filter { isOccupied( self, position, $0 ) }.count
+    }
 
-    func part1OccupiedCount( position: Position, direction: Direction ) -> Int {
-        let target = position.offset( by: direction )
-        
-        return !isValid( position: target ) ? 0 : ( self[target] == .occupied ? 1 : 0 )
-    }
-    
-    func part1NeighborCount( position: Position ) -> Int {
-        return Direction.allCases.reduce( 0 ) {
-            $0 + part1OccupiedCount( position: position, direction: $1 )
-        }
-    }
-    
-    func part2OccupiedCount( position: Position, direction: Direction ) -> Int {
-        var target = position.offset( by: direction )
-        
-        while isValid( position: target ) {
-            if self[target] != .floor { return self[target]  == .occupied ? 1 : 0 }
-            target = target.offset( by: direction )
-        }
-        
-        return 0
-    }
-    
-    func part2NeighborCount( position: Position ) -> Int {
-        return Direction.allCases.reduce( 0 ) {
-            $0 + part2OccupiedCount( position: position, direction: $1 )
-        }
-    }
-    
-    func part1() -> Int {
+    func solve( crowdThreshold: Int, isOccupied: ( SeatLayout, Point2D, Direction8 ) -> Bool ) -> Int {
         var oldgrid = self
         var newgrid = self
-        let positions = grid.indices.flatMap { (row) -> [Position] in
-            grid[row].indices.map { Position( row: row, col: $0 ) }
+        let positions = grid.indices.flatMap { (row) -> [Point2D] in
+            grid[row].indices.map { Point2D( x: $0, y: row ) }
         }
 
         repeat {
             oldgrid = newgrid
+            //print( "\(oldgrid)" )
+            //print()
             for position in positions {
-                let count = oldgrid.part1NeighborCount( position: position )
-                
+                let count = oldgrid.occupiedCount( position: position, isOccupied: isOccupied )
+
                 if oldgrid[position] == .empty {
                     if count == 0 { newgrid[position] = .occupied }
                 } else if oldgrid[position] == .occupied {
-                    if count > 3 { newgrid[position] = .empty }
+                    if count >= crowdThreshold { newgrid[position] = .empty }
                 }
             }
         } while oldgrid.grid != newgrid.grid
         
-        return oldgrid.grid.flatMap { $0 }.filter { $0 == .occupied }.count
-    }
-    
-    func part2() -> Int {
-        var oldgrid = self
-        var newgrid = self
-        let positions = grid.indices.flatMap { (row) -> [Position] in
-            grid[row].indices.map { Position( row: row, col: $0 ) }
-        }
-
-        repeat {
-            oldgrid = newgrid
-            for position in positions {
-                let count = oldgrid.part2NeighborCount( position: position )
-                
-                if oldgrid[position] == .empty {
-                    if count == 0 { newgrid[position] = .occupied }
-                } else if oldgrid[position] == .occupied {
-                    if count > 4 { newgrid[position] = .empty }
-                }
-            }
-        } while oldgrid.grid != newgrid.grid
-
         return oldgrid.grid.flatMap { $0 }.filter { $0 == .occupied }.count
     }
 }
 
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day11.txt"
-let initial = try SeatLayout( input:  String( contentsOfFile: inputFile ) )
+func parse( input: AOCinput ) -> SeatLayout {
+    return SeatLayout( lines: input.lines )
+}
 
-print( "Part 1: \(initial.part1())" )
-print( "Part 2: \(initial.part2())" )
+
+func part1( input: AOCinput ) -> String {
+    let result = parse( input: input ).solve( crowdThreshold: 4 ) { layout, position, direction in
+        let target = position + direction.vector
+        
+        guard layout.isValid( position: target ) else { return false }
+        return layout[target] == .occupied
+    }
+    
+    return "\( result )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let result = parse( input: input ).solve( crowdThreshold: 5 ) { layout, position, direction in
+        var target = position + direction.vector
+        
+        while layout.isValid( position: target ) {
+            if layout[target] != .floor { return layout[target] == .occupied }
+            target = target + direction.vector
+        }
+        
+        return false
+    }
+    
+    return "\( result )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
