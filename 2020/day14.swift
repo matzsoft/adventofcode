@@ -1,17 +1,17 @@
 //
-//  main.swift
-//  day14
-//
-//  Created by Mark Johnson on 12/13/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day14 - Docking Data
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/26/21 12:39:20
 //
 
 import Foundation
 
 struct Docker {
-    enum Opcode: String {
-        case mask, mem
-    }
+    enum Opcode: String { case mask, mem }
     
     struct Mask {
         let zeroes:  Int            // 0 where there is a 0, 1 everywhere else
@@ -19,19 +19,23 @@ struct Docker {
         let xmask:   Int            // 0 where there is an X, 1 everywhere else
         let xvalues: [Int]
 
-        init( input: String ) {
+        init( input: String, version: Int ) {
             let xcount = input.reduce( 0 ) { $0 + ( $1 == "X" ? 1 : 0 ) }
             
             zeroes = input.reduce( 0 ) { ( $0 << 1 ) | ( $1 == "0" ? 0 : 1 ) }
             ones = input.reduce( 0 ) { ( $0 << 1 ) | ( $1 == "1" ? 1 : 0 ) }
             xmask = input.reduce( 0 ) { ( $0 << 1 ) | ( $1 == "X" ? 0 : 1 ) }
-            xvalues = ( 0 ..< ( 1 << xcount ) ).map {
-                var value = $0
-                return input.reduce( 0 ) {
-                    guard $1 == "X" else { return $0 << 1 }
-                    let bit = value & 1
-                    value = value >> 1
-                    return ( $0 << 1 ) | bit
+            if version == 1 {
+                xvalues = []
+            } else {
+                xvalues = ( 0 ..< ( 1 << xcount ) ).map {
+                    var value = $0
+                    return input.reduce( 0 ) {
+                        guard $1 == "X" else { return $0 << 1 }
+                        let bit = value & 1
+                        value = value >> 1
+                        return ( $0 << 1 ) | bit
+                    }
                 }
             }
         }
@@ -51,20 +55,20 @@ struct Docker {
         let address: Int
         let operand: Int
         
-        init( input: Substring ) {
+        init( input: String, version: Int ) {
             let fields = input.components( separatedBy: " = " )
             
             switch fields[0] {
             case "mask":
                 opcode = .mask
-                mask = Mask( input: fields[1] )
+                mask = Mask( input: fields[1], version: version )
                 address = 0
                 operand = 0
             default:
                 let string = fields[0]
                 
                 opcode = .mem
-                mask = Mask( input: "" )
+                mask = Mask( input: "", version: version )
                 address = Int( string[string.index( string.startIndex, offsetBy: 4 )...].dropLast() )!
                 operand = Int( fields[1] )!
             }
@@ -75,14 +79,14 @@ struct Docker {
     var mask: Mask
     var memory: [ Int : Int ]
     
-    init( input: String ) {
-        program = input.split( separator: "\n" ).map { Instruction( input: $0 ) }
-        mask = Mask( input: "" )
+    init( lines: [String], version: Int ) {
+        program = lines.map { Instruction( input: $0, version: version ) }
+        mask = Mask( input: "", version: version )
         memory = [:]
     }
     
     mutating func reset() -> Void {
-        mask = Mask( input: "" )
+        mask = Mask( input: "", version: 2 )
         memory = [:]
     }
     
@@ -97,7 +101,7 @@ struct Docker {
             }
         }
         
-        return memory.values.reduce( 0 ) { $0 + $1 }
+        return memory.values.reduce( 0, + )
     }
     
     mutating func run2() -> Int {
@@ -111,13 +115,29 @@ struct Docker {
             }
         }
         
-        return memory.values.reduce( 0 ) { $0 + $1 }
+        return memory.values.reduce( 0, + )
     }
 }
 
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day14.txt"
-var docker = try Docker( input: String( contentsOfFile: inputFile ) )
+func parse( input: AOCinput, version: Int = 1 ) -> Docker {
+    return Docker( lines: input.lines, version: version )
+}
 
-print( "Part 1: \(docker.run1())" )
-print( "Part 2: \(docker.run2())" )
+
+func part1( input: AOCinput ) -> String {
+    var docker = parse( input: input )
+    return "\( docker.run1() )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    var docker = parse( input: input, version: 2 )
+    return "\( docker.run2() )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
