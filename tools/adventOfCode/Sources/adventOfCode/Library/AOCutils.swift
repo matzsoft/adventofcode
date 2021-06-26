@@ -145,42 +145,35 @@ func runSolution( label: String, function: ( AOCinput ) -> String, input: AOCinp
 
 
 func runTests( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
-    let tests = try getTests().filter { $0.part1 != nil }
+    let tests = try getTests().filter { $0.part1 != nil }.map { ( $0, $0.part1! ) }
     let label = label == "" ? "Part1" : "Part1 \(label)"
-    var successes = 0
     
-    for test in tests {
-        if let expected = test.part1 {
-            let result = part1( test )
-            
-            if result == expected {
-                successes += 1
-            } else {
-                print( "Test \(test.filename) \(label): \(result), should be \(expected)" )
-            }
-        }
-    }
-    
-    print( "\(successes) of \(tests.count) \(label) tests ran successfully" )
+    runTests( part: part1, tests: tests, label: label )
 }
 
 
 func runTests( part2: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
-    let tests = try getTests().filter { $0.part2 != nil }
+    let tests = try getTests().filter { $0.part2 != nil }.map { ( $0, $0.part2! ) }
     let label = label == "" ? "Part2" : "Part2 \(label)"
-    var successes = 0
     
-    for test in tests {
-        if let expected = test.part2 {
-            let result = part2( test )
-            
-            if result == expected {
-                successes += 1
-            } else {
-                print( "Test \(test.filename) \(label): \(result), should be \(expected)" )
-            }
+    runTests( part: part2, tests: tests, label: label )
+}
+
+func runTests( part: ( ( AOCinput ) -> String ), tests: [ ( AOCinput, String ) ], label: String ) -> Void {
+    var successes = 0
+    let startTime = CFAbsoluteTimeGetCurrent()
+
+    for ( test, expected ) in tests {
+        let result = part( test )
+        
+        if result == expected {
+            successes += 1
+        } else {
+            print( "Test \(test.filename) \(label): \(result), should be \(expected)" )
         }
     }
     
-    print( "\(successes) of \(tests.count) \(label) tests ran successfully" )
+    let timeElapsed = formatElapsed( startTime: startTime )
+
+    print( "\(successes) of \(tests.count) \(label) tests ran successfully (\(timeElapsed))" )
 }
