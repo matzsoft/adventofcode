@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day13
-//
-//  Created by Mark Johnson on 12/12/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day13 - Shuttle Search
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/26/21 11:40:43
 //
 
 import Foundation
@@ -13,7 +15,7 @@ struct Bus {
     let offset: Int
     let arrival: Int
     
-    init( id: Substring, offset: Int ) {
+    init( id: Substring, offset: Int, earliest: Int ) {
         self.id = Int( id )!
         self.offset = offset
         arrival = ( earliest + self.id - 1 ) / self.id * self.id
@@ -37,14 +39,34 @@ struct Cycle {
 }
 
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day13.txt"
-let lines = try String( contentsOfFile: inputFile ).split( separator: "\n" )
-let earliest = Int( lines[0] )!
-let buses = lines[1].split( separator: "," ).enumerated().filter { $0.element != "x" }.map {
-    Bus( id: $0.element, offset: $0.offset )
+func parse( input: AOCinput ) -> ( Int, [Bus] ) {
+    let earliest = Int( input.lines[0] )!
+    let buses = input.lines[1].split( separator: "," ).enumerated().filter { $0.element != "x" }.map {
+        Bus( id: $0.element, offset: $0.offset, earliest: earliest )
+    }
+    
+    return ( earliest, buses )
 }
-let first = buses.min { $0.arrival < $1.arrival }!
-let part2 = buses.reduce( Cycle( start: 0, increment: 1 ) ) { $0.combine( id: $1.id, offset: $1.offset ) }
 
-print( "Part 1: \(first.id * ( first.arrival - earliest ))" )
-print( "Part 2: \(part2.start)" )
+
+func part1( input: AOCinput ) -> String {
+    let ( earliest, buses ) = parse( input: input )
+    let first = buses.min { $0.arrival < $1.arrival }!
+    
+    return "\( first.id * ( first.arrival - earliest ) )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let ( _, buses ) = parse( input: input )
+    let cycle = buses.reduce( Cycle( start: 0, increment: 1 ) ) {
+        $0.combine( id: $1.id, offset: $1.offset )
+    }
+    return "\( cycle.start )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
