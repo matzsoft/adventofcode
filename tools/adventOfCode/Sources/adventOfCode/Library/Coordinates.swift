@@ -280,13 +280,6 @@ struct Rect2D: Hashable {
         self.init( min: bounds.min, max: bounds.max )
     }
     
-    func contains( point: Point2D ) -> Bool {
-        guard min.x <= point.x, point.x <= max.x else { return false }
-        guard min.y <= point.y, point.y <= max.y else { return false }
-
-        return true
-    }
-    
     func expand( with point: Point2D ) -> Rect2D {
         let minX = Swift.min( min.x, point.x )
         let maxX = Swift.max( max.x, point.x )
@@ -294,6 +287,22 @@ struct Rect2D: Hashable {
         let maxY = Swift.max( max.y, point.y )
 
         return Rect2D( min: Point2D( x: minX, y: minY ), max: Point2D( x: maxX, y: maxY ) )
+    }
+
+    func pad( byMinX: Int = 0, byMaxX: Int = 0, byMinY: Int = 0, byMaxY: Int = 0 ) -> Rect2D {
+        return Rect2D( min: Point2D( x: min.x - byMinX, y: min.y - byMinY ),
+                       max: Point2D( x: max.x + byMaxX, y: max.y + byMaxY ) )
+    }
+    
+    func pad( by: Int ) -> Rect2D {
+        return pad( byMinX: by, byMaxX: by, byMinY: by, byMaxY: by )
+    }
+    
+    func contains( point: Point2D ) -> Bool {
+        guard min.x <= point.x, point.x <= max.x else { return false }
+        guard min.y <= point.y, point.y <= max.y else { return false }
+
+        return true
     }
     
     func intersection( with other: Rect2D ) -> Rect2D? {
@@ -385,7 +394,7 @@ struct Rect3D: Hashable {
     }
     
     init( rects: [Rect3D] ) {
-        var bounds = Rect3D(min: rects[0].min, max: rects[0].max )
+        var bounds = Rect3D( min: rects[0].min, max: rects[0].max )
         
         rects[1...].forEach {
             bounds = bounds.expand( with: $0.min )
@@ -393,14 +402,6 @@ struct Rect3D: Hashable {
         }
         
         self.init( min: bounds.min, max: bounds.max )
-    }
-    
-    func contains( point: Point3D ) -> Bool {
-        guard min.x <= point.x, point.x <= max.x else { return false }
-        guard min.y <= point.y, point.y <= max.y else { return false }
-        guard min.z <= point.z, point.z <= max.z else { return false }
-
-        return true
     }
     
     func expand( with point: Point3D ) -> Rect3D {
@@ -414,6 +415,27 @@ struct Rect3D: Hashable {
         return Rect3D( min: Point3D( x: minX, y: minY, z: minZ ), max: Point3D( x: maxX, y: maxY, z: maxZ ) )
     }
     
+    func pad(
+        byMinX: Int = 0, byMaxX: Int = 0,
+        byMinY: Int = 0, byMaxY: Int = 0,
+        byMinZ: Int = 0, byMaxZ: Int = 0
+    ) -> Rect3D {
+        return Rect3D( min: Point3D( x: min.x - byMinX, y: min.y - byMinY, z: min.z - byMinZ ),
+                       max: Point3D( x: max.x + byMaxX, y: max.y + byMaxY, z: max.z + byMaxZ ) )
+    }
+    
+    func pad( by: Int ) -> Rect3D {
+        return pad( byMinX: by, byMaxX: by, byMinY: by, byMaxY: by, byMinZ: by, byMaxZ: by )
+    }
+    
+    func contains( point: Point3D ) -> Bool {
+        guard min.x <= point.x, point.x <= max.x else { return false }
+        guard min.y <= point.y, point.y <= max.y else { return false }
+        guard min.z <= point.z, point.z <= max.z else { return false }
+
+        return true
+    }
+    
     func intersection( with other: Rect3D ) -> Rect3D? {
         let minX = Swift.max( min.x, other.min.x )
         let minY = Swift.max( min.y, other.min.y )
@@ -424,7 +446,8 @@ struct Rect3D: Hashable {
 
         return Rect3D(
             min: Point3D( x: minX, y: minY, z: minZ ),
-            width: maxX - minX, length: maxY - minY, height: maxZ - minZ )
+            width: maxX - minX, length: maxY - minY, height: maxZ - minZ
+        )
     }
 }
 
@@ -452,5 +475,147 @@ struct Point4D: Hashable {
     
     var magnitude: Int {
         return abs( x ) + abs( y ) + abs( z ) + abs( t )
+    }
+}
+
+struct Rect4D: Hashable {
+    let min:      Point4D
+    let max:      Point4D
+    let width:    Int
+    let length:   Int
+    let height:   Int
+    let duration: Int
+    let volume:   Int
+    
+    init( min: Point4D, max: Point4D ) {
+        self.min = Point4D(
+            x: Swift.min( min.x, max.x ),
+            y: Swift.min( min.y, max.y ),
+            z: Swift.min( min.z, max.z ),
+            t: Swift.min( min.t, max.t )
+        )
+        self.max = Point4D(
+            x: Swift.max( min.x, max.x ),
+            y: Swift.max( min.y, max.y ),
+            z: Swift.max( min.z, max.z ),
+            t: Swift.max( min.t, max.t )
+        )
+        self.width    = self.max.x - self.min.x + 1
+        self.length   = self.max.y - self.min.y + 1
+        self.height   = self.max.z - self.min.z + 1
+        self.duration = self.max.t - self.min.t + 1
+        
+        if width.multipliedReportingOverflow( by: length ).overflow {
+            volume = Int.max
+        } else if ( width * length ).multipliedReportingOverflow( by: height ).overflow {
+            volume = Int.max
+        } else if ( width * length * height ).multipliedReportingOverflow( by: duration ).overflow {
+            volume = Int.max
+        } else {
+            volume = width * length * height * duration
+        }
+    }
+
+    init?( min: Point4D, width: Int, length: Int, height: Int, duration: Int ) {
+        guard width > 0 && length > 0 && height > 0 else { return nil }
+        
+        self.min      = min
+        self.max      = Point4D( x: min.x + width - 1,
+                               y: min.y + length - 1,
+                               z: min.z + height - 1,
+                               t: min.t + duration - 1
+        )
+        self.width    = width
+        self.length   = length
+        self.height   = height
+        self.duration = duration
+        
+        if width.multipliedReportingOverflow( by: length ).overflow {
+            volume = Int.max
+        } else if ( width * length ).multipliedReportingOverflow( by: height ).overflow {
+            volume = Int.max
+        } else if ( width * length * height ).multipliedReportingOverflow( by: duration ).overflow {
+            volume = Int.max
+        } else {
+            volume = width * length * height * duration
+        }
+    }
+    
+    init( points: [Point4D] ) {
+        var bounds = Rect4D( min: points[0], max: points[0] )
+        
+        points[1...].forEach { bounds = bounds.expand( with: $0 ) }
+        
+        self.init( min: bounds.min, max: bounds.max )
+    }
+    
+    init( rects: [Rect4D] ) {
+        var bounds = Rect4D( min: rects[0].min, max: rects[0].max )
+        
+        rects[1...].forEach {
+            bounds = bounds.expand( with: $0.min )
+            bounds = bounds.expand( with: $0.max )
+        }
+        
+        self.init( min: bounds.min, max: bounds.max )
+    }
+    
+    func expand( with point: Point4D ) -> Rect4D {
+        let minX = Swift.min( min.x, point.x )
+        let maxX = Swift.max( max.x, point.x )
+        let minY = Swift.min( min.y, point.y )
+        let maxY = Swift.max( max.y, point.y )
+        let minZ = Swift.min( min.z, point.z )
+        let maxZ = Swift.max( max.z, point.z )
+        let minT = Swift.min( min.t, point.t )
+        let maxT = Swift.max( max.t, point.t )
+
+        return Rect4D(
+            min: Point4D( x: minX, y: minY, z: minZ, t: minT ),
+            max: Point4D( x: maxX, y: maxY, z: maxZ, t: maxT )
+        )
+    }
+    
+    func pad(
+        byMinX: Int = 0, byMaxX: Int = 0,
+        byMinY: Int = 0, byMaxY: Int = 0,
+        byMinZ: Int = 0, byMaxZ: Int = 0,
+        byMinT: Int = 0, byMaxT: Int = 0
+    ) -> Rect4D {
+        return Rect4D(
+            min: Point4D( x: min.x - byMinX, y: min.y - byMinY, z: min.z - byMinZ, t: min.t - byMinT ),
+            max: Point4D( x: max.x + byMaxX, y: max.y + byMaxY, z: max.z + byMaxZ, t: max.t + byMaxT )
+        )
+    }
+    
+    func pad( by: Int ) -> Rect4D {
+        return pad(
+            byMinX: by, byMaxX: by, byMinY: by, byMaxY: by, byMinZ: by, byMaxZ: by, byMinT: by, byMaxT: by
+        )
+    }
+    
+    func contains( point: Point4D ) -> Bool {
+        guard min.x <= point.x, point.x <= max.x else { return false }
+        guard min.y <= point.y, point.y <= max.y else { return false }
+        guard min.z <= point.z, point.z <= max.z else { return false }
+        guard min.t <= point.t, point.t <= max.t else { return false }
+
+        return true
+    }
+    
+    func intersection( with other: Rect4D ) -> Rect4D? {
+        let minX = Swift.max( min.x, other.min.x )
+        let minY = Swift.max( min.y, other.min.y )
+        let minZ = Swift.min( min.z, other.min.z )
+        let minT = Swift.min( min.t, other.min.t )
+        let maxX = Swift.min( max.x, other.max.x )
+        let maxY = Swift.min( max.y, other.max.y )
+        let maxZ = Swift.max( max.z, other.max.z )
+        let maxT = Swift.max( max.t, other.max.t )
+
+        return Rect4D(
+            min: Point4D( x: minX, y: minY, z: minZ, t: minT ),
+            width: maxX - minX, length: maxY - minY, height: maxZ - minZ, duration: maxT - minT
+        )
     }
 }

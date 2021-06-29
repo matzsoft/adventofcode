@@ -1,35 +1,29 @@
 //
-//  main.swift
-//  day17
-//
-//  Created by Mark Johnson on 12/16/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day17 - Conway Cubes
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/28/21 14:19:08
 //
 
 import Foundation
 
-struct Coordinate3: Hashable {
-    let x: Int, y: Int, z: Int
-}
-
-struct Coordinate4: Hashable {
-    let x: Int, y: Int, z: Int, w: Int
-}
-
-struct Dimension3 {
-    let active: Set<Coordinate3>
+struct Pocket3D {
+    let active: Set<Point3D>
     
-    init( active: [Coordinate3] ) {
+    init( active: [Point3D] ) {
         self.active = Set( active )
     }
     
-    init( input: String ) {
-        var active: [Coordinate3] = []
+    init( lines: [String] ) {
+        var active: [Point3D] = []
         
-        for ( yindex, row ) in input.split( separator: "\n" ).enumerated() {
+        for ( yindex, row ) in lines.enumerated() {
             for ( xindex, value ) in row.enumerated() {
                 if value == "#" {
-                    active.append( Coordinate3( x: xindex, y: yindex, z: 0 ) )
+                    active.append( Point3D( x: xindex, y: yindex, z: 0 ) )
                 }
             }
         }
@@ -37,19 +31,14 @@ struct Dimension3 {
         self.init( active: active )
     }
     
-    var cycle: Dimension3 {
-        let xmin = active.min( by: { $0.x < $1.x } )!.x - 1
-        let xmax = active.max( by: { $0.x < $1.x } )!.x + 1
-        let ymin = active.min( by: { $0.y < $1.y } )!.y - 1
-        let ymax = active.max( by: { $0.y < $1.y } )!.y + 1
-        let zmin = active.min( by: { $0.z < $1.z } )!.z - 1
-        let zmax = active.max( by: { $0.z < $1.z } )!.z + 1
-        var next: [Coordinate3] = []
+    var cycle: Pocket3D {
+        let bounds = Rect3D( points: Array( active ) ).pad( by: 1 )
+        var next: [Point3D] = []
         
-        for x in xmin ... xmax {
-            for y in ymin ... ymax {
-                for z in zmin ... zmax {
-                    let current = Coordinate3( x: x, y: y, z: z )
+        for x in bounds.min.x ... bounds.max.x {
+            for y in bounds.min.y ... bounds.max.y {
+                for z in bounds.min.z ... bounds.max.z {
+                    let current = Point3D( x: x, y: y, z: z )
                     let neighbors = countNeighbors( coordinate: current )
                     
                     if neighbors == 3 || active.contains( current ) && neighbors == 4 {
@@ -59,15 +48,15 @@ struct Dimension3 {
             }
         }
         
-        return Dimension3( active: next )
+        return Pocket3D( active: next )
     }
     
-    func countNeighbors( coordinate: Coordinate3 ) -> Int {
+    func countNeighbors( coordinate: Point3D ) -> Int {
         var sum = 0
         for x in coordinate.x - 1 ... coordinate.x + 1 {
             for y in coordinate.y - 1 ... coordinate.y + 1 {
                 for z in coordinate.z - 1 ... coordinate.z + 1 {
-                    sum += active.contains( Coordinate3( x: x, y: y, z: z ) ) ? 1 : 0
+                    sum += active.contains( Point3D( x: x, y: y, z: z ) ) ? 1 : 0
                 }
             }
         }
@@ -76,33 +65,36 @@ struct Dimension3 {
 }
 
 
-struct Dimension4 {
-    let active: Set<Coordinate4>
+struct Pocket4D {
+    let active: Set<Point4D>
     
-    init( active: [Coordinate4] ) {
+    init( active: [Point4D] ) {
         self.active = Set( active )
     }
 
-    init( active: Dimension3 ) {
-        self.active = Set( active.active.map { Coordinate4( x: $0.x, y: $0.y, z: $0.z, w: 0 ) } )
-    }
-    
-    var cycle: Dimension4 {
-        let xmin = active.min( by: { $0.x < $1.x } )!.x - 1
-        let xmax = active.max( by: { $0.x < $1.x } )!.x + 1
-        let ymin = active.min( by: { $0.y < $1.y } )!.y - 1
-        let ymax = active.max( by: { $0.y < $1.y } )!.y + 1
-        let zmin = active.min( by: { $0.z < $1.z } )!.z - 1
-        let zmax = active.max( by: { $0.z < $1.z } )!.z + 1
-        let wmin = active.min( by: { $0.w < $1.w } )!.w - 1
-        let wmax = active.max( by: { $0.w < $1.w } )!.w + 1
-        var next: [Coordinate4] = []
+    init( lines: [String] ) {
+        var active: [Point4D] = []
         
-        for x in xmin ... xmax {
-            for y in ymin ... ymax {
-                for z in zmin ... zmax {
-                    for w in wmin ... wmax {
-                        let current = Coordinate4( x: x, y: y, z: z, w: w )
+        for ( yindex, row ) in lines.enumerated() {
+            for ( xindex, value ) in row.enumerated() {
+                if value == "#" {
+                    active.append( Point4D( x: xindex, y: yindex, z: 0, t: 0 ) )
+                }
+            }
+        }
+        
+        self.init( active: active )
+    }
+
+    var cycle: Pocket4D {
+        let bounds = Rect4D( points: Array( active ) ).pad( by: 1 )
+        var next: [Point4D] = []
+        
+        for x in bounds.min.x ... bounds.max.x {
+            for y in bounds.min.y ... bounds.max.y {
+                for z in bounds.min.z ... bounds.max.z {
+                    for t in bounds.min.t ... bounds.max.t {
+                        let current = Point4D( x: x, y: y, z: z, t: t )
                         let neighbors = countNeighbors( coordinate: current )
                         
                         if neighbors == 3 || active.contains( current ) && neighbors == 4 {
@@ -113,16 +105,16 @@ struct Dimension4 {
             }
         }
         
-        return Dimension4( active: next )
+        return Pocket4D( active: next )
     }
     
-    func countNeighbors( coordinate: Coordinate4 ) -> Int {
+    func countNeighbors( coordinate: Point4D ) -> Int {
         var sum = 0
         for x in coordinate.x - 1 ... coordinate.x + 1 {
             for y in coordinate.y - 1 ... coordinate.y + 1 {
                 for z in coordinate.z - 1 ... coordinate.z + 1 {
-                    for w in coordinate.w - 1 ... coordinate.w + 1 {
-                        sum += active.contains( Coordinate4( x: x, y: y, z: z, w: w ) ) ? 1 : 0
+                    for t in coordinate.t - 1 ... coordinate.t + 1 {
+                        sum += active.contains( Point4D( x: x, y: y, z: z, t: t ) ) ? 1 : 0
                     }
                 }
             }
@@ -131,12 +123,23 @@ struct Dimension4 {
     }
 }
 
+func part1( input: AOCinput ) -> String {
+    var pocket3D = Pocket3D( lines: input.lines )
+    
+    for _ in 1 ... 6 { pocket3D = pocket3D.cycle }
+    return "\( pocket3D.active.count )"
+}
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day17.txt"
-var dimension3 = try Dimension3( input: String( contentsOfFile: inputFile ) )
-var dimension4 = Dimension4( active: dimension3 )
 
-for _ in 1 ... 6 { dimension3 = dimension3.cycle; dimension4 = dimension4.cycle }
+func part2( input: AOCinput ) -> String {
+    var pocket4D = Pocket4D( lines: input.lines )
 
-print( "Part 1: \(dimension3.active.count)" )
-print( "Part 2: \(dimension4.active.count)" )
+    for _ in 1 ... 6 { pocket4D = pocket4D.cycle }
+    return "\( pocket4D.active.count )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
