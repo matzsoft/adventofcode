@@ -1,27 +1,28 @@
 //
-//  main.swift
-//  day18
-//
-//  Created by Mark Johnson on 12/17/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day18 - Operation Order
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/29/21 13:13:44
 //
 
 import Foundation
 
-enum Operation: Character {
-    case add = "+", multiply = "*", leftParen = "(", rightParen = ")"
-}
+enum Operation: Character { case add = "+", multiply = "*", leftParen = "(", rightParen = ")" }
 
 struct Operator {
     let type: Operation
     let precedence: Int
 }
 
-func evaluate( expression: String, precedence: [ Operation : Operator ] ) -> Int {
+
+func evaluate( expression: String, precedence: [ Operation : Operator ] ) throws -> Int {
     var valueStack: [Int] = []
     var operatorStack: [Operator] = []
     
-    func apply( op: Operator ) -> Void {
+    func apply( op: Operator ) throws -> Void {
         let value2 = valueStack.removeLast()
         let value1 = valueStack.removeLast()
         
@@ -31,7 +32,7 @@ func evaluate( expression: String, precedence: [ Operation : Operator ] ) -> Int
         case .multiply:
             valueStack.append( value1 * value2 )
         default:
-            print( "Tried to apply bad operator \"\(op.type)\"." )
+            throw RuntimeError( "Tried to apply bad operator \"\(op.type)\"." )
         }
     }
     
@@ -46,20 +47,21 @@ func evaluate( expression: String, precedence: [ Operation : Operator ] ) -> Int
                     if top.type == .leftParen {
                         break
                     } else {
-                        apply( op: top )
+                        try apply( op: top )
                     }
                 }
             default:
-                guard let op = precedence[operation] else { print( "No precedence for \(term)" ); exit( 0 ) }
+                guard let op = precedence[operation] else {
+                    throw RuntimeError( "No precedence for \(term)" )
+                }
                 while let top = operatorStack.last, top.precedence >= op.precedence {
-                    apply( op: operatorStack.removeLast() )
+                    try apply( op: operatorStack.removeLast() )
                 }
                 operatorStack.append( op )
             }
         } else {
             guard let value = Int( String( term ) ) else {
-                print( "Unrecognized character: \"\(term)\"." )
-                exit( 0 )
+                throw RuntimeError( "Unrecognized character: \"\(term)\"." )
             }
             valueStack.append( value )
         }
@@ -67,25 +69,42 @@ func evaluate( expression: String, precedence: [ Operation : Operator ] ) -> Int
     
     while let top = operatorStack.last {
         operatorStack.removeLast( 1 )
-        apply( op: top )
+        try apply( op: top )
     }
     return valueStack.first!
 }
 
-let part1 = [
-    Operation.add : Operator( type: Operation.add, precedence: 1 ),
-    Operation.multiply : Operator( type: Operation.multiply, precedence: 1 ),
-    Operation.leftParen : Operator( type: Operation.leftParen, precedence: Int.min )
-]
-let part2 = [
-    Operation.add : Operator( type: Operation.add, precedence: 2 ),
-    Operation.multiply : Operator( type: Operation.multiply, precedence: 1 ),
-    Operation.leftParen : Operator( type: Operation.leftParen, precedence: Int.min )
-]
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day18.txt"
-let expressions = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map {
-    $0.replacingOccurrences( of: " ", with: "" )
+
+func parse( input: AOCinput ) -> [String] {
+    return input.lines.map { $0.replacingOccurrences( of: " ", with: "" ) }
 }
 
-print( "Part 1: \(expressions.reduce( 0 ) { $0 + evaluate( expression: $1, precedence: part1 ) })" )
-print( "Part 2: \(expressions.reduce( 0 ) { $0 + evaluate( expression: $1, precedence: part2 ) })" )
+
+func part1( input: AOCinput ) -> String {
+    let expressions = parse( input: input )
+    let precedence = [
+        Operation.add : Operator( type: Operation.add, precedence: 1 ),
+        Operation.multiply : Operator( type: Operation.multiply, precedence: 1 ),
+        Operation.leftParen : Operator( type: Operation.leftParen, precedence: Int.min )
+    ]
+    
+    return "\( expressions.reduce( 0 ) { try! $0 + evaluate( expression: $1, precedence: precedence ) } )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let expressions = parse( input: input )
+    let precedence = [
+        Operation.add : Operator( type: Operation.add, precedence: 2 ),
+        Operation.multiply : Operator( type: Operation.multiply, precedence: 1 ),
+        Operation.leftParen : Operator( type: Operation.leftParen, precedence: Int.min )
+    ]
+    
+    return "\( expressions.reduce( 0 ) { try! $0 + evaluate( expression: $1, precedence: precedence ) } )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
