@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day20
-//
-//  Created by Mark Johnson on 12/19/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day20 - Jurassic Jigsaw
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/29/21 14:59:09
 //
 
 import Foundation
@@ -137,8 +139,7 @@ struct Tile {
         }
     }
     
-    init( input: String ) {
-        let lines = input.split( separator: "\n" )
+    init( lines: [String] ) {
         var tops: [ String : Orientation ] = [:]
         
         id = Int( lines[0].dropFirst( 5 ).dropLast() )!
@@ -160,6 +161,7 @@ struct Tile {
         borders = Set( tops.keys )
     }
 }
+
 
 struct Node {
     let tile: Tile
@@ -195,6 +197,7 @@ func place( node top: Node, above bottom: Node ) -> Set<Orientation> {
     
     return Set( common.map { $0.rotated( by: 2 ) } )
 }
+
 
 class Piece {
     let node: Node
@@ -264,14 +267,15 @@ class Piece {
 struct Puzzle {
     let pieces: [[Piece]]
     var image: [String] {
-        return pieces.reduce( into: Array<String>(), { array, row in
-            array.append( contentsOf: row.reduce(
-                            into: Array( repeating: "", count: row[0].size ), { lines, piece in
-                                lines = lines.indices.reduce( into: Array<String>() ) {
-                                    $0.append( lines[$1] + piece.image[$1] )
-                                }
-                            } ) )
-        } )
+        return pieces.reduce( into: Array<String>() ) { array, row in
+            array.append(
+                contentsOf: row.reduce( into: Array( repeating: "", count: row[0].size ) ) { lines, piece in
+                    lines = lines.indices.reduce( into: Array<String>() ) {
+                        $0.append( lines[$1] + piece.image[$1] )
+                    }
+                }
+            )
+        }
     }
     
     init( nodes: [ Int : Node ] ) {
@@ -319,16 +323,16 @@ func orient( image: [String], orientation: Orientation ) -> [String] {
         case 0:
             return image
         case 1:
-            return ( 0 ..< image[0].count ).map { ( col ) -> String in
-                ( 0 ..< image.count ).reversed().map { ( row ) -> String in
+            return ( 0 ..< image[0].count ).map { col -> String in
+                ( 0 ..< image.count ).reversed().map { row -> String in
                     String( image[row][ image[row].index( image[row].startIndex, offsetBy: col ) ] )
                 }.joined()
             }
         case 2:
             return image.map { String( $0.reversed() ) }.reversed()
         case 3:
-            return ( 0 ..< image[0].count ).reversed().map { ( col ) -> String in
-                ( 0 ..< image.count ).map { ( row ) -> String in
+            return ( 0 ..< image[0].count ).reversed().map { col -> String in
+                ( 0 ..< image.count ).map { row -> String in
                     String( image[row][ image[row].index( image[row].startIndex, offsetBy: col ) ] )
                 }.joined()
             }
@@ -341,16 +345,16 @@ func orient( image: [String], orientation: Orientation ) -> [String] {
         case 0:
             return image.map { String( $0.reversed() ) }
         case 1:
-            return ( 0 ..< image[0].count ).reversed().map { ( col ) -> String in
-                ( 0 ..< image.count ).reversed().map { ( row ) -> String in
+            return ( 0 ..< image[0].count ).reversed().map { col -> String in
+                ( 0 ..< image.count ).reversed().map { row -> String in
                     String( image[row][ image[row].index( image[row].startIndex, offsetBy: col ) ] )
                 }.joined()
             }
         case 2:
             return image.reversed()
         case 3:
-            return ( 0 ..< image[0].count ).map { ( col ) -> String in
-                ( 0 ..< image.count ).map { ( row ) -> String in
+            return ( 0 ..< image[0].count ).map { col -> String in
+                ( 0 ..< image.count ).map { row -> String in
                     String( image[row][ image[row].index( image[row].startIndex, offsetBy: col ) ] )
                 }.joined()
             }
@@ -367,12 +371,28 @@ func countOccurances( of character: Character, in image: [String] ) -> Int {
 }
 
 
-func part1( nodes: [ Int: Node ] ) -> Int {
-    return nodes.values.filter { $0.isCorner }.reduce( 1 ) { $0 * $1.tile.id }
+func parse( input: AOCinput ) -> [ Int : Node ] {
+    let tiles = input.paragraphs.map { Tile( lines: $0 ) }
+    
+    return tiles.reduce( into: [ Int : Node ](), { $0[$1.id] = Node( tile: $1, tiles: tiles ) } )
 }
 
 
-func part2( nodes: [ Int: Node ] ) -> Int {
+func part1( input: AOCinput ) -> String {
+    let nodes = parse( input: input )
+    
+    return "\( nodes.values.filter { $0.isCorner }.reduce( 1 ) { $0 * $1.tile.id } )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let seaMonsterText = """
+                      #
+    #    ##    ##    ###
+     #  #  #  #  #  #
+    """
+    let seaMonster = Pattern( input: seaMonsterText )
+    let nodes = parse( input: input )
     let puzzle = Puzzle( nodes: nodes )
     let images = [
         puzzle.image( orientation: Orientation( flipped: false, rotation: 0 ) ),
@@ -384,25 +404,16 @@ func part2( nodes: [ Int: Node ] ) -> Int {
         puzzle.image( orientation: Orientation( flipped: true, rotation: 2 ) ),
         puzzle.image( orientation: Orientation( flipped: true, rotation: 3 ) ),
     ].map { ( $0, seaMonster.match( image: $0 ) ) }.max { $0.1.count < $1.1.count }!
-    
+
     let clearedImage = images.1.reduce( into: images.0 ) {
         $0 = seaMonster.clear( image: $0, match: $1 )
     }
-    return countOccurances( of: "#", in: clearedImage )
+
+    return "\( countOccurances( of: "#", in: clearedImage ) )"
 }
 
 
-let seaMonsterText = """
-                  #
-#    ##    ##    ###
- #  #  #  #  #  #
-"""
-let seaMonster = Pattern( input: seaMonsterText )
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day20.txt"
-let groups =  try String( contentsOfFile: inputFile ).components( separatedBy: "\n\n" )
-let tiles =  groups.map { Tile( input: $0 ) }
-var nodes = tiles.reduce(into: [ Int : Node ](), { $0[$1.id] = Node( tile: $1, tiles: tiles ) } )
-
-print( seaMonster.string )
-print( "Part 1: \( part1( nodes: nodes ) )" )
-print( "Part 2: \( part2( nodes: nodes ) )" )
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
