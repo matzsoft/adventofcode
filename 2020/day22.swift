@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day22
-//
-//  Created by Mark Johnson on 12/22/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day22 - Crab Combat
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/30/21 23:23:37
 //
 
 import Foundation
@@ -17,9 +19,7 @@ struct Deck {
         self.cards = cards
     }
     
-    init( input: String ) {
-        let lines = input.split( separator: "\n" )
-        
+    init( lines: [String] ) {
         title = String( lines.first! )
         cards = lines.dropFirst().map { Int( $0 )! }
     }
@@ -27,22 +27,6 @@ struct Deck {
     var score: Int {
         return cards.reversed().enumerated().reduce( 0 ) { $0 + ( $1.offset + 1 ) * $1.element }
     }
-}
-
-func part1( decks: [Deck] ) -> Int {
-    var decks = decks
-    
-    while decks.allSatisfy( { !$0.cards.isEmpty } ) {
-        let draws = [ decks[0].cards.removeFirst(), decks[1].cards.removeFirst() ]
-        
-        if draws[0] > draws[1] {
-            decks[0].cards.append( contentsOf: draws )
-        } else {
-            decks[1].cards.append( contentsOf: draws.reversed() )
-        }
-    }
-    
-    return decks.map { $0.score }.max()!
 }
 
 
@@ -55,8 +39,7 @@ func playRecursive( decks: [Deck] ) -> [Int] {
             $0.cards.map { String( $0 ) }.joined(separator: ",")
         }.joined(separator: "|" )
         
-        if states.contains( state ) { return [ decks[0].score, 0 ] }
-        states.insert( state )
+        if !states.insert( state ).inserted { return [ decks[0].score, 0 ] }
         
         let draws = [ decks[0].cards.removeFirst(), decks[1].cards.removeFirst() ]
         
@@ -85,14 +68,36 @@ func playRecursive( decks: [Deck] ) -> [Int] {
 }
 
 
-func part2( decks: [Deck] ) -> Int {
-    return playRecursive( decks: decks ).max()!
+func parse( input: AOCinput ) -> [Deck] {
+    return input.paragraphs.map { Deck( lines: $0 ) }
 }
 
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day22.txt"
-let groups =  try String( contentsOfFile: inputFile ).components( separatedBy: "\n\n" )
-let decks = groups.map { Deck( input: $0 ) }
+func part1( input: AOCinput ) -> String {
+    var decks = parse( input: input )
+    
+    while decks.allSatisfy( { !$0.cards.isEmpty } ) {
+        let draws = [ decks[0].cards.removeFirst(), decks[1].cards.removeFirst() ]
+        
+        if draws[0] > draws[1] {
+            decks[0].cards.append( contentsOf: draws )
+        } else {
+            decks[1].cards.append( contentsOf: draws.reversed() )
+        }
+    }
+    
+    return "\( decks.map { $0.score }.max()! )"
+}
 
-print( "Part 1: \( part1( decks: decks ) )" )
-print( "Part 2: \( part2( decks: decks ) )" )
+
+func part2( input: AOCinput ) -> String {
+    let decks = parse( input: input )
+    
+    return "\( playRecursive( decks: decks ).max()! )"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
