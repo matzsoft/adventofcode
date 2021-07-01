@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day21
-//
-//  Created by Mark Johnson on 12/23/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day21 - Allergen Assessment
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 06/29/21 20:34:38
 //
 
 import Foundation
@@ -17,7 +19,7 @@ struct Food {
         self.allergens = allergens
     }
     
-    init( input: Substring ) {
+    init( input: String ) {
         let groups = input.components( separatedBy: "(contains" )
         
         ingredients = Set( groups[0].split( separator: " " ).map { String( $0 ) } )
@@ -26,36 +28,53 @@ struct Food {
 }
 
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day21.txt"
-let foods = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map { Food( input: $0 ) }
-var ingredients = foods.reduce( into: Set<String>(), { $0.formUnion( $1.ingredients ) } )
-var allergens = foods.reduce( into: Set<String>(), { $0.formUnion( $1.allergens ) } )
-var dangerous: [ String : String ] = [:]
+func parse( input: AOCinput ) -> ( [Food], Set<String>, [ String : String ] ) {
+    let foods = input.lines.map { Food( input: $0 ) }
+    var ingredients = foods.reduce( into: Set<String>(), { $0.formUnion( $1.ingredients ) } )
+    var allergens = foods.reduce( into: Set<String>(), { $0.formUnion( $1.allergens ) } )
+    var dangerous: [ String : String ] = [:]
 
-while !allergens.isEmpty {
-    for allergen in allergens {
-        let candidates = foods.filter { $0.allergens.contains( allergen ) }.map {
-            Food( ingredients: $0.ingredients.intersection( ingredients ), allergens: $0.allergens )
-        }
-        let suspects = candidates.reduce( into: candidates[0].ingredients, {
-            $0.formIntersection( $1.ingredients )
-        } )
-        
-        if suspects.count == 1 {
-            let ingredient = suspects.first!
+    while !allergens.isEmpty {
+        for allergen in allergens {
+            let candidates = foods.filter { $0.allergens.contains( allergen ) }.map {
+                Food( ingredients: $0.ingredients.intersection( ingredients ), allergens: $0.allergens )
+            }
+            let suspects = candidates.reduce( into: candidates[0].ingredients, {
+                $0.formIntersection( $1.ingredients )
+            } )
             
-            allergens.remove( allergen )
-            ingredients.remove( ingredient )
-            dangerous[ingredient] = allergen
-            break
+            if suspects.count == 1 {
+                let ingredient = suspects.first!
+                
+                allergens.remove( allergen )
+                ingredients.remove( ingredient )
+                dangerous[ingredient] = allergen
+                break
+            }
         }
     }
+
+    return ( foods, ingredients, dangerous )
 }
 
-let part1 = ingredients.reduce( 0 ) { sum, ingredient in
-    sum + foods.reduce( 0 ) { $0 + ( $1.ingredients.contains( ingredient ) ? 1 : 0 ) }
-}
-let part2 = dangerous.sorted { $0.value < $1.value }.map { $0.key }.joined( separator: "," )
 
-print( "Part 1: \( part1 )" )
-print( "Part 2: \( part2 )" )
+func part1( input: AOCinput ) -> String {
+    let ( foods, ingredients, _ ) = parse( input: input )
+    let result = ingredients.flatMap { ing in foods.filter { $0.ingredients.contains( ing ) } }.count
+    
+    return "\(result)"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let ( _, _, dangerous ) = parse( input: input )
+    let result = dangerous.sorted { $0.value < $1.value }.map { $0.key }.joined( separator: "," )
+    
+    return "\(result)"
+}
+
+
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
