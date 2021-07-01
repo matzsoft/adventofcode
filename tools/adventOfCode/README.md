@@ -12,11 +12,11 @@ The tools directory which currently has one tool **adventOfCode** and a support 
 
 ### Year Subdirectories
 
-The year subdirectories should ultimately contain one file for each problem (day01.swift through day25.swift), a directory named input, and a directory named testfiles.  The input directory contains the problem data for each problem.  For example the problem data for day07.swift is in input/day07.txt.  The testfiles directory contains any test data for each problem.  For example any test data for day07.swift would be in testfiles/day07*.txt.
+The year subdirectories should ultimately contain one file for each problem (`day01.swift` through `day25.swift`), a directory named **input**, and a directory named **testfiles**.  The **input** directory contains the problem data for each problem.  For example the problem data for day07.swift is in `input/day07.txt`.  The **testfiles** directory contains any test data for each problem.  For example any test data for day07.swift would be in `testfiles/day07*.txt`.
 
 The format of the problem and test data is the same.  They consist of a header, a separator, and the problem data from the Advent of Code website.
 
-The first line of the header is the expected result for Part 1 of the problem.  The second line of the header is the expected result for Part 2 of the problem.  Either or both of these first two lines can be blank.  This indicates that the expected value is either not yet known or irrelevant (some tests are only valid for one part of the problem).
+The first line of the header is the expected result for Part 1 of the problem.  The second line of the header is the expected result for Part 2 of the problem.  Either or both of these first two lines can be blank.  A blank line indicates that the expected value is either not yet known or irrelevant (some tests are only valid for one part of the problem).
 
 The remaining lines of the header are optional.  They are used for extra parameters that relate to the data.  For example some tests use a different limit than the actual problem.
 
@@ -65,4 +65,4 @@ I use the close subcommand when I have finished working on a solution, or perhap
 
 ## The Library
 
-The source code for the **adventOfCode** tool contains a Library folder.  This folder contains all the code that is used by multiple problem solutions.  An `adventOfCode open` command copies all files from this Library folder into the newly created package.  An `adventOfCode close` command copies and changes to those files back into the Library folder.
+The source code for the **adventOfCode** tool contains a Library folder.  This folder contains all the code that is used by multiple problem solutions.  An `adventOfCode open` command copies all files from this Library folder into the newly created package.  An `adventOfCode close` command copies any changes to those files back into the Library folder.
