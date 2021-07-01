@@ -1,9 +1,11 @@
 //
-//  main.swift
-//  day23
-//
-//  Created by Mark Johnson on 12/23/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day23 - Crab Cups
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 07/01/21 10:27:39
 //
 
 import Foundation
@@ -16,19 +18,17 @@ struct Circle {
     var circle: [Cup]
     var current: Int
     
-    init( size: Int, input: String ) {
+    init( size: Int, input: String ) throws {
         let numbers = input.map { Int( String( $0 ) )! }
         let biggest = numbers.max()!
         var lastCup = 0
         
         guard biggest <= size else {
-            print( "Bad init of Circle, \(biggest) is greater than \(size)." )
-            exit( 0 )
+            throw RuntimeError( "Bad init of Circle, \(biggest) is greater than \(size)." )
         }
         
         circle = Array( repeating: Cup( clockwise: 0 ), count: size + 1 )
         for number in numbers {
-            circle[number] = circle[lastCup]
             circle[lastCup] = Cup( clockwise: number )
             lastCup = number
         }
@@ -98,18 +98,19 @@ struct Circle {
 }
 
 
-func part1( circle: Circle ) -> String {
-    var circle = circle
+func part1( input: AOCinput ) -> String {
+    var circle = try! Circle( size: input.line.count, input: input.line )
     
     for roundNumber in 1 ... 100 {
         circle.round( roundNumber: roundNumber )
     }
+    
     return circle.normalized
 }
 
 
-func part2( circle: Circle ) -> Int {
-    var circle = circle
+func part2( input: AOCinput ) -> String {
+    var circle = try! Circle( size: 1000000, input: input.line )
     
     for roundNumber in 1 ... 10000000 {
         circle.round( roundNumber: roundNumber )
@@ -117,13 +118,12 @@ func part2( circle: Circle ) -> Int {
     
     let cup1 = circle.circle[1].clockwise
     let cup2 = circle.circle[cup1].clockwise
-    return cup1 * cup2
+
+    return "\( cup1 * cup2 )"
 }
 
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day23.txt"
-let input = try String( contentsOfFile: inputFile ).replacingOccurrences( of: "\n", with: "" )
-//let input = "389125467"
-
-print( "Part 1: \( part1( circle: Circle( size: 9, input: input ) ) )" )
-print( "Part 2: \( part2( circle: Circle( size: 1000000, input: input ) ) )" )
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
