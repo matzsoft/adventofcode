@@ -1,136 +1,99 @@
 //
-//  main.swift
-//  day24
-//
-//  Created by Mark Johnson on 12/24/20.
-//  Copyright © 2020 matzsoft. All rights reserved.
+//         FILE: main.swift
+//  DESCRIPTION: day24 - Lobby Layout
+//        NOTES: ---
+//       AUTHOR: Mark T. Johnson, markj@matzsoft.com
+//    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
+//      VERSION: 1.0
+//      CREATED: 07/01/21 13:38:00
 //
 
 import Foundation
 
-enum Direction: String, CaseIterable {
-    case e, se, sw, w, nw, ne
+func identify( line: String ) -> Point2D {
+    var destination = Point2D( x: 0, y: 0 )
+    var last: Character?
     
-    var vector: Position {
-        switch self {
-        case .e:
-            return Position( x: 2, y: 0 )
-        case .se:
-            return Position( x: 1, y: -1 )
-        case .sw:
-            return Position( x: -1, y: -1 )
-        case .w:
-            return Position( x: -2, y: 0 )
-        case .nw:
-            return Position( x: -1, y: 1 )
-        case .ne:
-            return Position( x: 1, y: 1 )
-        }
-    }
-}
-
-
-struct Position: Hashable {
-    let x: Int
-    let y: Int
-    
-    func step( direction: Direction ) -> Position {
-        return Position( x: x + direction.vector.x, y: y + direction.vector.y )
-    }
-}
-
-struct StepList {
-    let steps: [Direction]
-    let vector: Position
-    
-    init( input: Substring ) {
-        var last: Character?
-        var steps: [Direction] = []
-        
-        for character in input {
-            if let previous = last {
-                steps.append( Direction( rawValue: String( previous ) + String( character ) )! )
-                last = nil
-            } else if let direction = Direction( rawValue: String( character ) ) {
-                steps.append( direction )
-            } else {
-                last = character
-            }
-        }
-        
-        self.steps = steps
-        vector = steps.reduce( into: Position( x: 0, y: 0 ), { $0 = $0.step( direction: $1 ) } )
-    }
-}
-
-
-func part1( tileList: [StepList] ) -> Set<Position> {
-    var blacks = Set<Position>()
-    
-    for tile in tileList {
-        if blacks.contains( tile.vector ) {
-            blacks.remove( tile.vector )
+    for character in line {
+        if let previous = last {
+            let direction = Direction6alt( rawValue: String( previous ) + String( character ) )!
+            destination = destination + direction.vector
+            last = nil
+        } else if let direction = Direction6alt( rawValue: String( character ) ) {
+            destination = destination + direction.vector
+            last = nil
         } else {
-            blacks.insert( tile.vector )
+            last = character
         }
     }
+    
+    return destination
+}
+
+
+func countNeighbors( blacks: Set<Point2D>, position: Point2D ) -> Int {
+    return Direction6alt.allCases.filter { blacks.contains( position + $0.vector ) }.count
+}
+
+
+func findWhites( blacks: Set<Point2D> ) -> [Point2D] {
+    let bounds = Rect2D(points: Array( blacks ) ).pad( byMinX: 2, byMaxX: 2, byMinY: 1, byMaxY: 1 )
+    
+    return ( bounds.min.x ... bounds.max.x ).flatMap { x in
+        ( bounds.min.y ... bounds.max.y ).compactMap{ y in
+            let tile = Point2D( x: x, y: y )
+
+            return blacks.contains( tile ) ? nil : tile
+        }
+    }
+}
+
+
+func parse( input: AOCinput ) -> Set<Point2D> {
+    let visited = input.lines.map { identify( line: $0 ) }
+    var blacks = Set<Point2D>()
+    
+    for tile in visited {
+        if !blacks.insert( tile ).inserted {
+            blacks.remove( tile )
+        }
+    }
+    
     return blacks
 }
 
 
-func countNeighbors( blacks: Set<Position>, position: Position ) -> Int {
-    return Direction.allCases.reduce( 0 ) {
-        $0 + ( blacks.contains( position.step( direction: $1 ) ) ? 1 : 0 )
-    }
+func part1( input: AOCinput ) -> String {
+    let blacks = parse( input: input )
+    return "\( blacks.count )"
 }
 
 
-func findWhites( blacks: Set<Position> ) -> [Position] {
-    var results: [Position] = []
-    let minX = blacks.min { $0.x < $1.x }!.x - 2
-    let maxX = blacks.max { $0.x < $1.x }!.x + 2
-    let minY = blacks.min { $0.y < $1.y }!.y - 1
-    let maxY = blacks.max { $0.y < $1.y }!.y + 1
-    
-    for x in minX ... maxX {
-        for y in minY ... maxY {
-            let tile = Position.init( x: x, y: y )
-            
-            if !blacks.contains( tile ) { results.append( tile ) }
-        }
-    }
-    return results
-}
-
-
-func part2( initial: Set<Position> ) -> Int {
-    var thisDay = initial
+func part2( input: AOCinput ) -> String {
+    var blacks = parse( input: input )
     
     for _ in 1 ... 100 {
-        var nextDay = thisDay
+        var nextDay = blacks
         
-        for tile in thisDay {
-            let neighbors = countNeighbors( blacks: thisDay, position: tile )
+        for tile in blacks {
+            let neighbors = countNeighbors( blacks: blacks, position: tile )
             
             if neighbors == 0 || neighbors > 2 { nextDay.remove( tile ) }
         }
         
-        for tile in findWhites( blacks: thisDay ) {
-            let neighbors = countNeighbors( blacks: thisDay, position: tile )
+        for tile in findWhites( blacks: blacks ) {
+            let neighbors = countNeighbors( blacks: blacks, position: tile )
             
             if neighbors == 2 { nextDay.insert( tile ) }
         }
-        thisDay = nextDay
+        blacks = nextDay
     }
     
-    return thisDay.count
+    return "\( blacks.count )"
 }
 
 
-let inputFile = "/Users/markj/Development/adventofcode/2020/input/day24.txt"
-let tileList = try String( contentsOfFile: inputFile ).split( separator: "\n" ).map { StepList( input: $0 ) }
-var blacks = part1( tileList: tileList )
-
-
-print( "Part 1: \( blacks.count )" )
-print( "Part 2: \( part2( initial: blacks ) )" )
+try runTests( part1: part1 )
+try runTests( part2: part2 )
+try solve( part1: part1 )
+try solve( part2: part2 )
