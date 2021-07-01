@@ -10,59 +10,48 @@
 
 import Foundation
 
+// Implemented as a singly linked, circular list with the head pointer stored in element zero of the array.
 struct Circle {
-    struct Cup {
-        let clockwise: Int
-    }
-    
-    var circle: [Cup]
+    var circle: [Int]
     var current: Int
     
     init( size: Int, input: String ) throws {
         let numbers = input.map { Int( String( $0 ) )! }
+        let starters = [ 0 ] + numbers + [ numbers[0] ]
         let biggest = numbers.max()!
-        var lastCup = 0
         
         guard biggest <= size else {
             throw RuntimeError( "Bad init of Circle, \(biggest) is greater than \(size)." )
         }
         
-        circle = Array( repeating: Cup( clockwise: 0 ), count: size + 1 )
-        for number in numbers {
-            circle[lastCup] = Cup( clockwise: number )
-            lastCup = number
+        circle = ( 0 ... numbers.count ).reduce( into: Array( repeating: 0, count: numbers.count + 1 ) ) {
+            array, index in array[ starters[index] ] = starters[ index + 1 ]
         }
-        
-        if biggest == size {
-            circle[lastCup] = circle[0]
-        } else {
-            circle[lastCup] = Cup( clockwise: biggest + 1 )
-            for number in ( biggest + 1 ) ..< size {
-                circle[number] = Cup( clockwise: number + 1 )
-            }
-            circle[size] = circle[0]
+        if biggest < size {
+            circle += ( biggest + 2 ... size ).map( { $0 } ) + [ circle[0] ]
+            circle[ numbers.last! ] = biggest + 1
         }
-        current = circle[0].clockwise
+        current = circle[0]
     }
     
     var normalized: String {
-        var last = circle[1].clockwise
+        var last = circle[1]
         var cups: [Int] = []
         
         while last != 1 {
             cups.append( last )
-            last = circle[last].clockwise
+            last = circle[last]
         }
         
         return cups.map { String( $0 ) }.joined()
     }
 
     mutating func remove( after: Int, count: Int ) -> Int {
-        let first = circle[after].clockwise
-        let last = ( 1 ..< count ).reduce( first, { current, _ in circle[current].clockwise } )
+        let first = circle[after]
+        let last = ( 1 ..< count ).reduce( first, { current, _ in circle[current] } )
 
         circle[after] = circle[last]
-        circle[last] = Cup( clockwise: 0 )
+        circle[last] = 0
         
         return first
     }
@@ -70,16 +59,16 @@ struct Circle {
     mutating func insert( after: Int, head: Int ) -> Void {
         var last = head
         
-        while circle[last].clockwise != 0 { last = circle[last].clockwise }
+        while circle[last] != 0 { last = circle[last] }
         circle[last] = circle[after]
-        circle[after] = Cup( clockwise: head )
+        circle[after] = head
     }
     
     func makeSet( head: Int ) -> Set<Int> {
         var set = Set<Int>()
         var last = head
         
-        while last != 0 { set.insert(last); last = circle[last].clockwise }
+        while last != 0 { set.insert(last); last = circle[last] }
         return set
     }
     
@@ -93,7 +82,7 @@ struct Circle {
         }
         
         insert( after: destination, head: removed )
-        current = circle[current].clockwise
+        current = circle[current]
     }
 }
 
@@ -116,8 +105,8 @@ func part2( input: AOCinput ) -> String {
         circle.round( roundNumber: roundNumber )
     }
     
-    let cup1 = circle.circle[1].clockwise
-    let cup2 = circle.circle[cup1].clockwise
+    let cup1 = circle.circle[1]
+    let cup2 = circle.circle[cup1]
 
     return "\( cup1 * cup2 )"
 }
