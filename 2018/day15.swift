@@ -54,11 +54,9 @@ class Fighter {
             let distances = allDistances( map: map )
             let inRange = findInRange( map: map, targets: targets )
 
-            if let closest = inRange.min( by: { distances[$0.y][$0.x] < distances[$1.y][$1.x] } ) {
-                let distance = distances[closest.y][closest.x]
-                
-                if distance < Int.max {
-                    let candidates = inRange.filter { distances[$0.y][$0.x] == distance }
+            if let closest = inRange.min( by: { distances[$0] ?? Int.max < distances[$1] ?? Int.max } ) {
+                if let distance = distances[closest] {
+                    let candidates = inRange.filter { distances[$0] == distance }
                     let target = candidates.sorted( by: Point2D.inReadingOrder( left: right: ) )[0]
                     let move = path( map: map, to: target, distances: distances )
                     let savedCell = map[position]
@@ -91,19 +89,18 @@ class Fighter {
             .sorted( by: Point2D.inReadingOrder( left: right: ) )
     }
         
-    func allDistances( map: Map ) -> [[Int]] {
-        var distances = Array( repeating: Array( repeating: Int.max, count: map.width ), count: map.height )
+    func allDistances( map: Map ) -> [ Point2D : Int ] {
+        var distances = [ Point2D : Int ]()
         var queue = [ position ]
         
-        distances[position.y][position.x] = 0
+        distances[position] = 0
         while queue.count > 0 {
             let current = queue.removeFirst()
-            let distance = distances[current.y][current.x] + 1
-            let moves = map.possibleMoves( position: current )
+            let distance = distances[current]! + 1
             
-            for move in moves {
-                if distances[move.y][move.x] == Int.max {
-                    distances[move.y][move.x] = distance
+            for move in map.possibleMoves( position: current ) {
+                if distances[move] == nil {
+                    distances[move] = distance
                     queue.append( move )
                 }
             }
@@ -112,14 +109,14 @@ class Fighter {
         return distances
     }
     
-    func path( map: Map, to location: Point2D, distances: [[Int]] ) -> Point2D {
+    func path( map: Map, to location: Point2D, distances: [ Point2D : Int ] ) -> Point2D {
         var results: [Point2D] = []
         var queue = [location]
         var alreadyQueued: Set<Point2D> = []
         
         while queue.count > 0 {
             let current = queue.removeFirst()
-            let distance = distances[current.y][current.x] - 1
+            let distance = distances[current]! - 1
             
             if distance < 1 {
                 results.append( current )
@@ -127,7 +124,7 @@ class Fighter {
                 let moves = map.possibleMoves( position: current )
                 
                 for move in moves {
-                    if distances[move.y][move.x] == distance && !alreadyQueued.contains( move ) {
+                    if distances[move] == distance && !alreadyQueued.contains( move ) {
                         queue.append( move )
                         alreadyQueued.insert( move )
                     }
