@@ -83,16 +83,10 @@ class Fighter {
             .min( by: { $0.hitPoints < $1.hitPoints } )
     }
     
-    func possibleMoves( map: Map, position: Point2D ) -> [Point2D] {
-        return DirectionUDLR.allCases
-            .map { position + $0.vector }
-            .filter { if case Cell.empty = map[$0] { return true }; return false }
-    }
-    
     func findInRange( map: Map, targets: [Fighter] ) -> [Point2D] {
         var seen = Set<Point2D>()
         return targets
-            .flatMap { $0.possibleMoves( map: map, position: $0.position ) }
+            .flatMap { map.possibleMoves( position: $0.position ) }
             .filter { seen.insert( $0 ).inserted }
             .sorted( by: Point2D.inReadingOrder( left: right: ) )
     }
@@ -105,7 +99,7 @@ class Fighter {
         while queue.count > 0 {
             let current = queue.removeFirst()
             let distance = distances[current.y][current.x] + 1
-            let moves = possibleMoves( map: map, position: current )
+            let moves = map.possibleMoves( position: current )
             
             for move in moves {
                 if distances[move.y][move.x] == Int.max {
@@ -130,7 +124,7 @@ class Fighter {
             if distance < 1 {
                 results.append( current )
             } else {
-                let moves = possibleMoves( map: map, position: current )
+                let moves = map.possibleMoves( position: current )
                 
                 for move in moves {
                     if distances[move.y][move.x] == distance && !alreadyQueued.contains( move ) {
@@ -154,29 +148,34 @@ class Fighter {
 }
 
 
-enum Cell {
-    case wall, empty, goblin( Fighter ), elf( Fighter )
-    
-    var mapValue: String {
-        switch self {
-        case .wall:
-            return "#"
-        case .empty:
-            return "."
-        case .goblin:
-            return "G"
-        case .elf:
-            return "E"
+class Map {
+    enum Cell {
+        case wall, empty, goblin( Fighter ), elf( Fighter )
+        
+        var mapValue: String {
+            switch self {
+            case .wall:
+                return "#"
+            case .empty:
+                return "."
+            case .goblin:
+                return "G"
+            case .elf:
+                return "E"
+            }
         }
     }
-}
 
-
-class Map {
     var cells: [[Cell]]
+    var completed: Int?
     
     var width: Int { cells[0].count }
     var height: Int { cells.count }
+    var outcome: Int? {
+        guard let completed = completed else { return nil }
+        
+        return completed * allFighters.reduce( 0, { $0 + $1.hitPoints } )
+    }
 
     init( lines: [String] ) {
         cells = ( 0 ..< lines.count ).map { y -> [Cell] in
@@ -241,74 +240,81 @@ class Map {
         cells.forEach { Swift.print( $0.map { $0.mapValue }.joined() ) }
         Swift.print()
     }
+
+    func possibleMoves( position: Point2D ) -> [Point2D] {
+        return DirectionUDLR.allCases
+            .map { position + $0.vector }
+            .filter { if case Cell.empty = self[$0] { return true }; return false }
+    }
+    
+    func runFight( elfAttackPoints: Int, printResults: Bool = false ) -> Bool {
+        if printResults { print( round: 0 ) }
+        
+        let elves = allElves
+        
+        elves.forEach { $0.attackPoints = elfAttackPoints }
+        
+        THEFIGHT:
+        for tick in 1 ... Int.max {
+            let fighters = allFighters
+            
+            for fighter in fighters where fighter.isAlive {
+                if !fighter.turn( map: self ) {
+                    if printResults { print( round: tick ) }
+                    completed = tick - 1
+                    break THEFIGHT
+                }
+            }
+        }
+        
+        if printResults {
+            Swift.print( "Win for team \(allFighters[0].type.rawValue) at", outcome! )
+        }
+        
+        return elves.count == allElves.count
+    }
 }
 
 
-func runFight( input: AOCinput, printResults: Bool, elfAttackPoints: Int ) -> ( Bool, Int ) {
-    let map = Map( lines: input.lines )
-    if printResults { map.print( round: 0 ) }
-    
-    var completed = 0
-    let elves = map.allElves
-    
-    elves.forEach { $0.attackPoints = elfAttackPoints }
-    
-    THEFIGHT:
-    for tick in 1 ... Int.max {
-        let fighters = map.allFighters
-        
-        for fighter in fighters where fighter.isAlive {
-            if !fighter.turn( map: map ) {
-                if printResults { map.print( round: tick ) }
-                break THEFIGHT
-            }
-        }
-        //    printMap(map: map, round: tick)
-        completed = tick
-    }
-    
-    let remaining = map.allFighters
-    let hitPoints = remaining.reduce( 0, { $0 + $1.hitPoints } )
-    
-    if printResults {
-        print( "Win for team \(remaining[0].type.rawValue) at", completed * hitPoints )
-    }
-    
-    return ( elves.count == map.allElves.count, completed * hitPoints )
+func parse( input: AOCinput ) -> Map {
+    return Map( lines: input.lines )
 }
 
 
 func part1( input: AOCinput ) -> String {
-    let ( _, result ) = runFight( input: input, printResults: false, elfAttackPoints: 3 )
+    let map = parse( input: input )
+    let _ = map.runFight( elfAttackPoints: 3 )
     
-    return "\(result)"
+    return "\( map.outcome! )"
 }
 
 
 func part2( input: AOCinput ) -> String {
     var lowHP = 3
-    var highHP = 100
+    var lastHP = lowHP
+    var highHP = 0
     var final = 0
     
-    do {
-        let ( success, result ) = runFight( input: input, printResults: false, elfAttackPoints: lowHP )
+    repeat {
+        let map = parse( input: input )
         
-        if success { return "\(result)" }
-    }
-    
-    do {
-        let ( success, _ ) = runFight( input: input, printResults: false, elfAttackPoints: highHP )
-        
-        if !success { return "\(highHP) is not high enough" }
-    }
+        if map.runFight( elfAttackPoints: lowHP ) {
+            highHP = lowHP
+            lowHP = lastHP
+            final = map.outcome!
+        } else {
+            lastHP = lowHP
+            lowHP *= 2
+        }
+    } while highHP == 0
     
     while lowHP + 1 < highHP {
+        let map = parse( input: input )
         let currentHP = ( lowHP + highHP ) / 2
         
-        let ( success, result ) = runFight( input: input, printResults: false, elfAttackPoints: currentHP )
-        if success {
+        if map.runFight( elfAttackPoints: currentHP ) {
             highHP = currentHP
-            final = result
+            final = map.outcome!
         } else {
             lowHP = currentHP
         }
