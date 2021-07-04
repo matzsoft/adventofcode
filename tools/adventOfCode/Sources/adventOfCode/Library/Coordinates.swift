@@ -29,6 +29,21 @@ enum Direction4: Int, CaseIterable, Direction2D {
         }
     }
     
+    static func fromArrows( char: String ) -> Direction4? {
+        switch char {
+        case "^":
+            return .north
+        case "v":
+            return .south
+        case "<":
+            return .west
+        case ">":
+            return .east
+        default:
+            return nil
+        }
+    }
+    
     func turn( direction: Turn ) -> Direction4 {
         switch direction {
         case .straight:
