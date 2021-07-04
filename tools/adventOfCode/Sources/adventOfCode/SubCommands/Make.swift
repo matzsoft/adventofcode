@@ -151,8 +151,8 @@ extension adventOfCode {
                 return false
             }
             
-            let day = package.dropFirst( 3 )
-            let session = try String( contentsOfFile: ".session" )
+            let day = Int( package.dropFirst( 3 ) )!
+            let session = try String( contentsOfFile: sessionFile )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
             let status = shell(
                 "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", inputFile, "https://adventofcode.com/\(year)/day/\(day)/input"
