@@ -33,7 +33,7 @@ func getArrangements(
 ) -> [Int] {
     if remaining.count > 1 {
         return remaining.reduce( into: [Int]() ) { list, next in
-            let table = table + [ next]
+            let table = table + [ next ]
             let remaining = remaining.filter { $0 != next }
             let arrangements = getArrangements( people: people, table: table, remaining: remaining )
             
@@ -56,7 +56,7 @@ func getArrangements(
 func parse( input: AOCinput ) -> [ String : [ String : Int ] ] {
     let delimiters = CharacterSet.whitespaces.union( CharacterSet.punctuationCharacters )
     
-    return input.lines.reduce(into: [ String : [ String : Int ] ]() ) { dict, line in
+    return input.lines.reduce( into: [ String : [ String : Int ] ]() ) { dict, line in
         let words = line.components( separatedBy: delimiters )
         let units = words[2] == "gain" ? Int( words[3] )! : -Int( words[3] )!
         
@@ -75,7 +75,7 @@ func part2( input: AOCinput ) -> String {
     var people = parse( input: input )
     
     people.keys.forEach {
-        people["me", default: [:] ][$0] = 0
+        people[ "me", default: [:] ][$0] = 0
         people[$0]!["me"] = 0
     }
     return "\( getArrangements( people: people ).max()! )"
