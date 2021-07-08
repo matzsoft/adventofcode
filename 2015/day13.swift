@@ -10,45 +10,30 @@
 
 import Foundation
 
-struct Table {
-    let people: [String]
-    
-    init( name: String ) {
-        people = [ name ]
-    }
-    
-    private init( people: [String] ) {
-        self.people = people
-    }
-    
-    func add( name: String ) -> Table {
-        return Table( people: self.people + [ name ] )
-    }
-    
-    subscript( index: Int ) -> String {
-        let modIndex = index % people.count        
-        return people[ modIndex < 0 ? modIndex + people.count : modIndex ]
+extension Array {
+    subscript( circular index: Int ) -> Element {
+        let modIndex = isEmpty ? 0 : index % count
+        return self[ modIndex < 0 ? modIndex + count : modIndex ]
     }
 }
 
 
 func getArrangements( people: [ String : [ String : Int ] ] ) -> [Int] {
     let names = people.keys.map { String( $0 ) }
-    let table = Table( name: names[0] )
     let remaining = Array( names.dropFirst() )
     
-    return getArrangements( people: people, table: table, remaining: remaining )
+    return getArrangements( people: people, table: [ names[0] ], remaining: remaining )
 }
 
 
 func getArrangements(
     people: [ String : [ String : Int ] ],
-    table: Table,
+    table: [String],
     remaining: [String]
 ) -> [Int] {
     if remaining.count > 1 {
         return remaining.reduce( into: [Int]() ) { list, next in
-            let table = table.add( name: next )
+            let table = table + [ next]
             let remaining = remaining.filter { $0 != next }
             let arrangements = getArrangements( people: people, table: table, remaining: remaining )
             
@@ -56,11 +41,13 @@ func getArrangements(
         }
     }
     
-    let table = table.add( name: remaining[0] )
+    let table = table + [ remaining[0] ]
     
     return [
-        table.people.indices.reduce( 0 ) {
-            $0 + people[ table[$1] ]![ table[ $1 - 1] ]! + people[ table[$1] ]![ table[ $1 + 1 ] ]!
+        table.indices.reduce( 0 ) {
+            let left = table[ circular: $1 - 1 ]
+            let right = table[ circular: $1 + 1 ]
+            return $0 + people[ table[$1] ]![left]! + people[ table[$1] ]![right]!
         }
     ]
 }
