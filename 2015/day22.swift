@@ -65,17 +65,18 @@ struct Spell: CustomStringConvertible {
         name: Name, cost: Int, duration: Int = 0, damage: Int = 0,
         heal: Int = 0, armor: Int = 0, mana: Int = 0
     ) {
-        self.name = name
-        self.cost = cost
+        self.name     = name
+        self.cost     = cost
         self.duration = duration
-        self.damage = damage
-        self.heal = heal
-        self.armor = armor
-        self.mana = mana
+        self.damage   = damage
+        self.heal     = heal
+        self.armor    = armor
+        self.mana     = mana
     }
     
     func cast( game: Game ) -> Void {
         game.player.mana -= cost
+        game.currentCost += cost
         switch name {
         case .magicMissle:
             game.boss.hitPoints -= damage
@@ -141,8 +142,8 @@ class Game {
     let boss:        Player
     var effects:     [ Spell.Name : Effect ]
     let turn:        Int
-    let minCost:     Int
-    let currentCost: Int
+    var minCost:     Int
+    var currentCost: Int
     let shop:        Shop
     let difficulty:  Difficulty
     var debug:       Bool
@@ -199,14 +200,19 @@ class Game {
             if player.hitPoints <= 0 { return debugReturn( message: "player looses from difficulty" ) }
         }
         applyEffects()
-        if boss.hitPoints <= 0 { return debugReturn( message: "boss killed before spell", passThru: 0 ) }
+        if boss.hitPoints <= 0 {
+            return debugReturn( message: "boss killed before spell", passThru: currentCost ) }
 
         return shop.spells.compactMap { spell -> Int? in
+            if currentCost + spell.cost >= minCost {
+                return debugReturn( message: "\(spell) already exceeds \(minCost)" ) }
             if spell.cost >= player.mana { return debugReturn( message: "player can't afford \(spell)" ) }
             if effects[spell.name] != nil {
                 return debugReturn( message: "can't cast \(spell), already in effect" ) }
             let game = Game( other: self, turn: turn )
-            return game.checkSpell( spell: spell )
+            let result = game.checkSpell( spell: spell )
+            if let cost = result { minCost = min( minCost, cost ) }
+            return result
         }.min()
     }
     
@@ -214,17 +220,17 @@ class Game {
         spell.cast( game: self )
         debugPrint( message: "player cast \(spell)" )
         if boss.hitPoints <= 0 {
-            return debugReturn( message: "boss killed by \(spell)", passThru: spell.cost) }
+            return debugReturn( message: "boss killed by \(spell)", passThru: currentCost) }
         applyEffects()
         if boss.hitPoints <= 0 {
-            return debugReturn( message: "boss killed by effects", passThru: spell.cost) }
+            return debugReturn( message: "boss killed by effects", passThru: currentCost) }
         player.hitPoints -= max( boss.damage - player.armor, 1 )
         if player.hitPoints <= 0 { return debugReturn( message: "boss kills player" ) }
         
         let game = Game( other: self, turn: turn + 2 )
         guard let recursed = game.lowestCost() else {
             return debugReturn( message: "\(spell) lead to death" ) }
-        return debugReturn( message: "\(spell) lead to victory", passThru: recursed + spell.cost )
+        return debugReturn( message: "\(spell) lead to victory", passThru: recursed )
     }
 }
 
