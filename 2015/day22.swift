@@ -74,23 +74,21 @@ struct Spell: CustomStringConvertible {
         self.mana = mana
     }
     
-    func cast( player: Player, boss: Player ) -> Effect? {
-        player.mana -= cost
+    func cast( game: Game ) -> Void {
+        game.player.mana -= cost
         switch name {
         case .magicMissle:
-            boss.hitPoints -= damage
-            return nil
+            game.boss.hitPoints -= damage
         case .drain:
-            player.hitPoints += heal
-            boss.hitPoints -= damage
-            return nil
+            game.player.hitPoints += heal
+            game.boss.hitPoints -= damage
         case .shield:
-            player.armor += armor
-            return Effect( spell: self )
+            game.player.armor += armor
+            game.effects[name] = Effect( spell: self )
         case .poison:
-            return Effect( spell: self )
+            game.effects[name] = Effect( spell: self )
         case .recharge:
-            return Effect( spell: self )
+            game.effects[name] = Effect( spell: self )
         }
     }
 }
@@ -115,12 +113,12 @@ struct Effect {
         self.duration = spell.duration
     }
     
-    mutating func apply( player: Player, boss: Player ) -> Void {
+    mutating func apply( game: Game ) -> Void {
         switch spell.name {
         case .poison:
-            boss.hitPoints -= spell.damage
+            game.boss.hitPoints -= spell.damage
         case .recharge:
-            player.mana += spell.mana
+            game.player.mana += spell.mana
         default:
             break
         }
@@ -128,120 +126,105 @@ struct Effect {
         duration -= 1
     }
     
-    func remove( player: Player, boss: Player ) -> Void {
+    func remove( game: Game ) -> Void {
         if spell.name == .shield {
-            player.armor -= spell.armor
+            game.player.armor -= spell.armor
         }
     }
 }
 
 
-struct Game {
+class Game {
     enum Difficulty { case easy, hard }
 
-    let player = Player( hitPoints: 50, damage: 0, armor: 0, mana: 500 )
-    let boss: Player
-    let difficulty: Difficulty
-    let shop = Shop()
-    var debug: Bool
+    let player:      Player
+    let boss:        Player
+    var effects:     [ Spell.Name : Effect ]
+    let turn:        Int
+    let minCost:     Int
+    let currentCost: Int
+    let shop:        Shop
+    let difficulty:  Difficulty
+    var debug:       Bool
     
     init( boss: Player, difficulty: Game.Difficulty, debug: Bool = false ) {
-        self.boss = boss
-        self.difficulty = difficulty
-        self.debug = debug
+        self.player      = Player( hitPoints: 50, damage: 0, armor: 0, mana: 500 )
+        self.boss        = boss
+        self.effects     = [:]
+        self.turn        = 1
+        self.minCost     = Int.max
+        self.currentCost = 0
+        self.shop        = Shop()
+        self.difficulty  = difficulty
+        self.debug       = debug
     }
     
-    var cheapestWin: Int? {
-        cheapestWin( player: player.copy, boss: boss.copy, effects: [:], turn: 1 )
+    internal init( other: Game, turn: Int ) {
+        self.player      = other.player.copy
+        self.boss        = other.boss.copy
+        self.effects     = other.effects
+        self.turn        = turn
+        self.minCost     = other.minCost
+        self.currentCost = other.currentCost
+        self.shop        = other.shop
+        self.difficulty  = other.difficulty
+        self.debug       = other.debug
     }
     
-    func cheapestWin( player: Player, boss: Player, effects: [ Spell.Name : Effect ], turn: Int ) -> Int? {
-        func debugPrint( message: String ) -> Void {
-            if debug {
-                let prefix = String( repeating: " ", count: turn - 1 )
-                print( "\(prefix)Turn \(turn) - \(message)" )
-                print( "\(prefix)player = \(player)" )
-                print( "\(prefix)boss = \(boss)" )
-                if player.mana < 0 { exit(1) }
-            }
+    func debugPrint( message: String ) -> Void {
+        if debug {
+            let prefix = String( repeating: " ", count: turn - 1 )
+            print( "\(prefix)Turn \(turn) - \(message)" )
+            print( "\(prefix)player = \(player)" )
+            print( "\(prefix)boss = \(boss)" )
         }
-        
+    }
+    
+    func debugReturn( message: String, passThru: Int? = nil ) -> Int? {
+        debugPrint( message: message )
+        return passThru
+    }
+    
+    func applyEffects() -> Void {
+        effects.filter { $0.value.duration == 0 }.forEach { effects[$0.key]?.remove( game: self ) }
+        effects = effects.filter { $0.value.duration > 0 }
+        for key in effects.keys { effects[key]!.apply( game: self ) }
+        debugPrint( message: "effects applied" )
+    }
+
+    func lowestCost() -> Int? {
         debugPrint( message: "start" )
-        var effects = effects
-        
         if difficulty == .hard {
             player.hitPoints -= 1
-            if player.hitPoints <= 0 {
-                debugPrint(message: "player looses from difficulty")
-                return nil
-            }
+            if player.hitPoints <= 0 { return debugReturn( message: "player looses from difficulty" ) }
         }
-        effects.filter { $0.value.duration == 0 }.forEach {
-            effects[$0.key]?.remove( player: player, boss: boss )
-        }
-        effects = effects.filter { $0.value.duration > 0 }
-        for key in effects.keys { effects[key]!.apply( player: player, boss: boss ) }
-        debugPrint( message: "effects applied" )
-        
-        let leastCost = shop.spells.compactMap { spell -> Int? in
-            let player = player.copy
-            let boss = boss.copy
-            var effects = effects
+        applyEffects()
+        if boss.hitPoints <= 0 { return debugReturn( message: "boss killed before spell", passThru: 0 ) }
 
-            func debugPrint( message: String ) -> Void {
-                if debug {
-                    let prefix = String( repeating: " ", count: turn - 1 )
-                    print( "\(prefix)Turn \(turn) - \(message)" )
-                    print( "\(prefix)player = \(player)" )
-                    print( "\(prefix)boss = \(boss)" )
-                    if player.mana < 0 { exit(1) }
-                }
-            }
-            
-            if spell.cost > player.mana {
-                debugPrint( message: "player can't afford \(spell)" )
-                return nil
-            }
+        return shop.spells.compactMap { spell -> Int? in
+            if spell.cost >= player.mana { return debugReturn( message: "player can't afford \(spell)" ) }
             if effects[spell.name] != nil {
-                debugPrint( message: "can't cast \(spell), already in effect")
-                return nil
-            }
-            if let event = spell.cast( player: player, boss: boss ) {
-                effects[event.spell.name] = Effect( spell: event.spell )
-            }
-            debugPrint( message: "player cast \(spell)" )
-
-            effects.filter { $0.value.duration == 0 }.forEach {
-                effects[$0.key]?.remove( player: player, boss: boss )
-            }
-            effects = effects.filter { $0.value.duration > 0 }
-            for key in effects.keys { effects[key]!.apply( player: player, boss: boss ) }
-            debugPrint( message: "effects applied" )
-
-            if boss.hitPoints <= 0 {
-                debugPrint( message: "boss killed with \(spell.cost)" )
-                return spell.cost
-            }
-            player.hitPoints -= max( boss.damage - player.armor, 1 )
-            if player.hitPoints <= 0 {
-                debugPrint( message: "boss kills player" )
-                return nil
-            }
-            if let recursed =
-                cheapestWin( player: player.copy, boss: boss.copy, effects: effects, turn: turn + 2 ) {
-                debugPrint( message: "\(spell) lead to victory" )
-                return recursed + spell.cost
-            }
-            debugPrint( message: "\(spell) lead to death" )
-            return nil
+                return debugReturn( message: "can't cast \(spell), already in effect" ) }
+            let game = Game( other: self, turn: turn )
+            return game.checkSpell( spell: spell )
         }.min()
+    }
+    
+    func checkSpell( spell: Spell ) -> Int? {
+        spell.cast( game: self )
+        debugPrint( message: "player cast \(spell)" )
+        if boss.hitPoints <= 0 {
+            return debugReturn( message: "boss killed by \(spell)", passThru: spell.cost) }
+        applyEffects()
+        if boss.hitPoints <= 0 {
+            return debugReturn( message: "boss killed by effects", passThru: spell.cost) }
+        player.hitPoints -= max( boss.damage - player.armor, 1 )
+        if player.hitPoints <= 0 { return debugReturn( message: "boss kills player" ) }
         
-        if let leastCost = leastCost {
-            debugPrint( message: "exit with \(leastCost)" )
-            return leastCost
-        }
-        debugPrint( message: "exit with nil" )
-        return nil
+        let game = Game( other: self, turn: turn + 2 )
+        guard let recursed = game.lowestCost() else {
+            return debugReturn( message: "\(spell) lead to death" ) }
+        return debugReturn( message: "\(spell) lead to victory", passThru: recursed + spell.cost )
     }
 }
 
@@ -255,16 +238,16 @@ func part1( input: AOCinput ) -> String {
     let boss = parse( input: input )
     let game = Game( boss: boss, difficulty: .easy, debug: false )
     
-    guard let cost = game.cheapestWin else { return "Failure" }
+    guard let cost = game.lowestCost() else { return "Failure" }
     return "\(cost)"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let boss = parse( input: input )
-    let game = Game( boss: boss, difficulty: .hard, debug: true )
+    let game = Game( boss: boss, difficulty: .hard, debug: false )
     
-    guard let cost = game.cheapestWin else { return "Failure" }
+    guard let cost = game.lowestCost() else { return "Failure" }
     return "\(cost)"
 }
 
