@@ -115,21 +115,16 @@ struct Effect {
     }
     
     mutating func apply( game: Game ) -> Void {
+        duration -= 1
         switch spell.name {
+        case .shield:
+            if duration == 0 { game.player.armor -= spell.armor }
         case .poison:
             game.boss.hitPoints -= spell.damage
         case .recharge:
             game.player.mana += spell.mana
         default:
             break
-        }
-        
-        duration -= 1
-    }
-    
-    func remove( game: Game ) -> Void {
-        if spell.name == .shield {
-            game.player.armor -= spell.armor
         }
     }
 }
@@ -187,9 +182,8 @@ class Game {
     }
     
     func applyEffects() -> Void {
-        effects.filter { $0.value.duration == 0 }.forEach { effects[$0.key]?.remove( game: self ) }
-        effects = effects.filter { $0.value.duration > 0 }
         for key in effects.keys { effects[key]!.apply( game: self ) }
+        effects = effects.filter { $0.value.duration > 0 }
         debugPrint( message: "effects applied" )
     }
 
