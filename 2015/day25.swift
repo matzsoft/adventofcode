@@ -1,7 +1,8 @@
 //
 //         FILE: main.swift
 //  DESCRIPTION: day25 - Let It Snow
-//        NOTES: ---
+//        NOTES: There is a cycle in the sequence, but it takes longer to find the cycle
+//               than just going all the way through.
 //       AUTHOR: Mark T. Johnson, markj@matzsoft.com
 //    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
 //      VERSION: 1.0
