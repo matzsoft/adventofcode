@@ -9,6 +9,49 @@
 //
 
 import Foundation
+import CoreGraphics
+import ImageIO
+
+public struct PixelData {
+    var a:UInt8 = 255
+    var r:UInt8
+    var g:UInt8
+    var b:UInt8
+}
+
+
+public func imageFromARGB32Bitmap( pixels: [PixelData], width: Int, height: Int ) -> CGImage? {
+    assert( pixels.count == Int( width * height ) )
+    
+    var data = pixels // Copy to mutable []
+    let providerRef = CGDataProvider(
+        data: NSData( bytes: &data, length: data.count * MemoryLayout<PixelData>.size )
+    )!
+
+    return CGImage(
+        width: width,
+        height: height,
+        bitsPerComponent: 8,
+        bitsPerPixel: 32,
+        bytesPerRow: width * MemoryLayout<PixelData>.size,
+        space: CGColorSpaceCreateDeviceRGB(),
+        bitmapInfo: CGBitmapInfo( rawValue: CGImageAlphaInfo.premultipliedFirst.rawValue ),
+        provider: providerRef,
+        decode: nil,
+        shouldInterpolate: true,
+        intent: CGColorRenderingIntent.defaultIntent
+    )
+}
+
+
+@discardableResult func writeCGImage( _ image: CGImage, to destinationURL: URL ) -> Bool {
+    guard let destination = CGImageDestinationCreateWithURL(
+        destinationURL as CFURL, "public.png" as CFString, 1, nil
+    ) else { return false }
+    CGImageDestinationAddImage( destination, image, nil )
+    return CGImageDestinationFinalize( destination )
+}
+
 
 struct Instruction {
     enum Action { case turnOn, turnOff, toggle }
@@ -76,6 +119,28 @@ struct Image {
             }
         }
     }
+    
+    func write( toPath path: String ) throws -> Void {
+        let url = URL( fileURLWithPath: path )
+        let topEnd = image.flatMap { $0 }.max()!
+        let pixels = image.flatMap { $0.map { cell -> PixelData in
+            let grey = UInt8( CGFloat( cell ) / CGFloat( topEnd ) * 255 )
+            return PixelData( r: grey, g: grey, b: grey )
+        } }
+        let cgImage = imageFromARGB32Bitmap( pixels: pixels, width: image[0].count, height: image.count )
+        
+        guard let realImage = cgImage else { throw RuntimeError( "Can't create image." ) }
+        
+        writeCGImage( realImage, to: url )
+    }
+}
+
+
+func constructFilePath( name: String ) throws -> String {
+    let outputDirectory = try findDirectory( name: "output" )
+    let project = URL( fileURLWithPath: #filePath ).deletingLastPathComponent().lastPathComponent
+    
+    return "\(outputDirectory)/\(project)-\(name).png"
 }
 
 
@@ -92,6 +157,7 @@ func part1( input: AOCinput ) -> String {
         image.basic( action: instruction )
     }
     
+    try! image.write( toPath: constructFilePath( name: "part1" ) )
     return "\( image.count )"
 }
 
@@ -104,7 +170,7 @@ func part2( input: AOCinput ) -> String {
         image.advanced( action: instruction )
     }
     
-    //print( image.image.flatMap { $0 }.max()! )        // 54
+    try! image.write( toPath: constructFilePath( name: "part2" ) )
     return "\( image.count )"
 }
 
