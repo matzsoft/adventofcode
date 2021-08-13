@@ -15,6 +15,9 @@ struct Game {
     var inputQueue: [String] = []
     var outputQueue = ""
     var lastOutput = ""
+    var trace = false
+    var traced = Set<Int>()
+    var traceBuffer = [String]()
     
     init( memory: [Int] ) {
         computer = Intcode( name: "AOC-Advent", memory: memory )
@@ -25,37 +28,23 @@ struct Game {
         computer.inputs.append( Int( Character( "\n" ).asciiValue! ) )
     }
     
-    mutating func trial() throws -> Void {
+    mutating func runUntilInput() throws -> String {
         var outputQueue = ""
         
         while true {
             if computer.nextInstruction.opcode == .input {
                 if computer.inputs.isEmpty {
-                    if inputQueue.isEmpty {
-                        let line = readLine( strippingNewline: true ) ?? ""
-                        
-                        command( value: line )
-                    } else {
-                        let line = inputQueue.removeFirst()
-                        
-                        command( value: line )
-                        print( line )
-                    }
+                    return outputQueue
                 }
             }
 
+            if trace { try traceBuffer.append( computer.trace() ) }
             if let output = try computer.step() {
                 if let code = UnicodeScalar( output ) {
                     let char = Character( code )
                     
                     if char.isASCII {
-                        if char != "\n" {
-                            outputQueue.append( char )
-                        } else {
-                            print( outputQueue )
-                            lastOutput = outputQueue
-                            outputQueue = ""
-                        }
+                        outputQueue.append( char )
                     }
                 }
             }
@@ -63,7 +52,32 @@ struct Game {
             if computer.nextInstruction.opcode == .halt { break }
         }
         
-        print( outputQueue )
+        return outputQueue
+    }
+    
+    mutating func trial() throws -> Void {
+        while true {
+            let output = try runUntilInput()
+
+            print( output, terminator: "" )
+            if computer.nextInstruction.opcode == .halt {
+                lastOutput = output
+                break
+            }
+
+            if computer.inputs.isEmpty {
+                if inputQueue.isEmpty {
+                    let line = readLine( strippingNewline: true ) ?? ""
+                    
+                    command( value: line )
+                } else {
+                    let line = inputQueue.removeFirst()
+                    
+                    command( value: line )
+                    print( line )
+                }
+            }
+        }
     }
 }
 
@@ -77,6 +91,7 @@ func parse( input: AOCinput ) -> Game {
 
 func part1( input: AOCinput ) -> String {
     var game = parse( input: input )
+    let initialSize = game.computer.memory.count
     let initialCommands = """
     south
     take mouse
@@ -101,12 +116,16 @@ func part1( input: AOCinput ) -> String {
     south
     south
     """
-
-    game.inputQueue = initialCommands.split( separator: "\n" ).map { String( $0 ) }
-    try! game.trial()
     
-    let words = game.lastOutput.split( separator: " " )
-    return "\( words[11] )"
+    game.inputQueue = initialCommands.split( separator: "\n" ).map { String( $0 ) }
+//    game.trace = true
+    try! game.trial()
+    for line in game.traceBuffer { print( line ) }
+    print( "Initial memory size \(initialSize), final memory size \(game.computer.memory.count) ")
+    
+    let words = game.lastOutput.components( separatedBy: " " )
+    guard let index = words.firstIndex( of: "typing" ) else { return "Failed" }
+    return words[index + 1]
 }
 
 
