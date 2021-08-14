@@ -51,6 +51,15 @@ class Intcode {
         self.memory = memory
         self.inputs = []
     }
+    
+    init( from other: Intcode ) {
+        name = other.name
+        ip = other.ip
+        relativeBase = other.relativeBase
+        memory = other.memory
+        inputs = other.inputs
+        debug = other.debug
+    }
 
     func fetch( _ instruction: Instruction, operand: Int ) throws -> Int {
         var location = memory[ ip + operand ]
