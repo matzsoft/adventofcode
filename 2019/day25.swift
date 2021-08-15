@@ -86,24 +86,6 @@ class Room {
         
         return nil
     }
-
-//    func path( to other: Room ) -> [String]? {
-//        guard !matches( other: other ) else { return [] }
-//
-//        var visited = Set<String>( [ name ] )
-//        var queue = exits.filter { $0.value != nil }.map { ( $0.value!, [ $0.key ] ) }
-//
-//        while let ( nextRoom, path ) = queue.first {
-//            queue.removeFirst()
-//            if visited.insert( nextRoom.name).inserted {
-//                if nextRoom.matches( other: other ) { return path }
-//                let list = nextRoom.exits.filter { $0.value != nil }.map { ( $0.value!, path + [ $0.key ] ) }
-//                queue.append( contentsOf: list )
-//            }
-//        }
-//
-//        return nil
-//    }
 }
 
 struct Game {
@@ -187,6 +169,7 @@ struct Map {
     var room: Room
     var roomsList: [Room]
     var roomsDict: [ String : Room ]
+    var ejector: Room?
     
     init( game: Game ) throws {
         self.game = game
@@ -201,12 +184,54 @@ struct Map {
         self.room = room
         roomsList = [ room ]
         roomsDict = [ room.name : room ]
+        ejector   = nil
         
         try findNewRooms()
         try exploreMore()
         try findSafeItems()
+    }
+    
+    mutating func solve() -> String {
+        var items = [String]()
         
-        let items = try gatherSafeItems()
+        do {
+            // Try each safe item, one at a time, discarding the too heavy ones.
+            for item in try gatherSafeItems() {
+                let result = try attempt( items: [ item ] )
+                switch result {
+                case "heavier":
+                    // Single item is too light.  Remember it.
+                    items.append( item )
+                case "lighter":
+                    // Single item is too heavy.  Ignore it.
+                    break
+                default:
+                    // Single item does it.
+                    return result
+                }
+            }
+
+            // now try all the remaining ones at once.
+            do {
+                let result = try attempt( items: items )
+                switch result {
+                case "heavier":
+                    // All items together is too light.
+                    return "Unsolvable"
+                case "lighter":
+                    // All items together is too heavy.
+                    break
+                default:
+                    // All items together does it.
+                    return result
+                }
+            }
+            
+            let number = try attempt( items: [ "mouse", "semiconductor", "hypercube", "antenna", ] )
+            return number
+        } catch {
+            return error.localizedDescription
+        }
     }
     
     mutating func restart() throws -> Void {
@@ -265,6 +290,39 @@ struct Map {
         
         return true
     }
+    
+    mutating func attempt( items: [String] ) throws -> String {
+        for item in items {
+            guard try take( item: item ) else { throw RuntimeError( "Unexpected take error." ) }
+        }
+        
+        guard let path = room.path( to: ejector! ) else {
+            throw RuntimeError( "Can't get there from here." )
+        }
+
+        let output = try game.send( command: path[0].0 )
+        let paragraphs = output.trimmingCharacters( in: .newlines ).components( separatedBy: "\n\n" )
+
+        guard paragraphs[2].hasPrefix( "A loud, robotic voice says" ) else {
+            throw RuntimeError( "Unexpected weight response." ) }
+        
+        if game.computer.nextInstruction.opcode != .halt {
+            for item in items {
+                guard try drop( item: item ) else { throw RuntimeError( "Unexpected drop error." ) }
+            }
+        }
+
+        if paragraphs[2].contains( "heavier" ) { return "heavier" }
+        if paragraphs[2].contains( "lighter" ) { return "lighter" }
+        
+        let words = paragraphs[2].components( separatedBy: " " )
+        guard let index = words.firstIndex( of: "typing" ) else {
+            throw RuntimeError( "Can't find the answer." ) }
+        
+        print( "Solved with: \( items.joined( separator: ", " ) )" )
+        return words[index + 1]
+    }
+    
     mutating func findNewRooms() throws -> Void {
         // Walk around randomly until you reach a room that all the exits have been explored.
         while let nextDirection = room.exits.first( where: { $0.value == nil } ) {
@@ -309,6 +367,11 @@ struct Map {
 
             try findNewRooms()
         }
+        
+        let ejectors = roomsList.filter { $0.ejectsTo != nil }
+        guard ejectors.count == 1 else {
+            throw RuntimeError( "Found \(ejectors.count) ejectors, expecting 1." ) }
+        ejector = ejectors[0]
     }
     
     mutating func findSafeItems() throws -> Void {
@@ -342,11 +405,7 @@ struct Map {
                 throw RuntimeError( "Unexpected take error." ) }
         }
         
-        let ejectors = roomsList.compactMap { $0.ejectsTo }
-        
-        guard ejectors.count == 1 else { throw RuntimeError( "Found \(ejectors.count), expecting 1." ) }
-        
-        let waitingRoom = roomsDict[ejectors[0]]!
+        let waitingRoom = roomsDict[ejector!.ejectsTo!]!
         guard try move( to: waitingRoom ) else { throw RuntimeError( "Traversal error." ) }
         
         for item in items {
@@ -410,9 +469,9 @@ func part2( input: AOCinput ) -> String {
 
 if CommandLine.arguments.count > 1 {
     let game = try! parse( input: getAOCinput() )
-    let map = try! Map( game: game )
+    var map = try! Map( game: game )
     
-    print( map.roomsList.count )
+    print( map.solve() )
 } else {
     try runTests( part1: part1 )
     try runTests( part2: part2 )
