@@ -1,4 +1,4 @@
- //
+//
 //         FILE: main.swift
 //  DESCRIPTION: day25 - Cryostasis
 //        NOTES: ---
@@ -9,8 +9,8 @@
 //
 
 import Foundation
- 
- extension Set {
+
+extension Set {
     var allSubsets: Set<Set<Element>> {
         var subsets = Set<Set<Element>>( [ Set<Element>() ] )
         
@@ -23,7 +23,7 @@ import Foundation
         
         return subsets
     }
- }
+}
 
 struct Item {
     let name: String
@@ -164,7 +164,7 @@ struct Game {
         return output
     }
     
-    mutating func trial() throws -> String {
+    mutating func interactive() throws -> String {
         while true {
             let output = try runUntilInput()
 
@@ -444,7 +444,13 @@ func parse( input: AOCinput ) -> Game {
 }
 
 
-func part1( input: AOCinput ) -> String {
+func playIt( input: AOCinput ) -> Void {
+    var game = parse( input: input )
+    let _ = try! game.interactive()
+}
+
+
+func traceIt( input: AOCinput ) -> String {
     var game = parse( input: input )
     let initialSize = game.computer.memory.count
     let initialCommands = """
@@ -473,8 +479,8 @@ func part1( input: AOCinput ) -> String {
     """
     
     game.inputQueue = initialCommands.split( separator: "\n" ).map { String( $0 ) }
-//    game.trace = true
-    let words = try! game.trial().components( separatedBy: " " )
+    game.trace = true
+    let words = try! game.interactive().components( separatedBy: " " )
     for line in game.traceBuffer { print( line ) }
     print( "Initial memory size \(initialSize), final memory size \(game.computer.memory.count) ")
     
@@ -487,11 +493,25 @@ func part2( input: AOCinput ) -> String {
     return "None"
 }
 
-if CommandLine.arguments.count > 1 {
-    let game = try! parse( input: getAOCinput() )
+
+func part1( input: AOCinput ) -> String {
+    let game = parse( input: input )
     var map = try! Map( game: game )
     
-    print( map.solve() )
+    return map.solve()
+}
+
+
+if CommandLine.arguments.count > 1 {
+    switch CommandLine.arguments[1] {
+    case "play":
+        playIt( input: try getAOCinput() )
+    case "trace":
+        print( "The airlock code is \( traceIt( input: try getAOCinput() ) )." )
+    default:
+        print( "Unknown argument '\(CommandLine.arguments[1])'.  Acceptable arguments are 'play' and 'trace'." )
+    }
+
 } else {
     try runTests( part1: part1 )
     try runTests( part2: part2 )
