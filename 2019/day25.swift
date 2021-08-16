@@ -93,6 +93,7 @@ struct Game {
     var inputQueue: [String] = []
     var trace = false
     var traceBuffer = [String]()
+    var maxOutput = 0
     
     init( memory: [Int] ) {
         computer = Intcode( name: "AOC-Advent", memory: memory )
@@ -105,12 +106,23 @@ struct Game {
     
     mutating func runUntilInput() throws -> String {
         var outputQueue = ""
+        let outputLimit = maxOutput == 0 ? Int.max : 5 * maxOutput
+        defer { maxOutput = max( maxOutput, outputQueue.count ) }
         
         while true {
             if computer.nextInstruction.opcode == .input {
                 if computer.inputs.isEmpty {
                     return outputQueue
                 }
+            }
+
+            if outputQueue.count >= outputLimit {
+                // The computer seems hung.  Simulate a halt.
+                computer.memory[computer.ip] = Intcode.Instruction.Opcode.halt.rawValue
+                print( outputQueue )
+                print( "Droid is hung.  Forcing a halt." )
+                outputQueue = ""
+                return outputQueue
             }
 
             if trace { try traceBuffer.append( computer.trace() ) }
@@ -265,7 +277,7 @@ struct Map {
     }
     
     mutating func take( item: String ) throws -> Bool {
-        guard item != "infinite loop" else { return false }         // TODO: try to improve this.
+//        guard item != "infinite loop" else { return false }         // TODO: try to improve this.
         let result = try game.send( command: "take \(item)" )
         
         guard game.computer.nextInstruction.opcode != .halt else { return false }
