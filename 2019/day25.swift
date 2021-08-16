@@ -25,93 +25,30 @@ extension Set {
     }
 }
 
-struct Item {
-    let name: String
-    var fatal = false
-}
- 
-class Room {
-    let name: String
-    let description: String
-    var exits: [ String : Room? ]
-    var items: [Item]
-    let ejectsTo: String?
-
-    init?( input: String ) {
-        let paragraphs = input.components( separatedBy: "\n\n" ).map {
-            $0.trimmingCharacters( in: .newlines )
-        }
-        let rooms = paragraphs.indices.filter { paragraphs[$0].hasPrefix( "== " ) }
-        
-        guard !rooms.isEmpty else { return nil }
-        
-        let lines = paragraphs[rooms[0]].components( separatedBy: "\n" )
-        let doors = paragraphs.first( where: { $0.hasPrefix( "Doors here lead:" ) } )
-        let things = paragraphs.first( where: { $0.hasPrefix( "Items here:" ) } )
-        
-        name = String( lines[0].dropFirst( 3 ).dropLast( 3 ) )
-        description = lines[1...].joined( separator: "\n" )
-        
-        if let doors = doors {
-            let directions = doors.components( separatedBy: "\n- " )
-            exits = Dictionary( uniqueKeysWithValues: directions[1...].map { ( $0, nil ) } )
-        } else {
-            exits = [:]
-        }
-        
-        if let things = things {
-            let stuff = things.components( separatedBy: "\n- " )
-            items = Array( stuff[1...] ).map { Item( name: $0 ) }
-        } else {
-            items = []
-        }
-        
-        if rooms.count == 1 {
-            ejectsTo = nil
-        } else {
-            let lines = paragraphs[rooms.last!].components( separatedBy: "\n" )
-            ejectsTo = String( lines[0].dropFirst( 3 ).dropLast( 3 ) )
-        }
-    }
-    
-    func matches( other: Room ) -> Bool {
-        guard name == other.name else { return false }
-        guard description == other.description else { return false }
-        guard exits.keys == other.exits.keys else { return false }
-        
-        return true
-    }
-    
-    func path( to other: Room ) -> [ ( String, Room ) ]? {
-        guard !matches( other: other ) else { return [] }
-        
-        var visited = Set<String>( [ name ] )
-        var queue = exits.filter { $0.value != nil }.map { [ ( $0.key, $0.value! ) ] }
-        
-        while let path = queue.first {
-            let ( _, nextRoom ) = path.last!
-            
-            queue.removeFirst()
-            if visited.insert( nextRoom.name).inserted {
-                if nextRoom.matches( other: other ) { return path }
-                let list = nextRoom.exits.filter { $0.value != nil }.map { path + [ ( $0.key, $0.value! ) ] }
-                queue.append( contentsOf: list )
-            }
-        }
-        
-        return nil
-    }
-}
-
 struct Game {
-    var computer: Intcode
-    var inputQueue: [String] = []
-    var trace = false
-    var traceBuffer = [String]()
-    var maxOutput = 0
+    var computer:    Intcode
+    var runQuiet:    Bool
+    var inputQueue:  [String]
+    var trace:       Bool
+    var traceBuffer: [String]
+    var maxOutput:   Int
     
     init( memory: [Int] ) {
-        computer = Intcode( name: "AOC-Advent", memory: memory )
+        computer    = Intcode( name: "AOC-Advent", memory: memory )
+        runQuiet    = false
+        inputQueue  = []
+        trace       = false
+        traceBuffer = []
+        maxOutput   = 0
+    }
+    
+    init( from other: Game ) {
+        computer    = Intcode( from: other.computer )
+        runQuiet    = other.runQuiet
+        inputQueue  = other.inputQueue
+        trace       = other.trace
+        traceBuffer = other.traceBuffer
+        maxOutput   = other.maxOutput
     }
 
     func command( value: String ) -> Void {
@@ -156,11 +93,11 @@ struct Game {
     }
     
     mutating func send( command: String ) throws -> String {
-        print( command )
+        if !runQuiet { print( command ) }
         self.command( value: command )
         
         let output = try runUntilInput()
-        print( output, terminator: "" )
+        if !runQuiet { print( output, terminator: "" ) }
         return output
     }
     
@@ -189,19 +126,99 @@ struct Game {
 
 
 struct Map {
-    var game: Game
-    var restartComputer: Intcode
-    var room: Room
+    struct Item {
+        let name: String
+        var fatal = false
+    }
+     
+    class Room {
+        let name:        String
+        let description: String
+        var exits:       [ String : Room? ]
+        var items:       [Item]
+        let ejectsTo:    String?
+
+        init?( input: String ) {
+            let paragraphs = input.components( separatedBy: "\n\n" ).map {
+                $0.trimmingCharacters( in: .newlines )
+            }
+            let rooms = paragraphs.indices.filter { paragraphs[$0].hasPrefix( "== " ) }
+            
+            guard !rooms.isEmpty else { return nil }
+            
+            let lines  = paragraphs[rooms[0]].components( separatedBy: "\n" )
+            let doors  = paragraphs.first( where: { $0.hasPrefix( "Doors here lead:" ) } )
+            let things = paragraphs.first( where: { $0.hasPrefix( "Items here:" ) } )
+            
+            name = String( lines[0].dropFirst( 3 ).dropLast( 3 ) )
+            description = lines[1...].joined( separator: "\n" )
+            
+            if let doors = doors {
+                let directions = doors.components( separatedBy: "\n- " )
+                exits = Dictionary( uniqueKeysWithValues: directions[1...].map { ( $0, nil ) } )
+            } else {
+                exits = [:]
+            }
+            
+            if let things = things {
+                let stuff = things.components( separatedBy: "\n- " )
+                items = Array( stuff[1...] ).map { Item( name: $0 ) }
+            } else {
+                items = []
+            }
+            
+            if rooms.count == 1 {
+                ejectsTo = nil
+            } else {
+                let lines = paragraphs[rooms.last!].components( separatedBy: "\n" )
+                ejectsTo = String( lines[0].dropFirst( 3 ).dropLast( 3 ) )
+            }
+        }
+        
+        func matches( other: Room ) -> Bool {
+            guard name == other.name else { return false }
+            guard description == other.description else { return false }
+            guard exits.keys == other.exits.keys else { return false }
+            
+            return true
+        }
+        
+        func path( to other: Room ) -> [ ( String, Room ) ]? {
+            guard !matches( other: other ) else { return [] }
+            
+            var visited = Set<String>( [ name ] )
+            var queue = exits.filter { $0.value != nil }.map { [ ( $0.key, $0.value! ) ] }
+            
+            while let path = queue.first {
+                let ( _, nextRoom ) = path.last!
+                
+                queue.removeFirst()
+                if visited.insert( nextRoom.name).inserted {
+                    if nextRoom.matches( other: other ) { return path }
+                    let list = nextRoom.exits.filter { $0.value != nil }.map { path + [ ( $0.key, $0.value! ) ] }
+                    queue.append( contentsOf: list )
+                }
+            }
+            
+            return nil
+        }
+    }
+
+    var game:      Game
+    var savedGame: Game
+    let runQuiet:  Bool
+    var room:      Room
     var roomsList: [Room]
     var roomsDict: [ String : Room ]
-    var ejector: Room?
+    var ejector:   Room?
     
     init( game: Game ) throws {
-        self.game = game
-        self.restartComputer = Intcode( from: game.computer )
+        self.game      = game
+        self.savedGame = Game( from: game )
+        self.runQuiet  = game.runQuiet
 
         let initialOutput = try self.game.runUntilInput()
-        print( initialOutput, terminator: "" )
+        if !runQuiet { print( initialOutput, terminator: "" ) }
 
         guard let room = Room( input: initialOutput ) else {
             throw RuntimeError( "Game initialization failed." ) }
@@ -216,52 +233,47 @@ struct Map {
         try findSafeItems()
     }
     
-    mutating func solve() -> String {
-        var items = [String]()
-        
-        do {
-            // Try each safe item, one at a time, discarding the too heavy ones.
-            for item in try gatherSafeItems() {
-                let result = try attempt( items: [ item ] )
-                switch result {
-                case "heavier":
-                    // Single item is too light.  Remember it.
-                    items.append( item )
-                case "lighter":
-                    // Single item is too heavy.  Ignore it.
-                    break
-                default:
-                    // Single item does it.
-                    return result
-                }
-            }
-
-            let subsets = Set( items ).allSubsets.filter { $0.count > 1 }
-            
-            for subset in subsets {
-                let result = try attempt( items: Array( subset ) )
-                switch result {
-                case "heavier", "lighter":
-                    break
-                default:
-                    return result
-                }
-            }
-            
-            return "Failed to find the solution."
-        } catch {
-            return error.localizedDescription
-        }
-    }
-    
     mutating func restart() throws -> Void {
-        game.computer = Intcode( from: restartComputer )
-        game.maxOutput = 0
+        game = Game( from: savedGame )
         room = roomsList.first!
         
-        print( "restart" )
+        if !runQuiet { print( "restart" ) }
         let initialOutput = try game.runUntilInput()
-        print( initialOutput, terminator: "" )
+        if !runQuiet { print( initialOutput, terminator: "" ) }
+    }
+    
+    mutating func solve() throws -> String {
+        var items = [String]()
+        
+        // Try each safe item, one at a time, discarding the too heavy ones.
+        for item in try gatherSafeItems() {
+            let result = try attempt( items: [ item ] )
+            switch result {
+            case "heavier":
+                // Single item is too light.  Remember it.
+                items.append( item )
+            case "lighter":
+                // Single item is too heavy.  Ignore it.
+                break
+            default:
+                // Single item does it.
+                return result
+            }
+        }
+        
+        let subsets = Set( items ).allSubsets.filter { $0.count > 1 }
+        
+        for subset in subsets {
+            let result = try attempt( items: Array( subset ) )
+            switch result {
+            case "heavier", "lighter":
+                break
+            default:
+                return result
+            }
+        }
+        
+        return "Failed to find the solution."
     }
     
     mutating func move( to other: Room ) throws -> Bool {
@@ -344,7 +356,7 @@ struct Map {
     }
     
     mutating func findNewRooms() throws -> Void {
-        // Walk around randomly until you reach a room that all the exits have been explored.
+        // Walk around randomly until you reach a room that has all its exits explored.
         while let nextDirection = room.exits.first( where: { $0.value == nil } ) {
             let output = try game.send( command: nextDirection.key )
             guard game.computer.nextInstruction.opcode != .halt else {
@@ -489,16 +501,22 @@ func traceIt( input: AOCinput ) -> String {
 }
 
 
-func part2( input: AOCinput ) -> String {
-    return "None"
+func part1( input: AOCinput ) -> String {
+    var game = parse( input: input )
+    
+    game.runQuiet = true
+    do {
+        var map = try Map( game: game )
+        
+        return try map.solve()
+    } catch {
+        return error.localizedDescription
+    }
 }
 
 
-func part1( input: AOCinput ) -> String {
-    let game = parse( input: input )
-    var map = try! Map( game: game )
-    
-    return map.solve()
+func part2( input: AOCinput ) -> String {
+    return "None"
 }
 
 
