@@ -9,6 +9,21 @@
 //
 
 import Foundation
+ 
+ extension Set {
+    var allSubsets: Set<Set<Element>> {
+        var subsets = Set<Set<Element>>( [ Set<Element>() ] )
+        
+        for element in self {
+            let subsetsWithout = self.filter { $0 != element }.allSubsets
+            
+            for subset in subsetsWithout { subsets.insert( subset ) }
+            for subset in subsetsWithout { subsets.insert( subset.union( [ element ] ) ) }
+        }
+        
+        return subsets
+    }
+ }
 
 struct Item {
     let name: String
@@ -119,9 +134,7 @@ struct Game {
             if outputQueue.count >= outputLimit {
                 // The computer seems hung.  Simulate a halt.
                 computer.memory[computer.ip] = Intcode.Instruction.Opcode.halt.rawValue
-                print( outputQueue )
-                print( "Droid is hung.  Forcing a halt." )
-                outputQueue = ""
+                outputQueue.append( "\nDroid is hung.  Forcing a halt.\n" )
                 return outputQueue
             }
 
@@ -223,24 +236,19 @@ struct Map {
                 }
             }
 
-            // now try all the remaining ones at once.
-            do {
-                let result = try attempt( items: items )
+            let subsets = Set( items ).allSubsets.filter { $0.count > 1 }
+            
+            for subset in subsets {
+                let result = try attempt( items: Array( subset ) )
                 switch result {
-                case "heavier":
-                    // All items together is too light.
-                    return "Unsolvable"
-                case "lighter":
-                    // All items together is too heavy.
+                case "heavier", "lighter":
                     break
                 default:
-                    // All items together does it.
                     return result
                 }
             }
             
-            let number = try attempt( items: [ "mouse", "semiconductor", "hypercube", "antenna", ] )
-            return number
+            return "Failed to find the solution."
         } catch {
             return error.localizedDescription
         }
@@ -248,6 +256,7 @@ struct Map {
     
     mutating func restart() throws -> Void {
         game.computer = Intcode( from: restartComputer )
+        game.maxOutput = 0
         room = roomsList.first!
         
         print( "restart" )
@@ -277,7 +286,6 @@ struct Map {
     }
     
     mutating func take( item: String ) throws -> Bool {
-//        guard item != "infinite loop" else { return false }         // TODO: try to improve this.
         let result = try game.send( command: "take \(item)" )
         
         guard game.computer.nextInstruction.opcode != .halt else { return false }
