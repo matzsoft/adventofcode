@@ -410,31 +410,41 @@ struct Map {
         let targetRooms = roomsList.filter { !$0.items.isEmpty }
         
         for targetRoom in targetRooms {
-            try restart()
             guard try move( to: targetRoom ) else { throw RuntimeError( "Traversal error." ) }
+            let saveGame = Game( from: game )
             
-            if try !take( item: room.items[0].name ) {
-                room.items[0].fatal = true
-                continue
-            }
+            for item in room.items {
+                if try !take( item: item.name ) {
+                    room.items[0].fatal = true
+                    game = Game( from: saveGame )
+                    continue
+                }
 
-            guard try move( to: room.exits.first!.value! ) else {
-                room.items[0].fatal = true
-                continue
+                guard try move( to: room.exits.first!.value! ) else {
+                    room.items[0].fatal = true
+                    game = Game( from: saveGame )
+                    room = targetRoom
+                    continue
+                }
+                
+                game = Game( from: saveGame )
+                room = targetRoom
             }
         }
     }
     
     mutating func gatherSafeItems() throws -> [String] {
-        let safeItemRooms = roomsList.filter { !$0.items.isEmpty && $0.items.allSatisfy { !$0.fatal } }
+        let safeItemRooms = roomsList.filter { $0.items.contains( where: { !$0.fatal } ) }
         var items = [String]()
         
         try restart()
         for targetRoom in safeItemRooms {
             guard try move( to: targetRoom ) else { throw RuntimeError( "Traversal error." ) }
-            items.append( room.items[0].name )
-            guard try take( item: room.items[0].name ) else {
-                throw RuntimeError( "Unexpected take error." ) }
+            for item in room.items.filter( { !$0.fatal } ) {
+                items.append( item.name )
+                guard try take( item: item.name ) else {
+                    throw RuntimeError( "Unexpected take error." ) }
+            }
         }
         
         let waitingRoom = roomsDict[ejector!.ejectsTo!]!
