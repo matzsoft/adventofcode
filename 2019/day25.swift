@@ -33,6 +33,8 @@ struct Game {
     var traceBuffer: [String]
     var maxOutput:   Int
     
+    var isHalted:    Bool { computer.nextInstruction.opcode == .halt }
+    
     init( memory: [Int] ) {
         computer    = Intcode( name: "AOC-Advent", memory: memory )
         runQuiet    = false
@@ -86,7 +88,7 @@ struct Game {
                 }
             }
             
-            if computer.nextInstruction.opcode == .halt { break }
+            if isHalted { break }
         }
         
         return outputQueue
@@ -106,7 +108,7 @@ struct Game {
             let output = try runUntilInput()
 
             print( output, terminator: "" )
-            if computer.nextInstruction.opcode == .halt { return output }
+            if isHalted { return output }
 
             if computer.inputs.isEmpty {
                 if inputQueue.isEmpty {
@@ -126,16 +128,11 @@ struct Game {
 
 
 struct Map {
-    struct Item {
-        let name: String
-        var fatal = false
-    }
-     
     class Room {
         let name:        String
         let description: String
         var exits:       [ String : Room? ]
-        var items:       [Item]
+        var items:       Set<String>
         let ejectsTo:    String?
 
         init?( input: String ) {
@@ -162,7 +159,7 @@ struct Map {
             
             if let things = things {
                 let stuff = things.components( separatedBy: "\n- " )
-                items = Array( stuff[1...] ).map { Item( name: $0 ) }
+                items = Set( stuff[1...] )
             } else {
                 items = []
             }
@@ -203,18 +200,23 @@ struct Map {
             return nil
         }
     }
+    
+    struct SavedState {
+        let game: Game
+        let room: Room
+        let inventory: Set<String>
+    }
 
     var game:      Game
-    var savedGame: Game
     let runQuiet:  Bool
     var room:      Room
     var roomsList: [Room]
     var roomsDict: [ String : Room ]
     var ejector:   Room?
+    var inventory: Set<String>
     
     init( game: Game ) throws {
         self.game      = game
-        self.savedGame = Game( from: game )
         self.runQuiet  = game.runQuiet
 
         let initialOutput = try self.game.runUntilInput()
@@ -227,147 +229,55 @@ struct Map {
         roomsList = [ room ]
         roomsDict = [ room.name : room ]
         ejector   = nil
+        inventory = []
         
-        try findNewRooms()
+        try checkItems()
         try exploreMore()
-        try findSafeItems()
     }
     
-    mutating func restart() throws -> Void {
-        game = Game( from: savedGame )
-        room = roomsList.first!
-        
-        if !runQuiet { print( "restart" ) }
-        let initialOutput = try game.runUntilInput()
-        if !runQuiet { print( initialOutput, terminator: "" ) }
+    mutating func saveState() -> SavedState {
+        return SavedState( game: Game( from: game ), room: room, inventory: inventory )
     }
     
-    mutating func solve() throws -> String {
-        var items = [String]()
-        
-        // Try each safe item, one at a time, discarding the too heavy ones.
-        for item in try gatherSafeItems() {
-            let result = try attempt( items: [ item ] )
-            switch result {
-            case "heavier":
-                // Single item is too light.  Remember it.
-                items.append( item )
-            case "lighter":
-                // Single item is too heavy.  Ignore it.
-                break
-            default:
-                // Single item does it.
-                return result
-            }
-        }
-        
-        let subsets = Set( items ).allSubsets.filter { $0.count > 1 }
-        
-        for subset in subsets {
-            let result = try attempt( items: Array( subset ) )
-            switch result {
-            case "heavier", "lighter":
-                break
-            default:
-                return result
-            }
-        }
-        
-        return "Failed to find the solution."
+    mutating func restore( state: SavedState ) -> Void {
+        game = state.game
+        room = state.room
+        inventory = state.inventory
     }
     
-    mutating func move( to other: Room ) throws -> Bool {
-        guard let path = room.path( to: other ) else {
-            throw RuntimeError( "Can't get there from here." )
-        }
-
-        for ( move, nextRoom ) in path {
-            let output = try game.send( command: move )
+    mutating func checkItems() throws -> Void {
+        for item in room.items {
+            let beforeTake = saveState()
             
-            guard game.computer.nextInstruction.opcode != .halt else {
-                throw RuntimeError( "Unexpected halt" ) }
-            
-            guard let newRoom = Room( input: output ), newRoom.matches( other: nextRoom ) else {
-                return false
+            if try !take( item: item ) {
+                restore( state: beforeTake )
+                continue
             }
             
-            room = nextRoom
-        }
-        
-        return true
-    }
-    
-    mutating func take( item: String ) throws -> Bool {
-        let result = try game.send( command: "take \(item)" )
-        
-        guard game.computer.nextInstruction.opcode != .halt else { return false }
-
-        let paragraphs = result.trimmingCharacters( in: .newlines ).components( separatedBy: "\n\n" )
-        
-        guard paragraphs[0] == "You take the \(item)." else { return false }
-        guard paragraphs[1] == "Command?" else { return false }
-        
-        return true
-    }
-    
-    mutating func drop( item: String ) throws -> Bool {
-        let result = try game.send( command: "drop \(item)" )
-        
-        guard game.computer.nextInstruction.opcode != .halt else { return false }
-
-        let paragraphs = result.trimmingCharacters( in: .newlines ).components( separatedBy: "\n\n" )
-
-        guard paragraphs[0] == "You drop the \(item)." else { return false }
-        guard paragraphs[1] == "Command?" else { return false }
-        
-        return true
-    }
-    
-    mutating func attempt( items: [String] ) throws -> String {
-        for item in items {
-            guard try take( item: item ) else { throw RuntimeError( "Unexpected take error." ) }
-        }
-        
-        guard let path = room.path( to: ejector! ) else {
-            throw RuntimeError( "Can't get there from here." )
-        }
-
-        let output = try game.send( command: path[0].0 )
-        let paragraphs = output.trimmingCharacters( in: .newlines ).components( separatedBy: "\n\n" )
-
-        guard paragraphs[2].hasPrefix( "A loud, robotic voice says" ) else {
-            throw RuntimeError( "Unexpected weight response." ) }
-        
-        if game.computer.nextInstruction.opcode != .halt {
-            for item in items {
-                guard try drop( item: item ) else { throw RuntimeError( "Unexpected drop error." ) }
+            let beforeMove = saveState()
+            let output = try game.send( command: room.exits.first!.key )
+            guard !game.isHalted, Room( input: output ) != nil else {
+                restore( state: beforeTake )
+                continue
             }
+            
+            restore( state: beforeMove )
         }
-
-        if paragraphs[2].contains( "heavier" ) { return "heavier" }
-        if paragraphs[2].contains( "lighter" ) { return "lighter" }
-        
-        let words = paragraphs[2].components( separatedBy: " " )
-        guard let index = words.firstIndex( of: "typing" ) else {
-            throw RuntimeError( "Can't find the answer." ) }
-        
-        print( "Solved with: \( items.joined( separator: ", " ) )" )
-        return words[index + 1]
     }
     
     mutating func findNewRooms() throws -> Void {
-        // Walk around randomly until you reach a room that has all its exits explored.
+        // Walk around randomly until you reach a room that has been completely explored.
         while let nextDirection = room.exits.first( where: { $0.value == nil } ) {
             let output = try game.send( command: nextDirection.key )
-            guard game.computer.nextInstruction.opcode != .halt else {
-                throw RuntimeError( "Unexpected halt." ) }
+            guard !game.isHalted else {
+                throw RuntimeError( "Moving \(nextDirection) from \(room.name) causes a halt." ) }
             guard let nextRoom = Room( input: output ) else {
-                throw RuntimeError( "Unexpected movement error." )
+                throw RuntimeError( "Moving \(nextDirection) from \(room.name) goes nowhere." )
             }
             
             if let alreadyVisited = roomsDict[ nextRoom.name ] {
                 if !alreadyVisited.matches( other: nextRoom ) {
-                    throw RuntimeError( "Room conflict" )
+                    throw RuntimeError( "Two rooms named \(nextRoom.name)?" )
                 }
                 room.exits[nextDirection.key] = alreadyVisited
                 room = alreadyVisited
@@ -376,6 +286,7 @@ struct Map {
                 roomsList.append( nextRoom )
                 roomsDict[nextRoom.name] = nextRoom
                 room = nextRoom
+                try checkItems()
             }
             
             if let ejectsTo = room.ejectsTo {
@@ -395,66 +306,129 @@ struct Map {
     mutating func exploreMore() throws -> Void {
         // Next revisit the rooms that have not yet been fully explored.
         while let nextRoom = roomsList.first( where: { $0.exits.contains( where: { $0.value == nil } ) } ) {
-            guard try move( to: nextRoom ) else { throw RuntimeError( "Traversal error." ) }
-
+            try move( to: nextRoom )
             try findNewRooms()
         }
         
         let ejectors = roomsList.filter { $0.ejectsTo != nil }
         guard ejectors.count == 1 else {
-            throw RuntimeError( "Found \(ejectors.count) ejectors, expecting 1." ) }
+            throw RuntimeError( "Expecting 1 ejector but found \(ejectors.count)." ) }
         ejector = ejectors[0]
     }
     
-    mutating func findSafeItems() throws -> Void {
-        let targetRooms = roomsList.filter { !$0.items.isEmpty }
-        
-        for targetRoom in targetRooms {
-            guard try move( to: targetRoom ) else { throw RuntimeError( "Traversal error." ) }
-            let saveGame = Game( from: game )
-            
-            for item in room.items {
-                if try !take( item: item.name ) {
-                    room.items[0].fatal = true
-                    game = Game( from: saveGame )
-                    continue
-                }
+    mutating func move( to other: Room ) throws -> Void {
+        guard let path = room.path( to: other ) else {
+            throw RuntimeError( "Can't get from \(room.name) to \(other.name)." ) }
 
-                guard try move( to: room.exits.first!.value! ) else {
-                    room.items[0].fatal = true
-                    game = Game( from: saveGame )
-                    room = targetRoom
-                    continue
-                }
-                
-                game = Game( from: saveGame )
-                room = targetRoom
-            }
+        for ( move, nextRoom ) in path {
+            let output = try game.send( command: move )
+            
+            guard !game.isHalted else {
+                throw RuntimeError( "Moving from \(room.name) to \(nextRoom.name) caused a halt." ) }
+            
+            guard let newRoom = Room( input: output ), newRoom.matches( other: nextRoom ) else {
+                throw RuntimeError( "Moving from \(room.name) to \(nextRoom.name) fails." ) }
+            
+            room = nextRoom
         }
     }
     
-    mutating func gatherSafeItems() throws -> [String] {
-        let safeItemRooms = roomsList.filter { $0.items.contains( where: { !$0.fatal } ) }
-        var items = [String]()
+    mutating func take( item: String ) throws -> Bool {
+        let result = try game.send( command: "take \(item)" )
         
-        try restart()
-        for targetRoom in safeItemRooms {
-            guard try move( to: targetRoom ) else { throw RuntimeError( "Traversal error." ) }
-            for item in room.items.filter( { !$0.fatal } ) {
-                items.append( item.name )
-                guard try take( item: item.name ) else {
-                    throw RuntimeError( "Unexpected take error." ) }
+        guard !game.isHalted else { return false }
+
+        let paragraphs = result.trimmingCharacters( in: .newlines ).components( separatedBy: "\n\n" )
+        
+        guard paragraphs[0] == "You take the \(item)." else { return false }
+        guard paragraphs[1] == "Command?" else { return false }
+        
+        inventory.insert( item )
+        return true
+    }
+    
+    mutating func drop( item: String ) throws -> Bool {
+        let result = try game.send( command: "drop \(item)" )
+        
+        guard !game.isHalted else { return false }
+
+        let paragraphs = result.trimmingCharacters( in: .newlines ).components( separatedBy: "\n\n" )
+
+        guard paragraphs[0] == "You drop the \(item)." else { return false }
+        guard paragraphs[1] == "Command?" else { return false }
+        
+        inventory.remove( item )
+        return true
+    }
+    
+    mutating func solve() throws -> String {
+        var items = inventory
+        
+        try move( to: roomsDict[ejector!.ejectsTo!]! )
+        
+        for item in items {
+            guard try drop( item: item ) else { throw RuntimeError( "Error dropping \(item)." ) }
+        }
+        
+        // Try each safe item, one at a time, discarding the too heavy ones.
+        for item in items {
+            let result = try attempt( items: [ item ] )
+            switch result {
+            case "heavier":
+                // Single item is too light.  Keep it.
+                break
+            case "lighter":
+                // Single item is too heavy.  Ignore it.
+                items.remove( item )
+            default:
+                // Single item does it.
+                return result
             }
         }
         
-        let waitingRoom = roomsDict[ejector!.ejectsTo!]!
-        guard try move( to: waitingRoom ) else { throw RuntimeError( "Traversal error." ) }
+        let subsets = items.allSubsets.filter { $0.count > 1 }
         
-        for item in items {
-            guard try drop( item: item ) else { throw RuntimeError( "Unexpected drop error." ) }
+        for subset in subsets {
+            let result = try attempt( items: Array( subset ) )
+            switch result {
+            case "heavier", "lighter":
+                break
+            default:
+                return result
+            }
         }
         
-        return items
+        return "Failed to find the solution."
+    }
+    
+    mutating func attempt( items: [String] ) throws -> String {
+        let state = saveState()
+        
+        for item in items {
+            guard try take( item: item ) else { throw RuntimeError( "Unexpected take error." ) }
+        }
+        
+        guard let path = room.path( to: ejector! ) else {
+            throw RuntimeError( "Can't get there from here." )
+        }
+
+        let output = try game.send( command: path[0].0 )
+        let paragraphs = output.trimmingCharacters( in: .newlines ).components( separatedBy: "\n\n" )
+
+        guard paragraphs[2].hasPrefix( "A loud, robotic voice says" ) else {
+            throw RuntimeError( "Unexpected weight response." ) }
+        
+        restore( state: state )
+
+        if paragraphs[2].contains( "heavier" ) { return "heavier" }
+        if paragraphs[2].contains( "lighter" ) { return "lighter" }
+        
+        let words = paragraphs[2].components( separatedBy: " " )
+        guard let index = words.firstIndex( of: "typing" ) else {
+            throw RuntimeError( "Can't find the answer." ) }
+        
+        print( "Solved with: \( items.joined( separator: ", " ) )" )
+        return words[index + 1]
     }
 }
  
