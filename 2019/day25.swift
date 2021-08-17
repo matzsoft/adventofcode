@@ -172,6 +172,10 @@ struct Map {
             }
         }
         
+        deinit {
+            exits = [:]         // eliminate cyclic references.
+        }
+        
         func matches( other: Room ) -> Bool {
             guard name == other.name else { return false }
             guard description == other.description else { return false }
