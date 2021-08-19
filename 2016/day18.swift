@@ -10,48 +10,53 @@
 
 import Foundation
 
-enum Tile: Character, CaseIterable {
-    case safe = ".", trap = "^"
-}
+enum Tile: Character { case safe = ".", trap = "^" }
 
-class Row {
-    static let traps = Set( [ "^^.", ".^^", "^..", "..^" ] )
-    let row: [Character]
+// I used to represent the traps as:
+//    static let traps = [ "^^.", ".^^", "^..", "..^" ]
+// But notice that this simplifies to "The one on the left is not equal to the one on the right".
+// This simplification cut my run times in half.
+// Also I tried to exploit the cyclic nature of the algorithm,
+// but the cycle length is greater than the part2 row count.
+
+struct Row {
+    let row: [Tile]
     
     init( row: String ) {
-        self.row = Array( row )
+        self.row = row.map { Tile( rawValue: $0 )! }
     }
     
-    func getDeterminant( index: Int ) -> Character {
-        var value: [Character] = []
+    init( row: [Tile] ) {
+        self.row = row
+    }
+    
+    func getDeterminant( index: Int ) -> Tile {
+        let left = index == 0 ? Tile.safe : row[ index - 1 ]
+        let right = index == row.count - 1 ? Tile.safe : row[ index + 1 ]
         
-        value.append( index == 0 ? Tile.safe.rawValue : row[ index - 1 ] )
-        value.append( row[index] )
-        value.append( index == row.count - 1 ? Tile.safe.rawValue : row[ index + 1 ] )
-        
-        return Row.traps.contains( String( value ) ) ? Tile.trap.rawValue : Tile.safe.rawValue
+        return left != right ? Tile.trap : Tile.safe
     }
     
     var nextRow: Row {
-        return Row( row: String( (0 ..< row.count).map { getDeterminant( index: $0 ) } ) )
+        return Row( row: ( 0 ..< row.count ).map { getDeterminant( index: $0 ) } )
     }
 
     var countSafes: Int {
-        return row.filter { $0 == Tile.safe.rawValue }.count
+        return row.filter { $0 == Tile.safe }.count
     }
 }
 
 
 func countSafes( row: Row, rowCount: Int ) -> Int {
-    var count = row.countSafes
+    var safeCount = 0
     var next = row
     
-    for _ in 2 ... rowCount {
+    for _ in 0 ..< rowCount {
+        safeCount += next.countSafes
         next = next.nextRow
-        count += next.countSafes
     }
     
-    return count
+    return safeCount
 }
 
 
