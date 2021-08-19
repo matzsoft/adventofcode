@@ -1,6 +1,6 @@
 //
 //         FILE: main.swift
-//  DESCRIPTION: day05 -
+//  DESCRIPTION: day05 - How About a Nice Game of Chess?
 //        NOTES: ---
 //       AUTHOR: Mark T. Johnson, markj@matzsoft.com
 //    COPYRIGHT: © 2021 MATZ Software & Consulting. All rights reserved.
