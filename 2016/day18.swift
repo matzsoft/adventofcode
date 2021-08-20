@@ -18,6 +18,7 @@ enum Tile: Character { case safe = ".", trap = "^" }
 // This simplification cut my run times in half.
 // Also I tried to exploit the cyclic nature of the algorithm,
 // but the cycle length is greater than the part2 row count.
+//
 
 struct Row {
     let row: [Tile]
@@ -61,12 +62,12 @@ func countSafes( row: Row, rowCount: Int ) -> Int {
 
 
 func part1( input: AOCinput ) -> String {
-    return "\(countSafes( row: Row( row: input.line ), rowCount: 40 ))"
+    return "\( countSafes( row: Row( row: input.line ), rowCount: Int( input.extras[0] )! ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    return "\(countSafes( row: Row( row: input.line ), rowCount: 400000 ))"
+    return "\( countSafes( row: Row( row: input.line ), rowCount: Int( input.extras[1] )! ) )"
 }
 
 
