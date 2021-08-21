@@ -1,5 +1,3 @@
-## Day 17 - Conway Cubes
-Conway's Game of Live expanded to 3, then 4 dimensions.  I should try to improve the performance.
 ## Day 22 - Crab Combat
 You are playing a fancied up game of War with a crab.  I would like to make my solution faster.
 ## Day 23 - Crab Cups
