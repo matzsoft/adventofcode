@@ -35,6 +35,7 @@ extension adventOfCode {
             let pattern = "\(sourcesFolder)/*.swift"
             let sourcesFiles = glob( pattern: pattern ).filter { $0 != mainSwift }
             var isDir: ObjCBool = false
+            let patchesFolder = "patches/\(package)"
 
             guard fileManager.fileExists( atPath: package, isDirectory: &isDir ) else {
                 var stderr = FileHandlerOutputStream( FileHandle.standardError )
@@ -64,6 +65,24 @@ extension adventOfCode {
             for file in sourcesFiles {
                 try updateLibrary( libraryFolder: libraryFolder, sourceFile: file )
             }
+            
+            fileManager.createFile( atPath: "\(patchesFolder)/Package.patch", contents: nil )
+            guard let diffOutput = FileHandle( forWritingAtPath: "\(patchesFolder)/Package.patch" ) else {
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "Can't write to the patch file.", to: &stderr )
+                throw ExitCode.failure
+            }
+            switch shell( stdout: diffOutput, "diff", "-Naur", "\(patchesFolder)/Package.swift", "\(package)/Package.swift" ) {
+            case 0:
+                try fileManager.removeItem( atPath: patchesFolder )
+            case 1:
+                try fileManager.removeItem( atPath: "\(patchesFolder)/Package.swift" )
+            default:
+                var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                print( "Can't diff the Package.swift files.", to: &stderr )
+                throw ExitCode.failure
+            }
+            
             try fileManager.removeItem( atPath: package )
         }
     }
