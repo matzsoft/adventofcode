@@ -55,7 +55,6 @@ func performOpen( package: String ) throws -> Void {
     let libraryFolder = try findDirectory( name: "Library" )
     let pattern = "\(libraryFolder)/*.swift"
     let libraryFiles = glob( pattern: pattern )
-    let patchesFolder = URL( fileURLWithPath: "patches/\(package)" ).path
 
     guard fileManager.fileExists( atPath: swiftFile ) else {
         var stderr = FileHandlerOutputStream( FileHandle.standardError )
@@ -70,11 +69,6 @@ func performOpen( package: String ) throws -> Void {
     }
     
     try fileManager.createDirectory( atPath: package, withIntermediateDirectories: false, attributes: nil )
-    if !fileManager.fileExists( atPath: patchesFolder ) {
-        try fileManager.createDirectory(
-            atPath: patchesFolder, withIntermediateDirectories: true, attributes: nil )
-    }
-    
     guard fileManager.changeCurrentDirectoryPath( package ) else {
         var stderr = FileHandlerOutputStream( FileHandle.standardError )
         print( "Can't change directory to \(package).", to: &stderr )
@@ -89,18 +83,19 @@ func performOpen( package: String ) throws -> Void {
 
     try fileManager.removeItem( atPath: mainSwift )
     try fileManager.copyItem( atPath: "../\(swiftFile)", toPath: mainSwift )
-    try fileManager.copyItem( atPath: "Package.swift", toPath: "\(patchesFolder)/Package.swift" )
+    try fileManager.copyItem( atPath: "Package.swift", toPath: "stock-Package.swift" )
     for file in libraryFiles {
         let filename = URL( fileURLWithPath: file ).lastPathComponent
         
         try fileManager.copyItem( atPath: file, toPath: "\(sourcesFolder)/\(filename)" )
     }
-    if fileManager.fileExists( atPath: "\(patchesFolder)/Package.patch" ) {
-        guard shell( "patch", "-d", "..", "-p0", "-i", "\(patchesFolder)/Package.patch" ) == 0 else {
+    if fileManager.fileExists( atPath: "../\(package).patch" ) {
+        guard shell( "patch", "-d", "..", "-p0", "-i", "\(package).patch" ) == 0 else {
             var stderr = FileHandlerOutputStream( FileHandle.standardError )
             print( "Can't create Xcode project.", to: &stderr )
             throw ExitCode.failure
         }
+        usleep( 5000 )      // 5 millisecond wait for Pacakage.swift to close.
     }
     guard shell( "open", "Package.swift" ) == 0 else {
         var stderr = FileHandlerOutputStream( FileHandle.standardError )

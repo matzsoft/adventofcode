@@ -1,5 +1,5 @@
---- patches/day22/Package.swift	2021-08-23 19:30:43.000000000 -0700
-+++ day22/Package.swift	2021-08-23 19:30:43.000000000 -0700
+--- day22/stock-Package.swift
++++ day22/Package.swift
 @@ -8,13 +8,14 @@
      dependencies: [
          // Dependencies declare other packages that this package depends on.

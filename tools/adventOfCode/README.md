@@ -12,7 +12,7 @@ The tools directory which currently has one tool **adventOfCode** and a support 
 
 ### Year Subdirectories
 
-The year subdirectories should ultimately contain one file for each problem (`day01.swift` through `day25.swift`), a directory named **input**, a directory named **testfiles**, and a directory named **patches**.  The **input** directory contains the problem data for each problem.  For example the problem data for day07.swift is in `input/day07.txt`.  The **testfiles** directory contains any test data for each problem.  For example any test data for day07.swift would be in `testfiles/day07*.txt`.  The **patches** directory contains a subdirectory for each problem that requires changes to its Package.swift file.
+The year subdirectories should ultimately contain one file for each problem (`day01.swift` through `day25.swift`), a directory named **input**, a directory named **testfiles**, and an optional file for each problem that needs a patch to Package.swift (e.g. `day22.patch`).  The **input** directory contains the problem data for each problem.  For example the problem data for day07.swift is in `input/day07.txt`.  The **testfiles** directory contains any test data for each problem.  For example any test data for day07.swift would be in `testfiles/day07*.txt`.
 
 #### Problem and Test Data
 
@@ -24,11 +24,9 @@ The remaining lines of the header are optional.  They are used for extra paramet
 
 The separator line is just a line containing only one or more minus signs.  It serves to mark the end of the optional part of the header.
 
-#### Modifications to the Package.swift File ####
+#### Patching the Package.swift File ####
 
-A very few of the problems required an external library in order to run.  In that case, the Package.swift file must be modified with the information about the external library.  The **patches** dirctory is used so that these modifications don't have to be made manually each time those problems are opened.
-
-For the example above there are two files of interest, `patches/day07/Package.swift` and `patches/day07/Package.patch`. For more detail on how these are used see the descriptions of the subcommands below.  But note that the `patches/day07/Package.swift` only exists when the **day07** problem is open.  Furthermore the `patches/day07/Package.swift` file only exists when changes to the Package.swift file have been recorded.  Lastly, the directory `patches/day07` does not exist if problem **day07** is closed and has no required Package.swift changes.
+A very few of the problems require an external library in order to run.  In that case, the Package.swift file must be modified with the information about the external library.  A patch file (e.g. `day22.patch`) is created to record those changes so that they don't have to be reapplied manually each time. For more detail see the descriptions of the subcommands below.
 
 ## Operation of the Tool
 
@@ -59,8 +57,8 @@ The open subcommand takes a problem solution name and creates a Swift Package Ma
 1. Creates a Swift Package Manager structure within the day12 directory.
 1. Copies day12.swift into the correct part of the Sources directory as main.swift.
 1. Copies all the library files into place beside main.swift.
-1. Copies the stock Package.swift to patches/day12/Package.swift.
-1. If patches/day12/Package.patch exists, use `patch` to update the live Package.swift.
+1. Copies the stock Package.swift to stock-Package.swift.
+1. If day12.patch exists, use `patch` to update the live Package.swift.
 1. Opens the package in Xcode.
 
 ### Close subcommand
@@ -71,8 +69,7 @@ I use the close subcommand when I have finished working on a solution, or perhap
 1. For all other files in the Sources of the package do the following:
     - If the corresponding file does not exist in the library, copy it to the library.
     - If the corresponding file in the library is different, copy the package file to the library.
-1. Use `diff` to create patches/day12/Package.patch if there are any required changes to Package.swift.
-1. Delete anything unneeded from patches/day12/.
+1. Use `diff` to create day12.patch if there are any required changes to Package.swift.
 1. Delete the day12 directory.
 
 ## The Library
