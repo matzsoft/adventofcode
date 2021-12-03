@@ -10,7 +10,7 @@
 
 import Foundation
 
-func mostCommon( report: [[Character]], index: Array<Character>.Index ) -> Character {
+func mostCommon( report: [String], index: String.Index ) -> Character {
     let count = report.filter { $0[index] == "1" }.count
     
     if count > report.count / 2 { return "1" }
@@ -20,27 +20,21 @@ func mostCommon( report: [[Character]], index: Array<Character>.Index ) -> Chara
 }
 
 
-func parse( input: AOCinput ) -> [[Character]] {
-    return input.lines.map { [Character]( $0 ) }
-}
-
-
 func part1( input: AOCinput ) -> String {
-    let report = parse( input: input )
-    var gamma = [Character]()
-    var epsilon = [Character]()
-    for index in report[0].indices {
-        let frequent = mostCommon( report: report, index: index )
+    var gamma = ""
+    var epsilon = ""
+    for index in input.lines[0].indices {
+        let frequent = mostCommon( report: input.lines, index: index )
         gamma.append( frequent )
         epsilon.append( frequent == "1" ? "0" : "1" )
     }
-    let gammaRate = Int( String( gamma ), radix: 2 )!
-    let epsilonRate = Int( String( epsilon ), radix: 2 )!
+    let gammaRate = Int( gamma, radix: 2 )!
+    let epsilonRate = Int( epsilon, radix: 2 )!
     return "\( gammaRate * epsilonRate )"
 }
 
 
-func elimination( report: [[Character]], predicate: ( Character, Character ) -> Bool ) -> Int {
+func elimination( report: [String], predicate: ( Character, Character ) -> Bool ) -> Int {
     var report = report
     
     for index in report[0].indices {
@@ -50,14 +44,13 @@ func elimination( report: [[Character]], predicate: ( Character, Character ) -> 
         if report.count == 1 { break }
     }
 
-    return Int( String( report[0] ), radix: 2 )!
+    return Int( report[0], radix: 2 )!
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let report = parse( input: input )
-    let O2rating = elimination( report: report, predicate: == )
-    let CO2rating = elimination( report: report, predicate: != )
+    let O2rating = elimination( report: input.lines, predicate: == )
+    let CO2rating = elimination( report: input.lines, predicate: != )
 
     return "\( O2rating * CO2rating )"
 }
