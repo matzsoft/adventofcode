@@ -10,53 +10,44 @@
 
 import Foundation
 
-func isLowPoint( map: [[Int]], row: Int, col: Int ) -> Bool {
-//    print( "\(row), \(col)" )
-    guard map[row][col] < map[row-1][col] else { return false }
-    guard map[row][col] < map[row+1][col] else { return false }
-    guard map[row][col] < map[row][col-1] else { return false }
-    guard map[row][col] < map[row][col+1] else { return false }
-
-    return true
-}
-
-
-func parse( input: AOCinput ) -> [[Int]] {
-    let map = input.lines.map { $0.map { Int( String( $0 ) )! } }
-    return
-        [ Array( repeating: 9, count: map[0].count + 2 ) ] +
-        map.map { [ 9 ] + $0 + [ 9 ] } +
-        [ Array( repeating: 9, count: map[0].count + 2 ) ]
-}
-
-
-func part1( input: AOCinput ) -> String {
-    let map = parse( input: input )
-    var sum = 0
+struct Map {
+    let map: [[Int]]
     
-    for row in 1 ..< map.count - 1 {
-        for col in 1 ..< map[row].count - 1 {
-            if isLowPoint( map: map, row: row, col: col ) {
-                sum += map[row][col] + 1
-            }
-        }
+    subscript( position: Point2D ) -> Int { return map[position.y][position.x] }
+    
+    var points: [Point2D] {
+        ( 1 ..< map.count - 1 ).map {
+            row in ( 1 ..< map[0].count - 1 ).map { col in Point2D(x: col, y: row) }
+        }.flatMap { $0 }
+    }
+    
+    init( lines: [String] ) {
+        let map = lines.map { $0.map { Int( String( $0 ) )! } }
+        
+        self.map =
+            [ Array( repeating: 9, count: map[0].count + 2 ) ] +
+            map.map { [ 9 ] + $0 + [ 9 ] } +
+            [ Array( repeating: 9, count: map[0].count + 2 ) ]
     }
 
-    return "\(sum)"
-}
-
-
-func part2( input: AOCinput ) -> String {
-    let map = parse( input: input )
-    var basins = Array( repeating: Array( repeating: Int?( nil ), count: map[0].count ), count: map.count )
-    var basinNumber = 0
+    func isLowPoint( position: Point2D ) -> Bool {
+        return DirectionUDLR.allCases.allSatisfy {
+            let neighbor = position + $0.vector
+            return self[position] < self[neighbor]
+        }
+    }
     
-    for row in map.indices {
-        for col in map[row].indices {
-            guard map[row][col] != 9 else { continue }
-            guard basins[row][col] == nil else { continue }
-
-            var queue = [ Point2D( x: col, y: row ) ]
+    // returns [ ( key: basinID, value: basinSize ) ] sorted by decreasing basinSize
+    var basins: [ Dictionary<Int, Int>.Element ] {
+        var basins = Array( repeating: Array( repeating: Int?( nil ),
+                                              count: map[0].count ), count: map.count )
+        var basinNumber = 0
+        
+        for position in points {
+            guard self[position] != 9 else { continue }
+            guard basins[position.y][position.x] == nil else { continue }
+            
+            var queue = [ position ]
             
             basinNumber += 1
             while !queue.isEmpty {
@@ -72,12 +63,31 @@ func part2( input: AOCinput ) -> String {
                 }
             }
         }
+        
+        return basins.flatMap { $0 }.compactMap { $0 }.reduce( into: [ Int : Int ]() ) {
+            $0[ $1, default: 0 ] += 1
+        }.sorted( by: { $0.value > $1.value } )
     }
-    
-    let histogram = basins.flatMap { $0 }.compactMap { $0 }.reduce( into: [ Int : Int ]() ) {
-        $0[ $1, default: 0 ] += 1
-    }.sorted( by: { $0.value > $1.value } )
-    let big3 = histogram[0].value * histogram[1].value * histogram[2].value
+}
+
+
+func parse( input: AOCinput ) -> Map {
+    return Map( lines: input.lines )
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let map = parse( input: input )
+    let sum = map.points.reduce( 0 ) { $0 + ( map.isLowPoint( position: $1 ) ? map[$1] + 1 : 0 ) }
+
+    return "\(sum)"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let map = parse( input: input )
+    let basins = map.basins
+    let big3 = ( 0 ..< 3 ).reduce( 1, { $0 * basins[$1].value } )
     return "\(big3)"
 }
 
