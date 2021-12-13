@@ -53,39 +53,7 @@ class Path {
 }
 
 
-func parse( input: AOCinput ) -> [ String : Cave ] {
-    let dict = input.lines.reduce( into: [ String : Set<String> ]() ) { dict, line in
-        let words = line.split( separator: "-" ).map { String( $0 ) }
-        dict[ words[0], default: Set() ].insert( words[1] )
-        dict[ words[1], default: Set() ].insert( words[0] )
-    }
-    return Dictionary( uniqueKeysWithValues: dict.map { ( $0, Cave( name: $0, connected: $1 ) ) } )
-}
-
-
-func part1( input: AOCinput ) -> String {
-    let network = parse( input: input )
-    var queue = [ Path() ]
-    var valid = [Path]()
-    
-    while !queue.isEmpty {
-        let path = queue.removeFirst()
-        let current = network[ path.current ]!
-        
-        for neighbor in current.connected.map( { network[ $0 ]! } ) {
-            if path.offLimits.contains( neighbor.name ) { continue }
-            if neighbor.name == "end" {
-                valid.append( Path( from: path, goto: neighbor ) )
-            } else {
-                queue.append( Path( from: path, goto: neighbor ) )
-            }
-        }
-    }
-    return "\( valid.count )"
-}
-
-
-func part2( input: AOCinput ) -> String {
+func countValid( input: AOCinput, allowTwice: Bool = false ) -> Int {
     let network = parse( input: input )
     var queue = [ Path() ]
     var valid = [Path]()
@@ -100,12 +68,32 @@ func part2( input: AOCinput ) -> String {
                 valid.append( Path( from: path, goto: neighbor ) )
                 continue
             }
-            if !path.offLimits.contains( neighbor.name ) || !path.exception {
+            if !path.offLimits.contains( neighbor.name ) || allowTwice && !path.exception {
                 queue.append( Path( from: path, goto: neighbor ) )
             }
         }
     }
-    return "\( valid.count )"
+    return valid.count
+}
+
+
+func parse( input: AOCinput ) -> [ String : Cave ] {
+    let dict = input.lines.reduce( into: [ String : Set<String> ]() ) { dict, line in
+        let words = line.split( separator: "-" ).map { String( $0 ) }
+        dict[ words[0], default: Set() ].insert( words[1] )
+        dict[ words[1], default: Set() ].insert( words[0] )
+    }
+    return Dictionary( uniqueKeysWithValues: dict.map { ( $0, Cave( name: $0, connected: $1 ) ) } )
+}
+
+
+func part1( input: AOCinput ) -> String {
+    return "\( countValid( input: input ) )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    return "\( countValid( input: input, allowTwice: true ) )"
 }
 
 
