@@ -18,28 +18,44 @@ let hexTable: [ Character : [Int] ] = [
 ]
 
 struct Packet {
-    enum Kind { case literal, other }
+    enum Kind: Int { case sum, product, minimum, maximum, literal, greater, less, equal }
     
     let version: Int
     let type: Kind
     let value: Int?
     let subpackets: [ Packet ]
     
-    var versionSum: Int {
-        version + subpackets.reduce( 0 ) { $0 + $1.versionSum }
+    var versionSum: Int { version + subpackets.reduce( 0 ) { $0 + $1.versionSum } }
+    var packetValue: Int {
+        switch type {
+        case .sum:
+            return subpackets.reduce( 0 ) { $0 + $1.packetValue }
+        case .product:
+            return subpackets.reduce( 1 ) { $0 * $1.packetValue }
+        case .minimum:
+            return subpackets.map { $0.packetValue }.min()!
+        case .maximum:
+            return subpackets.map { $0.packetValue }.max()!
+        case .literal:
+            return value!
+        case .greater:
+            return subpackets[0].packetValue > subpackets[1].packetValue ? 1 : 0
+        case .less:
+            return subpackets[0].packetValue < subpackets[1].packetValue ? 1 : 0
+        case .equal:
+            return subpackets[0].packetValue == subpackets[1].packetValue ? 1 : 0
+        }
     }
     
     init( bits: Bits ) throws {
         version = bits.getChunk( size: 3 )
-        let typeID = bits.getChunk( size: 3 )
+        type = Kind( rawValue: bits.getChunk( size: 3 ) )!
         
-        switch typeID {
-        case 4:
-            type = .literal
+        switch type {
+        case .literal:
             value = bits.getLiteral()
             subpackets = []
         default:
-            type = .other
             value = nil
             
             // lengthTypeID = bits.getChunk( size: 1 )
@@ -70,7 +86,7 @@ class Bits {
     var count: Int { bits.count }
     
     init( line: String ) {
-        bits = line.map { hexTable[$0]! }.flatMap { $0 }
+        bits = line.flatMap { hexTable[$0]! }
     }
     
     func getChunk( size: Int ) -> Int {
@@ -102,7 +118,8 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let bits = Bits( line: input.line )
-    return ""
+    let packet = try! Packet( bits: bits )
+    return "\( packet.packetValue )"
 }
 
 
