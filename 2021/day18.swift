@@ -321,8 +321,18 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    return "Not yet implemented"
+    let ( runtype, numbers ) = parse( input: input )
+    var biggest = 0
+    
+    for index1 in 0 ..< numbers.count - 1 {
+        for index2 in index1 ..< numbers.count {
+            let sum1 = numbers[index1].add( rhs: numbers[index2] )
+            let sum2 = numbers[index2].add( rhs: numbers[index1] )
+            
+            biggest = max( biggest, sum1.magnitude, sum2.magnitude )
+        }
+    }
+    return "\(biggest)"
 }
 
 
