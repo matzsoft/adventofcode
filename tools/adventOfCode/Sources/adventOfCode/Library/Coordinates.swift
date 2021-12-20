@@ -321,6 +321,10 @@ struct Rect2D: Hashable {
         self.init( min: bounds.min, max: bounds.max )
     }
     
+    var points: [Point2D] {
+        ( min.y ... max.y ).flatMap { y in ( min.x ... max.x ).map { x in Point2D( x: x, y: y ) } }
+    }
+    
     func expand( with point: Point2D ) -> Rect2D {
         let minX = Swift.min( min.x, point.x )
         let maxX = Swift.max( max.x, point.x )
