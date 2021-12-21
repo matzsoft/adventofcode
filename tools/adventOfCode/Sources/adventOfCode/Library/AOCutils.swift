@@ -55,6 +55,19 @@ struct AOCinput {
 }
 
 
+func projectInfo() throws -> String {
+    let input = try URL( fileURLWithPath: findDirectory( name: "input" ) )
+    let year = input.deletingLastPathComponent().lastPathComponent
+    let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
+    
+    #if DEBUG
+    return "Advent of Code \(year) \(project), Debug Build"
+    #else
+    return "Advent of Code \(year) \(project), Release Build"
+    #endif
+}
+
+
 func findDirectory( name: String ) throws -> String {
     let fileManager = FileManager.default
     var directory = URL( fileURLWithPath: #file ).deletingLastPathComponent().path
