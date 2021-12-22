@@ -10,6 +10,13 @@
 
 import Foundation
 
+struct Player: Hashable {
+    var location: Int
+    var score: Int
+    var isWinner: Bool { score >= 21 }
+}
+
+
 struct DeterministicDie {
     let sides: Int
     var next: Int
@@ -24,37 +31,86 @@ struct DeterministicDie {
 }
 
 
-func parse( input: AOCinput ) -> [Int] {
-    return input.lines.map { Int( $0.split( separator: " " )[4] )! - 1 }
+struct State: Hashable {
+    let players: [Player]
+}
+
+
+func parse( input: AOCinput ) -> [Player] {
+    return input.lines.map { Player( location: Int( $0.split( separator: " " )[4] )! - 1, score: 0 ) }
 }
 
 
 func part1( input: AOCinput ) -> String {
     var players = parse( input: input )
-    var scores = Array( repeating: 0, count: players.count )
     var die = DeterministicDie( sides: 100, next: 0 )
     
     while true {
-        players[0] = ( players[0] + die.roll() + die.roll() + die.roll() ) % 10
-        scores[0] += players[0] + 1
-        if scores[0] >= 1000 { break }
+        players[0].location = ( players[0].location + die.roll() + die.roll() + die.roll() ) % 10
+        players[0].score += players[0].location + 1
+        if players[0].score >= 1000 { break }
         
-        players[1] = ( players[1] + die.roll() + die.roll() + die.roll() ) % 10
-        scores[1] += players[1] + 1
-        if scores[0] >= 1000 { break }
+        players[1].location = ( players[1].location + die.roll() + die.roll() + die.roll() ) % 10
+        players[1].score += players[1].location + 1
+        if players[1].score >= 1000 { break }
     }
     
-    scores.sort()
+    let scores = players.map { $0.score }.sorted()
     return "\( die.count * scores[0] )"
 }
 
 
+let diracDieRoll = [ ( 3, 1 ), ( 4, 3 ), ( 5, 6 ), ( 6, 7 ), ( 7, 6 ), ( 8, 3 ), ( 9, 1 ) ]
+
+
 func part2( input: AOCinput ) -> String {
     let players = parse( input: input )
-    var multiverses = Array( repeating: Array( repeating: Array( repeating: Array( repeating: Array( repeating: 0, count: 30 ), count: 10 ), count: 30 ), count: 10 ), count: 2 )
+    var turn1 = [ State : Int ]()
+    var turn2 = turn1
+    var completed = turn1
+
+    turn1[ State( players: players ) ] = 1
     
-    multiverses[0][players[0]][0][players[1]][0] = 1
-    return ""
+    while !turn1.isEmpty || !turn2.isEmpty {
+        for state in turn1 {
+            for ( roll, count ) in diracDieRoll {
+                let newLocation = ( state.key.players[0].location + roll ) % 10
+                let newScore = state.key.players[0].score + newLocation + 1
+                let newPlayer = Player( location: newLocation, score: newScore )
+                let newState = State( players: [ newPlayer, state.key.players[1] ] )
+                
+                if newPlayer.isWinner {
+                    completed[ newState, default: 0 ] += count
+                } else {
+                    turn2[ newState, default: 0 ] += count
+                }
+            }
+        }
+        turn1.removeAll()
+            
+        for state in turn2 {
+            for ( roll, count ) in diracDieRoll {
+                let newLocation = ( state.key.players[1].location + roll ) % 10
+                let newScore = state.key.players[1].score + newLocation + 1
+                let newPlayer = Player( location: newLocation, score: newScore )
+                let newState = State( players: [ state.key.players[0], newPlayer ] )
+                
+                if newPlayer.isWinner {
+                    completed[ newState, default: 0 ] += count
+                } else {
+                    turn1[ newState, default: 0 ] += count
+                }
+            }
+        }
+        turn2.removeAll()
+    }
+    
+    let wins = [
+        completed.reduce( 0 ) { $0 + ( $1.key.players[0].isWinner ? $1.value : 0 ) },
+        completed.reduce( 0 ) { $0 + ( $1.key.players[1].isWinner ? $1.value : 0 ) },
+    ].sorted()
+    
+    return "\( wins[1] )"
 }
 
 
