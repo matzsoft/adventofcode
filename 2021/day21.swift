@@ -65,24 +65,25 @@ let diracDieRoll = [ ( 3, 1 ), ( 4, 3 ), ( 5, 6 ), ( 6, 7 ), ( 7, 6 ), ( 8, 3 ),
 
 func part2( input: AOCinput ) -> String {
     let players = parse( input: input )
+    var wins = Array( repeating: 0, count: players.count )
     var turn1 = [ State : Int ]()
     var turn2 = turn1
-    var completed = turn1
 
     turn1[ State( players: players ) ] = 1
     
-    while !turn1.isEmpty || !turn2.isEmpty {
+    while !turn1.isEmpty {
         for state in turn1 {
             for ( roll, count ) in diracDieRoll {
                 let newLocation = ( state.key.players[0].location + roll ) % 10
                 let newScore = state.key.players[0].score + newLocation + 1
                 let newPlayer = Player( location: newLocation, score: newScore )
+                let newCount = state.value * count
                 let newState = State( players: [ newPlayer, state.key.players[1] ] )
                 
                 if newPlayer.isWinner {
-                    completed[ newState, default: 0 ] += count
+                    wins[0] += newCount
                 } else {
-                    turn2[ newState, default: 0 ] += count
+                    turn2[ newState, default: 0 ] += newCount
                 }
             }
         }
@@ -93,24 +94,20 @@ func part2( input: AOCinput ) -> String {
                 let newLocation = ( state.key.players[1].location + roll ) % 10
                 let newScore = state.key.players[1].score + newLocation + 1
                 let newPlayer = Player( location: newLocation, score: newScore )
+                let newCount = state.value * count
                 let newState = State( players: [ state.key.players[0], newPlayer ] )
                 
                 if newPlayer.isWinner {
-                    completed[ newState, default: 0 ] += count
+                    wins[1] += newCount
                 } else {
-                    turn1[ newState, default: 0 ] += count
+                    turn1[ newState, default: 0 ] += newCount
                 }
             }
         }
         turn2.removeAll()
     }
     
-    let wins = [
-        completed.reduce( 0 ) { $0 + ( $1.key.players[0].isWinner ? $1.value : 0 ) },
-        completed.reduce( 0 ) { $0 + ( $1.key.players[1].isWinner ? $1.value : 0 ) },
-    ].sorted()
-    
-    return "\( wins[1] )"
+    return "\( wins.max()! )"
 }
 
 
