@@ -399,9 +399,20 @@ struct Rect3D: Hashable {
             x: Swift.min( min.x, max.x ), y: Swift.min( min.y, max.y ), z: Swift.min( min.z, max.z ) )
         self.max = Point3D(
             x: Swift.max( min.x, max.x ), y: Swift.max( min.y, max.y ), z: Swift.max( min.z, max.z ) )
-        self.width  = self.max.x - self.min.x + 1
-        self.length = self.max.y - self.min.y + 1
-        self.height = self.max.z - self.min.z + 1
+        
+        func measurement( small: Int, big: Int ) -> Int {
+            if big.subtractingReportingOverflow( small ).overflow {
+                return Int.max
+            } else if ( big - small ).addingReportingOverflow( 1 ).overflow {
+                return Int.max
+            } else {
+                return big - small + 1
+            }
+        }
+
+        self.width  = measurement( small: self.min.x, big: self.max.x )
+        self.length = measurement( small: self.min.y, big: self.max.y )
+        self.height = measurement( small: self.min.z, big: self.max.z )
         
         if width.multipliedReportingOverflow( by: length ).overflow {
             volume = Int.max
@@ -449,6 +460,12 @@ struct Rect3D: Hashable {
         self.init( min: bounds.min, max: bounds.max )
     }
     
+    var points: [Point3D] {
+        ( min.z ... max.z ).flatMap { z in
+            ( min.y ... max.y ).flatMap {
+                y in ( min.x ... max.x ).map { x in Point3D( x: x, y: y, z: z ) } } }
+    }
+    
     func expand( with point: Point3D ) -> Rect3D {
         let minX = Swift.min( min.x, point.x )
         let maxX = Swift.max( max.x, point.x )
@@ -484,14 +501,14 @@ struct Rect3D: Hashable {
     func intersection( with other: Rect3D ) -> Rect3D? {
         let minX = Swift.max( min.x, other.min.x )
         let minY = Swift.max( min.y, other.min.y )
-        let minZ = Swift.min( min.z, other.min.z )
+        let minZ = Swift.max( min.z, other.min.z )
         let maxX = Swift.min( max.x, other.max.x )
         let maxY = Swift.min( max.y, other.max.y )
-        let maxZ = Swift.max( max.z, other.max.z )
+        let maxZ = Swift.min( max.z, other.max.z )
 
         return Rect3D(
             min: Point3D( x: minX, y: minY, z: minZ ),
-            width: maxX - minX, length: maxY - minY, height: maxZ - minZ
+            width: maxX - minX + 1, length: maxY - minY + 1, height: maxZ - minZ + 1
         )
     }
 }
