@@ -10,11 +10,19 @@
 
 import Foundation
 
-struct BottomlessStack {
-    var values = [Int]()
-    var top: Int { return values.isEmpty ? 0 : values.last! }
-    mutating func push( value: Int ) -> Void { values.append( value ) }
-    mutating func pop() -> Void { if !values.isEmpty { values.removeLast() } }
+let modelNumberLength = 14
+let inputIndices = 0 ..< modelNumberLength
+let validInputs = 1 ... 9
+
+extension Range where Element : Comparable {
+    func intersection( other: Range ) -> Range {
+        guard endIndex > other.startIndex else { return endIndex ..< endIndex }
+        guard other.endIndex > startIndex else { return startIndex ..< startIndex }
+        
+        let s = other.startIndex > startIndex ? other.startIndex : startIndex
+        let e = other.endIndex < endIndex ? other.endIndex : endIndex
+        return s ..< e
+    }
 }
 
 struct BottomlessStack2 {
@@ -24,31 +32,9 @@ struct BottomlessStack2 {
     mutating func pop() -> Void { if !values.isEmpty { values.removeLast() } }
 }
 
-class Expression {
-    enum Kind { case knownValue, input, add, mul, div, mod, eql }
-    
-    let type: Kind
-    let value: Int
-    let min: Int
-    let max: Int
-    let left: Expression?
-    let right: Expression?
-    
-    internal init(
-        type: Expression.Kind, value: Int, min: Int, max: Int,
-        left: Expression? = nil, right: Expression? = nil
-    ) {
-        self.type = type
-        self.value = value
-        self.min = min
-        self.max = max
-        self.left = left
-        self.right = right
-    }
-    
-}
 
-
+// This type is not required to solve the problem.  It does correctly execute any ALU program.
+// It can be used to validate a submarine model number.
 struct ALU: CustomStringConvertible {
     struct Instruction: CustomStringConvertible {
         enum VariableName: String { case w, x, y, z }
@@ -122,8 +108,8 @@ struct ALU: CustomStringConvertible {
         variables = [ .w: 0, .x: 0, .y: 0, .z: 0 ]
     }
     
-    func parameters( ip: Int ) -> ( Int, Int, Int ) {
-        ( instructions[ip+4].operand.value, instructions[ip+5].operand.value, instructions[ip+15].operand.value )
+    func parameters( ip: Int ) -> [Int] {
+        [ instructions[ip+4].operand.value, instructions[ip+5].operand.value, instructions[ip+15].operand.value ]
     }
     
     mutating func run( input: [Int] ) throws -> Void {
@@ -174,66 +160,85 @@ struct ALU: CustomStringConvertible {
             }
         }
     }
+}
 
-//    mutating func addProcess( instruction: Instruction ) -> String {
-//        <#function body#>
-//    }
+
+// This function is also not needed to solve the problem.  It simulates what an ALU running the MONAD
+// program does.  Hence it can also be used to validate a submarine model number.
+func MONAD( alu: ALU, input: [Int] ) -> Int {
+    struct BottomlessStack {
+        var values = [Int]()
+        var top: Int { return values.isEmpty ? 0 : values.last! }
+        mutating func push( value: Int ) -> Void { values.append( value ) }
+        mutating func pop() -> Void { if !values.isEmpty { values.removeLast() } }
+    }
+
+    var stack = BottomlessStack()
+
+    func monad( input: Int, p1: Int, p2: Int, p3: Int ) -> Void {
+        let top = stack.top
+        if p1 == 26 { stack.pop() }
+        if top + p2 != input { stack.push( value: input + p3 ) }
+    }
     
-    mutating func interpret( input: [Int] ) throws -> Void {
-        var inputPointer = 0
-        
-        variables = [ .w: 0, .x: 0, .y: 0, .z: 0 ]
-        dirty = [:]
-        for ( ip, instruction ) in instructions.enumerated() {
-            let disassembly = String( format: "%3d: \(instruction)", ip )
-            var comment = ""
-            switch instruction.opcode {
-            case .inp:
-                if inputPointer >= input.count {
-                    throw RuntimeError( "Input queue exhausted at ip \(ip)" ) }
-                variables[ instruction.result ] = input[inputPointer]
-                inputPointer += 1
-                comment = "\(instruction.result) = d\(inputPointer)"
-                dirty[instruction.result] = comment
-            case .add:
-                switch instruction.operand {
-                case .variable( let variable ):
-                    variables[ instruction.result ]! += variables[ variable ]!
-                case .int( let int ):
-                    variables[ instruction.result ]! += int
-                }
-            case .mul:
-                switch instruction.operand {
-                case .variable( let variable ):
-                    variables[ instruction.result ]! *= variables[ variable ]!
-                case .int( let int ):
-                    variables[ instruction.result ]! *= int
-                }
-            case .div:
-                switch instruction.operand {
-                case .variable( let variable ):
-                    variables[ instruction.result ]! /= variables[ variable ]!
-                case .int( let int ):
-                    variables[ instruction.result ]! /= int
-                }
-            case .mod:
-                switch instruction.operand {
-                case .variable( let variable ):
-                    variables[ instruction.result ]! %= variables[ variable ]!
-                case .int( let int ):
-                    variables[ instruction.result ]! %= int
-                }
-            case .eql:
-                switch instruction.operand {
-                case .variable( let variable ):
-                    variables[ instruction.result ]!
-                        = variables[ instruction.result ]! == variables[ variable ]! ? 1 : 0
-                case .int( let int ):
-                    variables[ instruction.result ]! = variables[ instruction.result ]! == int ? 1 : 0
-                }
+    input.indices.forEach {
+        let parameters = alu.parameters( ip: 18 * $0 )
+        monad( input: input[$0], p1: parameters[0], p2: parameters[1], p3: parameters[2] )
+    }
+    
+    return stack.values.isEmpty ? 0 : stack.values.reduce( 0 ) { $0 * 26 + $1 }
+}
+
+
+struct Solver {
+    struct BottomlessStack {
+        var values = [ ( Int, Int ) ]()
+        var top: ( Int, Int ) { return values.isEmpty ? ( 0, 0 ) : values.last! }
+        mutating func push( value: ( Int, Int ) ) -> Void { values.append( value ) }
+        mutating func pop() -> Void { if !values.isEmpty { values.removeLast() } }
+    }
+
+    struct Condition: CustomStringConvertible {
+        let firstIndex: Int
+        let offset: Int
+        let secondIndex: Int
+
+        var description: String {
+            if offset > 0 {
+                return "d\(firstIndex+1) + \(offset) == d\(secondIndex+1)"
             }
-            print( disassembly + String( repeating: " ", count: 20 - disassembly.count ) + "// \(comment)" )
+            return "d\(firstIndex+1) - \(-offset) == d\(secondIndex+1)"
         }
+    }
+
+    let conditions: [Condition]
+    let ranges: [ClosedRange<Int>]
+
+    init( alu: ALU ) {
+        var stack = BottomlessStack()
+        var conditions = [Condition]()
+
+        ranges = inputIndices.reduce( into: Array( repeating: validInputs, count: modelNumberLength ) ) {
+            let parameters = alu.parameters( ip: 18 * $1 )
+            let top = stack.top
+            if parameters[0] == 26 { stack.pop() }
+
+            let actualRange = ( top.1 + parameters[1] + 1 ... top.1 + parameters[1] + 9 )
+            if !actualRange.overlaps( validInputs ) {
+                stack.push( value: ( $1, parameters[2] ) )
+            } else {
+                let clippedStart = max( actualRange.first!, validInputs.first! )
+                let clippedEnd = min( actualRange.last!, validInputs.last! )
+                let adjustedStart = clippedStart - top.1 - parameters[1]
+                let adjustedEnd = clippedEnd - top.1 - parameters[1]
+                
+                conditions.append(
+                    Condition( firstIndex: top.0, offset: top.1 + parameters[1], secondIndex: $1 ) )
+                $0[$1] = ClosedRange( uncheckedBounds: ( clippedStart, clippedEnd ) )
+                $0[top.0] = ClosedRange( uncheckedBounds: ( adjustedStart, adjustedEnd ) )
+            }
+        }
+        self.conditions = conditions
     }
 }
 
@@ -242,33 +247,8 @@ func parse( input: AOCinput ) -> ALU {
     return try! ALU( lines: input.lines )
 }
 
-var stack = BottomlessStack()
-var stack2 = BottomlessStack2()
 
-func monad( input: Int, p1: Int, p2: Int, p3: Int ) -> Void {
-    let top = stack.top
-    if p1 == 26 { stack.pop() }
-    if top + p2 != input { stack.push( value: input + p3 ) }
-}
-
-
-func monad2( input: Int, p1: Int, p2: Int, p3: Int ) -> ( Int, Int, Int )? {
-    let top = stack2.top
-    if p1 == 26 { stack2.pop() }
-    
-    let range1 = ( top.1 + p2 + 1 ... top.1 + p2 + 9 )
-    let range2 = ( 1 ... 9 )
-    if !range1.overlaps( range2 ) {
-        stack2.push( value: ( input, p3 ) )
-        return nil
-    } else {
-        print( "d\(top.0+1) + \(top.1 + p2) == d\(input+1)" )
-        return ( top.0, top.1 + p2, input )
-    }
-}
-
-
-func part1( input: AOCinput ) -> String {
+func part0( input: AOCinput ) -> String {
     var alu = parse( input: input )
 //    print("\(alu)")
     
@@ -284,75 +264,27 @@ func part1( input: AOCinput ) -> String {
     let input = Array( "65984919997939" ).map { Int( String( $0 ) )! }
     try! alu.run( input: input )
     print( "From ALU: \( alu.variables[.z]! )" )
-//    try! alu.interpret( input: Array( "95985919997399" ).map { Int( String( $0 ) )! } )
+    print( "From monad: \( MONAD( alu: alu, input: input ) )" )
     
-//    monad( input: input[0], p1: 1, p2: 12, p3: 7 )
-//    monad( input: input[1], p1: 1, p2: 11, p3: 15 )
-//    monad( input: input[2], p1: 1, p2: 12, p3: 2 )
-//    monad( input: input[3], p1: 26, p2: -3, p3: 15 )
-//    monad( input: input[4], p1: 1, p2: 10, p3: 14 )
-//    monad( input: input[5], p1: 26, p2: -9, p3: 2 )
-//    monad( input: input[6], p1: 1, p2: 10, p3: 15 )
-//    monad( input: input[7], p1: 26, p2: -7, p3: 1 )
-//    monad( input: input[8], p1: 26, p2: -11, p3: 15 )
-//    monad( input: input[9], p1: 26, p2: -4, p3: 15 )
-//    monad( input: input[10], p1: 1, p2: 14, p3: 12 )
-//    monad( input: input[11], p1: 1, p2: 11, p3: 2 )
-//    monad( input: input[12], p1: 26, p2: -8, p3: 13 )
-//    monad( input: input[13], p1: 26, p2: -10, p3: 13 )
-//    print( "\( stack.values.isEmpty ? 0 : stack.values.reduce( 0 ) { $0 * 26 + $1 } )" )
-    
-    stack = BottomlessStack()
-    input.indices.forEach {
-        let parameters = alu.parameters( ip: 18 * $0 )
-        monad( input: input[$0], p1: parameters.0, p2: parameters.1, p3: parameters.2 )
-    }
-    print( "From monad: \( stack.values.isEmpty ? 0 : stack.values.reduce( 0 ) { $0 * 26 + $1 } )" )
-    
-    let answer = input.indices.reduce( into: Array( repeating: 0, count: 14 ) ) {
-        let parameters = alu.parameters( ip: 18 * $1 )
-        if let result = monad2( input: $1, p1: parameters.0, p2: parameters.1, p3: parameters.2 ) {
-            if result.1 > 0 {
-                $0[result.0] = 9 - result.1
-                $0[result.2] = 9
-            } else {
-                $0[result.0] = 9
-                $0[result.2] = 9 + result.1
-            }
-        }
-    }.map { String( $0 ) }.joined()
-    return "\(answer)"
+    let solver = Solver( alu: alu )
+    solver.conditions.forEach { print( "\($0)" ) }
+    print( "solver: \( solver.ranges.map { String( $0.last! ) }.joined() )" )
+
+    return "\( solver.ranges.map { String( $0.last! ) }.joined() )"
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let alu = parse( input: input )
+
+    return "\( Solver( alu: alu ).ranges.map { String( $0.last! ) }.joined() )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    var alu = parse( input: input )
-    let input = Array( "11211619541713" ).map { Int( String( $0 ) )! }
+    let alu = parse( input: input )
 
-    try! alu.run( input: input )
-    print( "From ALU: \( alu.variables[.z]! )" )
-
-    stack = BottomlessStack()
-    stack2 = BottomlessStack2()
-    input.indices.forEach {
-        let parameters = alu.parameters( ip: 18 * $0 )
-        monad( input: input[$0], p1: parameters.0, p2: parameters.1, p3: parameters.2 )
-    }
-    print( "From monad: \( stack.values.isEmpty ? 0 : stack.values.reduce( 0 ) { $0 * 26 + $1 } )" )
-    
-    let answer = input.indices.reduce( into: Array( repeating: 0, count: 14 ) ) {
-        let parameters = alu.parameters( ip: 18 * $1 )
-        if let result = monad2( input: $1, p1: parameters.0, p2: parameters.1, p3: parameters.2 ) {
-            if result.1 > 0 {
-                $0[result.0] = 1
-                $0[result.2] = 1 + result.1
-            } else {
-                $0[result.0] = 1 - result.1
-                $0[result.2] = 1
-            }
-        }
-    }.map { String( $0 ) }.joined()
-    return "\(answer)"
+    return "\( Solver( alu: alu ).ranges.map { String( $0.first! ) }.joined() )"
 }
 
 
