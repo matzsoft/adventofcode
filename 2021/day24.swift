@@ -12,24 +12,10 @@ import Foundation
 
 let modelNumberLength = 14
 let inputIndices = 0 ..< modelNumberLength
-let validInputs = 1 ... 9
+let validInputs = 1 ..< 10
 
-extension Range where Element : Comparable {
-    func intersection( other: Range ) -> Range {
-        guard endIndex > other.startIndex else { return endIndex ..< endIndex }
-        guard other.endIndex > startIndex else { return startIndex ..< startIndex }
-        
-        let s = other.startIndex > startIndex ? other.startIndex : startIndex
-        let e = other.endIndex < endIndex ? other.endIndex : endIndex
-        return s ..< e
-    }
-}
-
-struct BottomlessStack2 {
-    var values = [ ( Int, Int ) ]()
-    var top: ( Int, Int ) { return values.isEmpty ? ( 0, 0 ) : values.last! }
-    mutating func push( value: ( Int, Int ) ) -> Void { values.append( value ) }
-    mutating func pop() -> Void { if !values.isEmpty { values.removeLast() } }
+extension Range where Element : BinaryInteger {
+    func offset( by: Bound ) -> Range { ( lowerBound + by ) ..< ( upperBound + by ) }
 }
 
 
@@ -212,7 +198,7 @@ struct Solver {
     }
 
     let conditions: [Condition]
-    let ranges: [ClosedRange<Int>]
+    let ranges: [Range<Int>]
 
     init( alu: ALU ) {
         var stack = BottomlessStack()
@@ -223,19 +209,14 @@ struct Solver {
             let top = stack.top
             if parameters[0] == 26 { stack.pop() }
 
-            let actualRange = ( top.1 + parameters[1] + 1 ... top.1 + parameters[1] + 9 )
+            let actualRange = ( top.1 + parameters[1] + 1 ..< top.1 + parameters[1] + 10 )
             if !actualRange.overlaps( validInputs ) {
                 stack.push( value: ( $1, parameters[2] ) )
             } else {
-                let clippedStart = max( actualRange.first!, validInputs.first! )
-                let clippedEnd = min( actualRange.last!, validInputs.last! )
-                let adjustedStart = clippedStart - top.1 - parameters[1]
-                let adjustedEnd = clippedEnd - top.1 - parameters[1]
-                
                 conditions.append(
                     Condition( firstIndex: top.0, offset: top.1 + parameters[1], secondIndex: $1 ) )
-                $0[$1] = ClosedRange( uncheckedBounds: ( clippedStart, clippedEnd ) )
-                $0[top.0] = ClosedRange( uncheckedBounds: ( adjustedStart, adjustedEnd ) )
+                $0[$1] = actualRange.clamped( to: validInputs )
+                $0[top.0] = $0[$1].offset( by: -top.1 - parameters[1] )
             }
         }
         self.conditions = conditions
