@@ -19,8 +19,8 @@ extension Range where Element : BinaryInteger {
 }
 
 
-// This type is not required to solve the problem.  It does correctly execute any ALU program.
-// It can be used to validate a submarine model number.
+// This type is only used to hold the input data.  None of its methods are used in the final solution.
+// It does correctly execute any ALU program. It can be used to validate a submarine model number.
 struct ALU: CustomStringConvertible {
     struct Instruction: CustomStringConvertible {
         enum VariableName: String { case w, x, y, z }
@@ -84,7 +84,6 @@ struct ALU: CustomStringConvertible {
     
     let instructions: [Instruction]
     var variables: [ Instruction.VariableName : Int ]
-    var dirty = [ Instruction.VariableName : String ]()
     var description: String {
         instructions.enumerated().map { String( format: "%3d: \($0.1)", $0.0 ) }.joined( separator: "\n" )
     }
@@ -149,7 +148,7 @@ struct ALU: CustomStringConvertible {
 }
 
 
-// This function is also not needed to solve the problem.  It simulates what an ALU running the MONAD
+// This function is not needed to solve the problem.  It simulates what an ALU running the MONAD
 // program does.  Hence it can also be used to validate a submarine model number.
 func MONAD( alu: ALU, input: [Int] ) -> Int {
     struct BottomlessStack {
@@ -177,10 +176,15 @@ func MONAD( alu: ALU, input: [Int] ) -> Int {
 
 
 struct Solver {
+    struct StackEntry {
+        let index: Int
+        let offset: Int
+    }
+    
     struct BottomlessStack {
-        var values = [ ( Int, Int ) ]()
-        var top: ( Int, Int ) { return values.isEmpty ? ( 0, 0 ) : values.last! }
-        mutating func push( value: ( Int, Int ) ) -> Void { values.append( value ) }
+        var values = [ StackEntry ]()
+        var top: StackEntry { return values.isEmpty ? StackEntry( index: 0, offset: 0 ) : values.last! }
+        mutating func push( value: StackEntry ) -> Void { values.append( value ) }
         mutating func pop() -> Void { if !values.isEmpty { values.removeLast() } }
     }
 
@@ -209,14 +213,14 @@ struct Solver {
             let top = stack.top
             if parameters[0] == 26 { stack.pop() }
 
-            let actualRange = ( top.1 + parameters[1] + 1 ..< top.1 + parameters[1] + 10 )
+            let actualRange = ( top.offset + parameters[1] + 1 ..< top.offset + parameters[1] + 10 )
             if !actualRange.overlaps( validInputs ) {
-                stack.push( value: ( $1, parameters[2] ) )
+                stack.push( value: StackEntry( index: $1, offset: parameters[2] ) )
             } else {
                 conditions.append(
-                    Condition( firstIndex: top.0, offset: top.1 + parameters[1], secondIndex: $1 ) )
+                    Condition( firstIndex: top.index, offset: top.offset + parameters[1], secondIndex: $1 ) )
                 $0[$1] = actualRange.clamped( to: validInputs )
-                $0[top.0] = $0[$1].offset( by: -top.1 - parameters[1] )
+                $0[top.index] = $0[$1].offset( by: -top.offset - parameters[1] )
             }
         }
         self.conditions = conditions
@@ -226,32 +230,6 @@ struct Solver {
 
 func parse( input: AOCinput ) -> ALU {
     return try! ALU( lines: input.lines )
-}
-
-
-func part0( input: AOCinput ) -> String {
-    var alu = parse( input: input )
-//    print("\(alu)")
-    
-//    for base in 0 ... 17 {
-//        for other in stride( from: base, to: input.lines.count, by: 18 ) {
-//            if input.lines[base] != input.lines[other] {
-//                print( String( format: "%3d: \(alu.instructions[base])", base ) )
-//                print( String( format: "%3d: \(alu.instructions[other])", other ) )
-//                print( "-------------------------" )
-//            }
-//        }
-//    }
-    let input = Array( "65984919997939" ).map { Int( String( $0 ) )! }
-    try! alu.run( input: input )
-    print( "From ALU: \( alu.variables[.z]! )" )
-    print( "From monad: \( MONAD( alu: alu, input: input ) )" )
-    
-    let solver = Solver( alu: alu )
-    solver.conditions.forEach { print( "\($0)" ) }
-    print( "solver: \( solver.ranges.map { String( $0.last! ) }.joined() )" )
-
-    return "\( solver.ranges.map { String( $0.last! ) }.joined() )"
 }
 
 
@@ -274,3 +252,62 @@ try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )
 try solve( part2: part2 )
+
+
+// The following can be run to show steps in the development of this solution.
+#if true
+func part3( input: AOCinput ) -> Void {
+    let alu = parse( input: input )
+    print( "---------- Disassembly ----------" )
+    print("\(alu)")
+}
+
+
+func part4( input: AOCinput ) -> Void {
+    let alu = parse( input: input )
+    let chunkSize = input.lines.count / modelNumberLength
+    let blocks = ( 0 ..< 18 ).compactMap { base -> String? in
+        let diffs = stride( from: base, to: input.lines.count, by: chunkSize ).filter {
+            input.lines[base] != input.lines[$0]
+        }
+        if diffs.isEmpty {
+            return nil
+        } else {
+            return (
+                [ String( format: "%3d: \(alu.instructions[base])", base ) ] +
+                diffs.map { String( format: "%3d: \(alu.instructions[$0])", $0 ) }
+            ).joined( separator: "\n")
+        }
+    }
+    
+    print( "---------- Differences ----------" )
+    print( blocks.joined( separator: "\n-------------------------\n" ) )
+}
+
+
+func part5( input: AOCinput ) -> Void {
+    var alu = parse( input: input )
+    let input = Array( input.part1 ?? "65984919997939" ).map { Int( String( $0 ) )! }
+    
+    try! alu.run( input: input )
+    print( "---------- Checking ALU and MONAD ----------" )
+    print( "From ALU: \( alu.variables[.z]! )" )
+    print( "From monad: \( MONAD( alu: alu, input: input ) )" )
+}
+
+
+func part6( input: AOCinput ) -> Void {
+    let alu = parse( input: input )
+    let solver = Solver( alu: alu )
+
+    print( "---------- Conditions ----------" )
+    solver.conditions.forEach { print( "\($0)" ) }
+}
+
+let input = try getAOCinput()
+
+part3( input: input )
+part4( input: input )
+part5( input: input )
+part6( input: input )
+#endif
