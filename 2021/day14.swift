@@ -17,19 +17,14 @@ extension Array {
 
 struct Rule {
     let match: [Character]
-    let replacement: [Character]
+    let replacement: Character
     
     init( line : String ) {
         let words = line.split( whereSeparator: { " ->".contains( $0 ) } )
         
         match = Array( words[0] )
-        replacement = Array( words[1] )
+        replacement = Array( words[1] )[0]
     }
-}
-
-
-func polymerLength( start: Int, cycles: Int ) -> Int {
-    return ( 1 ... cycles ).reduce( start ) { value, _ in 2 * value - 1 }
 }
 
 
@@ -46,11 +41,12 @@ func part1( input: AOCinput ) -> String {
     let ( template, rules ) = parse( input: input )
     let final = ( 1 ... 10 ).reduce( template ) { polymer, _ in
         let pairs = polymer.adjacentPairs
-        return pairs.flatMap { [ $0[0] ] + rules[$0]!.replacement } + [ rules[ pairs.last! ]!.match.last! ]
+        return pairs.flatMap { [ $0[0], rules[$0]!.replacement ] } + [ rules[ pairs.last! ]!.match.last! ]
     }
-    let histogram = final.reduce( into: [ Character : Int ]() ) { $0[ $1, default: 0 ] += 1 }.sorted {
-        $0.value < $1.value
-    }
+    let histogram = final.reduce( into: [ Character : Int ]() ) {
+        $0[ $1, default: 0 ] += 1
+    }.sorted {  $0.value < $1.value }
+    
     return "\( histogram.last!.value - histogram.first!.value )"
 }
 
@@ -58,15 +54,15 @@ func part1( input: AOCinput ) -> String {
 func part2( input: AOCinput ) -> String {
     let ( template, rules ) = parse( input: input )
     var elementCounts = template.reduce( into: [ Character : Int ]() ) { $0[ $1, default: 0 ] += 1 }
-    var trackPairs = template.adjacentPairs.reduce( into: [ [Character] : Int ]() ) {
+    var pairCounts = template.adjacentPairs.reduce( into: [ [Character] : Int ]() ) {
         $0[ $1, default: 0 ] += 1
     }
     
     for _ in 1 ... 40 {
-        trackPairs = trackPairs.reduce( into: [ [Character]: Int ]() ) {
-            $0[ [ $1.key[0] ] + rules[$1.key]!.replacement, default: 0 ] += trackPairs[$1.key]!
-            $0[ rules[$1.key]!.replacement + [ $1.key[1] ], default: 0 ] += trackPairs[$1.key]!
-            elementCounts[ rules[$1.key]!.replacement[0], default: 0 ] += trackPairs[$1.key]!
+        pairCounts = pairCounts.reduce( into: [ [Character]: Int ]() ) {
+            $0[ [ $1.key[0], rules[$1.key]!.replacement ], default: 0 ] += pairCounts[$1.key]!
+            $0[ [ rules[$1.key]!.replacement, $1.key[1] ], default: 0 ] += pairCounts[$1.key]!
+            elementCounts[ rules[$1.key]!.replacement, default: 0 ] += pairCounts[$1.key]!
         }
     }
 
