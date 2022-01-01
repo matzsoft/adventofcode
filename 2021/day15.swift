@@ -10,7 +10,15 @@
 
 import Foundation
 
-struct Map {
+protocol RiskMap {
+    var bounds: Rect2D { get }
+    var end: Point2D { get }
+    var points: [Point2D] { get }
+
+    subscript( position: Point2D ) -> Int { get }
+}
+
+struct Map: RiskMap {
     let map: [[Int]]
     let bounds: Rect2D
     let end: Point2D
@@ -18,15 +26,15 @@ struct Map {
     subscript( position: Point2D ) -> Int { return map[position.y][position.x] }
     
     var points: [Point2D] {
-        ( 0 ..< map.count ).map {
-            row in ( 0 ..< map[0].count ).map { col in Point2D( x: col, y: row ) }
+        ( 0 ..< bounds.height ).map { row in
+            ( 0 ..< bounds.width ).map { col in Point2D( x: col, y: row ) }
         }.flatMap { $0 }
     }
-    
+
     init( lines: [String] ) {
         map = lines.map { $0.map { Int( String( $0 ) )! } }
         end = Point2D( x: map[0].count - 1, y: map.count - 1 )
-        bounds = Rect2D(min: Point2D( x: 0, y: 0 ), max: end )
+        bounds = Rect2D( min: Point2D( x: 0, y: 0 ), max: end )
     }
     
     init( expand: Map, by: Int ) {
@@ -40,7 +48,7 @@ struct Map {
 }
 
 struct RiskMatrix {
-    let map: Map
+    let map: RiskMap
     var risks: [[Int]]
     var vertexSet: Set<Point2D>
     
@@ -49,7 +57,7 @@ struct RiskMatrix {
         set( newValue ) { risks[position.y][position.x] = newValue }
     }
 
-    init( map: Map, start: Point2D ) {
+    init( map: RiskMap, start: Point2D ) {
         self.map = map
         risks = Array(
             repeating: Array( repeating: Int.max, count: map.bounds.width ),
@@ -65,7 +73,6 @@ struct RiskMatrix {
             let position = vertexSet.min( by: { self[$0] < self[$1] } )!
             
             vertexSet.remove( position )
-            if predicate( position ) { return position }
 
             for neighbor in DirectionUDLR.allCases
                     .map( { position + $0.vector } )
@@ -77,21 +84,48 @@ struct RiskMatrix {
                     self[neighbor] = risk
                 }
             }
+            if predicate( position ) { return position }
         }
         
         return nil
     }
 }
 
-struct TiledMap {
+struct TiledMap: RiskMap {
+    static let expandFactor = 5
+    
     let maps: [Map]
-    
-    subscript( position: Point2D ) -> Map { return maps[ position.y + position.x ] }
-    
-    var bounds: Rect2D { Rect2D( min: Point2D( x: 0, y: 0 ), width: 5, height: 5 )! }
+    let bounds: Rect2D
+    let end: Point2D
+    var points: [Point2D] {
+        ( 0 ..< bounds.height ).map { row in
+            ( 0 ..< bounds.width ).map { col in Point2D( x: col, y: row ) }
+        }.flatMap { $0 }
+    }
+    var fullMap: String {
+        return ( 0 ..< bounds.height ).map { y in
+            ( 0 ..< maps[0].bounds.height ).map { mapY in
+                ( 0 ..< bounds.width ).map { x -> String in
+                    return maps[x + y].map[mapY].map { String( $0 ) }.joined()
+                }.joined()
+            }.joined( separator: "\n" )
+        }.joined( separator: "\n" )
+    }
+
+    subscript( position: Point2D ) -> Int {
+        let mapIndex = position.x / maps[0].bounds.width + position.y / maps[0].bounds.height
+        let mapPosition = Point2D(
+            x: position.x % maps[0].bounds.width, y: position.y % maps[0].bounds.height )
+        return maps[mapIndex][mapPosition]
+    }
     
     init( initial: Map ) {
         maps = [ initial ] + ( 1 ... 8 ).map { Map( expand: initial, by: $0 ) }
+        end  = Point2D(
+            x: initial.map[0].count * TiledMap.expandFactor - 1,
+            y: initial.map.count * TiledMap.expandFactor - 1
+        )
+        bounds = Rect2D( min: Point2D( x: 0, y: 0 ), max: end )
     }
 }
 
@@ -138,10 +172,13 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let map = parse( input: input )
-    let expanded = Map( expand: map, by: 1 )
-    
-//    for row in expanded.map { print( row.map { String( $0 ) }.joined() ) }
-    return ""
+    let tiled = TiledMap( initial: map )
+    var risks = RiskMatrix( map: tiled, start: Point2D( x: 0, y: 0 ) )
+
+    if let ending = risks.scan( predicate: { $0 == tiled.end } ) {
+        return "\( risks[ending] )"
+    }
+    return "No solution"
 }
 
 try print( projectInfo() )
