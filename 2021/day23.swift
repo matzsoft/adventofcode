@@ -18,21 +18,6 @@ func occupant( value: Int? ) -> String {
 }
 
 
-struct Tree {
-    class Node {
-        let burrow: Burrow
-        var final: Burrow?
-        let candidates: [Node]
-        
-        init( burrow: Burrow, candidates: [Node], final: Burrow? = nil ) {
-            self.burrow = burrow
-            self.final = final
-            self.candidates = candidates
-        }
-    }
-}
-
-
 struct Burrow: CustomStringConvertible, Hashable {
     static let moveCosts = [ 1, 10, 100, 1000 ]
     static let entries = [ 2, 4, 6, 8 ]
@@ -256,28 +241,46 @@ struct Burrow: CustomStringConvertible, Hashable {
         return list
     }
     
-    func organize() -> Tree.Node {
-        if isFinal { return Tree.Node( burrow: self, candidates: [], final: self ) }
+//    func organize() -> Burrow? {
+//        var openSet = Set( [ self ] )
+//        var gScore = [ self : 0 ]
+//        var fScore = [ self : theoretical ]
+//
+//        while !openSet.isEmpty {
+//            let current = fScore.min( by: { $0.value < $1.value } )!.key
+//
+//            if current.isFinal { return current }
+//
+//            openSet.remove( current )
+//            for neighbor in current.neighbors {
+//                if neighbor.energy < gScore[ neighbor, default: Int.max ] {
+//                    gScore[neighbor] = neighbor.energy
+//                    fScore[neighbor] = neighbor.energy + neighbor.theoretical
+//                    openSet.insert( neighbor )
+//                }
+//            }
+//        }
+//
+//        return nil
+//    }
+    
+    func organize() -> Burrow? {
+        if isFinal { return self }
         let list = neighbors
-        if list.isEmpty { return Tree.Node( burrow: self, candidates: [] ) }
-        
-        let sorted = list.reduce( into: [ Burrow : Int ]() ) { $0[$1] = $1.score }.sorted {
-            $0.value > $1.value
-        }
-        
-        let candidates = sorted.map { $0.key.organize() }
-        let final = candidates.compactMap { $0.final }.min( by: { $0.energy < $1.energy } )
-        
-        return Tree.Node( burrow: self, candidates: candidates, final: final )
+        if list.isEmpty { return nil }
+
+        let candidates = list.compactMap { $0.organize() }
+        let final = candidates.min( by: { $0.energy < $1.energy } )
+
+        return final
     }
 }
 
 
 func part1( input: AOCinput ) -> String {
     let burrow = Burrow( lines: input.lines )
-    let tree = burrow.organize()
     
-    if let final = tree.final {
+    if let final = burrow.organize() {
         return "\( final.energy )"
     }
     
