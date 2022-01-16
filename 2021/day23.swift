@@ -265,14 +265,21 @@ struct Burrow: CustomStringConvertible, Hashable {
 //    }
     
     func organize() -> Burrow? {
-        if isFinal { return self }
-        let list = neighbors
-        if list.isEmpty { return nil }
+        var seen = Set( [ self ] )
+        
+        func organize( current: Burrow ) -> Burrow? {
+            if current.isFinal { return current }
+            seen.insert( current )
+            let list = current.neighbors
+            if list.isEmpty { return nil }
 
-        let candidates = list.compactMap { $0.organize() }
-        let final = candidates.min( by: { $0.energy < $1.energy } )
+            let candidates = list.filter { !seen.contains( $0 ) }.compactMap { organize( current: $0 ) }
+            let final = candidates.min( by: { $0.energy < $1.energy } )
 
-        return final
+            return final
+        }
+
+        return organize( current: self )
     }
 }
 
