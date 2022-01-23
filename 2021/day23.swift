@@ -26,13 +26,22 @@ struct Burrow: CustomStringConvertible, Hashable {
     let rooms: [[Int?]]
     let energy: Int
     
-    var isFinal: Bool { Burrow.entries.indices.allSatisfy { rooms[0][$0] == $0 && rooms[1][$0] == $0 } }
+    var isFinal: Bool {
+        rooms.indices.allSatisfy { depth in
+            rooms[depth].indices.allSatisfy { roomIndex in rooms[depth][roomIndex] == roomIndex }
+        }
+    }
     var description: String {
         var lines = [ "Energy: \(energy)", String( repeating: "#", count: 13 ) ]
+        var prefix = "###"
+        var suffix = "###"
         
         lines.append( "#" + hallway.map { occupant( value: $0 ) }.joined() + "#" )
-        lines.append( "###" + rooms[0].map { occupant( value: $0 ) }.joined( separator: "#" ) + "###" )
-        lines.append( "  #" + rooms[1].map { occupant( value: $0 ) }.joined( separator: "#" ) + "#" )
+        for row in rooms {
+            lines.append( prefix + row.map { occupant( value: $0 ) }.joined( separator: "#" ) + suffix )
+            prefix = "  #"
+            suffix = "#"
+        }
         lines.append( "  " + String( repeating: "#", count: 9 ) )
 
         return lines.joined( separator: "\n" )
@@ -46,7 +55,7 @@ struct Burrow: CustomStringConvertible, Hashable {
     
     init( lines: [String] ) {
         hallway = Array( repeating: nil, count: 11 )
-        rooms = lines[2...3].map {
+        rooms = lines[2...(lines.count-2)].map {
             $0.filter { "ABCD?".contains( $0 ) }.map { Int( $0.asciiValue! ) - asciiA }
         }
         energy = 0
@@ -296,8 +305,15 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let burrow = Burrow( lines: input.lines )
-    return ""
+    let missingLines = [ "  #D#C#B#A#", "  #D#B#A#C#" ]
+    let revisedLines = Array( input.lines[...2] ) + missingLines + Array( input.lines[3...] )
+    let burrow = Burrow( lines: revisedLines )
+    
+    if let final = burrow.organize() {
+        return "\( final.energy )"
+    }
+    
+    return "No solution"
 }
 
 
