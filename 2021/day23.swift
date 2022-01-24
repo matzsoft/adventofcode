@@ -32,18 +32,17 @@ struct Burrow: CustomStringConvertible, Hashable {
         }
     }
     var description: String {
-        var lines = [ "Energy: \(energy)", String( repeating: "#", count: 13 ) ]
-        var prefix = "###"
-        var suffix = "###"
-        
-        lines.append( "#" + hallway.map { occupant( value: $0 ) }.joined() + "#" )
-        for row in rooms {
-            lines.append( prefix + row.map { occupant( value: $0 ) }.joined( separator: "#" ) + suffix )
-            prefix = "  #"
-            suffix = "#"
+        let lines1 = [
+            "Energy: \(energy)",
+            String( repeating: "#", count: 13 ),
+            "#" + hallway.map { occupant( value: $0 ) }.joined() + "#",
+            "###" + rooms[0].map { occupant( value: $0 ) }.joined( separator: "#" ) + "###"
+        ]
+        let roomLines = rooms[1...].map {
+            "  #" + $0.map { occupant( value: $0 ) }.joined( separator: "#" ) + "#"
         }
-        lines.append( "  " + String( repeating: "#", count: 9 ) )
-
+        let lines = lines1 + roomLines + [ "  " + String( repeating: "#", count: 9 ) ]
+        
         return lines.joined( separator: "\n" )
     }
     
@@ -212,20 +211,6 @@ struct Burrow: CustomStringConvertible, Hashable {
             rightRange.compactMap { moveOut( roomIndex: roomIndex, hallIndex: $0 ) }
     }
 
-    var score: Int {
-        let score0 = rooms[0].indices.filter {
-            rooms[0][$0] == $0 && rooms[1][$0] == $0
-        }.map { 4 * Burrow.moveCosts[$0] }.reduce( 0, + )
-        let score1 = rooms[1].indices.filter {
-            rooms[1][$0] == $0
-        }.map { 3 * Burrow.moveCosts[$0] }.reduce( 0, + )
-        let scoreH = hallway.indices.filter {
-            hallway[$0] != nil && abs( $0 - Burrow.entries[ hallway[$0]! ] ) == 1
-        }.map { Burrow.moveCosts[ hallway[$0]! ] }.reduce( 0, + )
-        
-        return score0 + score1 + scoreH
-    }
-    
     var neighbors: [Burrow] {
         var cumulative = self
         var list = possibleMoveOutIn
