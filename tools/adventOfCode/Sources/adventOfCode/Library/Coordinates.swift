@@ -9,7 +9,7 @@ import Foundation
 
 protocol Direction2D { var vector: Point2D { get } }
 
-enum Turn: String { case left = "L", right = "R", straight = "S", back = "B" }
+enum Turn: String, CaseIterable { case left = "L", right = "R", straight = "S", back = "B" }
 
 /// Important Notice - this enum implements a coordinate system normally used in mathematics.
 /// Positive Y is north and positive X is east.
@@ -321,10 +321,6 @@ struct Rect2D: Hashable {
         self.init( min: bounds.min, max: bounds.max )
     }
     
-    var points: [Point2D] {
-        ( min.y ... max.y ).flatMap { y in ( min.x ... max.x ).map { x in Point2D( x: x, y: y ) } }
-    }
-    
     func expand( with point: Point2D ) -> Rect2D {
         let minX = Swift.min( min.x, point.x )
         let maxX = Swift.max( max.x, point.x )
@@ -399,20 +395,9 @@ struct Rect3D: Hashable {
             x: Swift.min( min.x, max.x ), y: Swift.min( min.y, max.y ), z: Swift.min( min.z, max.z ) )
         self.max = Point3D(
             x: Swift.max( min.x, max.x ), y: Swift.max( min.y, max.y ), z: Swift.max( min.z, max.z ) )
-        
-        func measurement( small: Int, big: Int ) -> Int {
-            if big.subtractingReportingOverflow( small ).overflow {
-                return Int.max
-            } else if ( big - small ).addingReportingOverflow( 1 ).overflow {
-                return Int.max
-            } else {
-                return big - small + 1
-            }
-        }
-
-        self.width  = measurement( small: self.min.x, big: self.max.x )
-        self.length = measurement( small: self.min.y, big: self.max.y )
-        self.height = measurement( small: self.min.z, big: self.max.z )
+        self.width  = self.max.x - self.min.x + 1
+        self.length = self.max.y - self.min.y + 1
+        self.height = self.max.z - self.min.z + 1
         
         if width.multipliedReportingOverflow( by: length ).overflow {
             volume = Int.max
@@ -460,12 +445,6 @@ struct Rect3D: Hashable {
         self.init( min: bounds.min, max: bounds.max )
     }
     
-    var points: [Point3D] {
-        ( min.z ... max.z ).flatMap { z in
-            ( min.y ... max.y ).flatMap {
-                y in ( min.x ... max.x ).map { x in Point3D( x: x, y: y, z: z ) } } }
-    }
-    
     func expand( with point: Point3D ) -> Rect3D {
         let minX = Swift.min( min.x, point.x )
         let maxX = Swift.max( max.x, point.x )
@@ -501,15 +480,167 @@ struct Rect3D: Hashable {
     func intersection( with other: Rect3D ) -> Rect3D? {
         let minX = Swift.max( min.x, other.min.x )
         let minY = Swift.max( min.y, other.min.y )
-        let minZ = Swift.max( min.z, other.min.z )
+        let minZ = Swift.min( min.z, other.min.z )
         let maxX = Swift.min( max.x, other.max.x )
         let maxY = Swift.min( max.y, other.max.y )
-        let maxZ = Swift.min( max.z, other.max.z )
+        let maxZ = Swift.max( max.z, other.max.z )
 
         return Rect3D(
             min: Point3D( x: minX, y: minY, z: minZ ),
-            width: maxX - minX + 1, length: maxY - minY + 1, height: maxZ - minZ + 1
+            width: maxX - minX, length: maxY - minY, height: maxZ - minZ
         )
+    }
+}
+
+struct Matrix3D {
+    static var identity: Matrix3D {
+        let matrix = [
+            [ 1, 0, 0, 0 ],
+            [ 0, 1, 0, 0 ],
+            [ 0, 0, 1, 0 ],
+            [ 0, 0, 0, 1 ]
+        ]
+        return Matrix3D( matrix: matrix )
+    }
+    
+    static func scale( by factors: Point3D ) -> Matrix3D {
+        var matrix = identity.matrix
+        matrix[0][0] = factors.x
+        matrix[1][1] = factors.y
+        matrix[2][2] = factors.z
+        return Matrix3D( matrix: matrix )
+    }
+    
+    static func rotate( aroundX by: Turn ) -> Matrix3D {
+        var matrix = identity.matrix
+        switch by {
+        case .left:
+            matrix[1][1] =  0        // cos(90)
+            matrix[2][2] =  0        // cos(90)
+            matrix[2][1] =  1        // sin(90)
+            matrix[1][2] = -1        // -sin(90)
+        case .right:
+            matrix[1][1] =  0        // cos(270)
+            matrix[2][2] =  0        // cos(270)
+            matrix[2][1] = -1        // sin(270)
+            matrix[1][2] =  1        // -sin(270)
+        case .straight:
+            break
+        case .back:
+            matrix[1][1] = -1        // cos(180)
+            matrix[2][2] = -1        // cos(180)
+            matrix[2][1] =  0        // sin(180)
+            matrix[1][2] =  0        // -sin(180)
+        }
+        return Matrix3D( matrix: matrix )
+    }
+    
+    static func rotate( aroundY by: Turn ) -> Matrix3D {
+        var matrix = identity.matrix
+        switch by {
+        case .left:
+            matrix[0][0] =  0        // cos(90)
+            matrix[2][2] =  0        // cos(90)
+            matrix[0][2] =  1        // sin(90)
+            matrix[2][0] = -1        // -sin(90)
+        case .right:
+            matrix[0][0] =  0        // cos(270)
+            matrix[2][2] =  0        // cos(270)
+            matrix[0][2] = -1        // sin(270)
+            matrix[2][0] =  1        // -sin(270)
+        case .straight:
+            break
+        case .back:
+            matrix[0][0] = -1        // cos(180)
+            matrix[2][2] = -1        // cos(180)
+            matrix[0][2] =  0        // sin(180)
+            matrix[2][0] =  0        // -sin(180)
+        }
+        return Matrix3D( matrix: matrix )
+    }
+    
+    static func rotate( aroundZ by: Turn ) -> Matrix3D {
+        var matrix = identity.matrix
+        switch by {
+        case .left:
+            matrix[0][0] =  0        // cos(90)
+            matrix[1][1] =  0        // cos(90)
+            matrix[1][0] =  1        // sin(90)
+            matrix[0][1] = -1        // -sin(90)
+        case .right:
+            matrix[0][0] =  0        // cos(270)
+            matrix[1][1] =  0        // cos(270)
+            matrix[1][0] = -1        // sin(270)
+            matrix[0][1] =  1        // -sin(270)
+        case .straight:
+            break
+        case .back:
+            matrix[0][0] = -1        // cos(180)
+            matrix[1][1] = -1        // cos(180)
+            matrix[1][0] =  0        // sin(180)
+            matrix[0][1] =  0        // -sin(180)
+        }
+        return Matrix3D( matrix: matrix )
+    }
+    
+    static func rotate( aroundX byX: Turn, aroundY byY: Turn, aroundZ byZ: Turn ) -> Matrix3D {
+        rotate( aroundX: byX ).multiply( by: rotate( aroundY: byY ) ).multiply( by: rotate(aroundZ: byZ ) )
+    }
+    
+    let matrix: [[Int]]
+    
+    init( matrix: [[Int]] ) {
+        self.matrix = matrix
+    }
+    
+    func multiply( by other: Matrix3D ) -> Matrix3D {
+        let matrix = ( 0 ..< self.matrix.count ).map { row in
+            ( 0 ..< other.matrix[0].count ).map { col in
+                ( 0 ..< self.matrix[0].count ).reduce( 0 ) { $0 + self.matrix[row][$1] * other.matrix[$1][col] }
+            }
+        }
+//        let matrix = [
+//            [
+//                matrix[0][0] * other.matrix[0][0] + matrix[0][1] * other.matrix[1][0] + matrix[0][2] * other.matrix[2][0] + matrix[0][3] * other.matrix[3][0],
+//                matrix[0][0] * other.matrix[0][1] + matrix[0][1] * other.matrix[1][1] + matrix[0][2] * other.matrix[2][1] + matrix[0][3] * other.matrix[3][1],
+//                matrix[0][0] * other.matrix[0][2] + matrix[0][1] * other.matrix[1][2] + matrix[0][2] * other.matrix[2][2] + matrix[0][3] * other.matrix[3][2],
+//                matrix[0][0] * other.matrix[0][3] + matrix[0][1] * other.matrix[1][3] + matrix[0][2] * other.matrix[2][3] + matrix[0][3] * other.matrix[3][3],
+//            ],
+//            [
+//                matrix[1][0] * other.matrix[0][0] + matrix[1][1] * other.matrix[1][0] + matrix[1][2] * other.matrix[2][0] + matrix[1][3] * other.matrix[3][0],
+//                matrix[1][0] * other.matrix[0][1] + matrix[1][1] * other.matrix[1][1] + matrix[1][2] * other.matrix[2][1] + matrix[1][3] * other.matrix[3][1],
+//                matrix[1][0] * other.matrix[0][2] + matrix[1][1] * other.matrix[1][2] + matrix[1][2] * other.matrix[2][2] + matrix[0][3] * other.matrix[3][2],
+//                matrix[0][0] * other.matrix[0][3] + matrix[0][1] * other.matrix[1][3] + matrix[0][2] * other.matrix[2][3] + matrix[1][3] * other.matrix[3][3],
+//            ],
+//            [
+//                matrix[2][0] * other.matrix[0][0] + matrix[2][1] * other.matrix[1][0] + matrix[2][2] * other.matrix[2][0] + matrix[2][3] * other.matrix[3][0],
+//                matrix[2][0] * other.matrix[0][1] + matrix[2][1] * other.matrix[1][1] + matrix[2][2] * other.matrix[2][1] + matrix[2][3] * other.matrix[3][1],
+//                matrix[2][0] * other.matrix[0][2] + matrix[2][1] * other.matrix[1][2] + matrix[2][2] * other.matrix[2][2] + matrix[2][3] * other.matrix[3][2],
+//                matrix[2][0] * other.matrix[0][3] + matrix[2][1] * other.matrix[1][3] + matrix[2][2] * other.matrix[2][3] + matrix[2][3] * other.matrix[3][3],
+//            ],
+//            [
+//                matrix[3][0] * other.matrix[0][0] + matrix[3][1] * other.matrix[1][0] + matrix[3][2] * other.matrix[2][0] + matrix[3][3] * other.matrix[3][0],
+//                matrix[3][0] * other.matrix[0][1] + matrix[3][1] * other.matrix[1][1] + matrix[3][2] * other.matrix[2][1] + matrix[3][3] * other.matrix[3][1],
+//                matrix[3][0] * other.matrix[0][2] + matrix[3][1] * other.matrix[1][2] + matrix[3][2] * other.matrix[2][2] + matrix[3][3] * other.matrix[3][2],
+//                matrix[3][0] * other.matrix[0][3] + matrix[3][1] * other.matrix[1][3] + matrix[3][2] * other.matrix[2][3] + matrix[3][3] * other.matrix[3][3],
+//            ]
+//        ]
+        return Matrix3D( matrix: matrix )
+    }
+    
+    func transform( point: Point3D ) -> Point3D {
+        let newX = point.x * matrix[0][0] + point.y * matrix[1][0] + point.z * matrix[2][0] + matrix[3][0]
+        let newY = point.x * matrix[0][1] + point.y * matrix[1][1] + point.z * matrix[2][1] + matrix[3][1]
+        let newZ = point.x * matrix[0][2] + point.y * matrix[1][2] + point.z * matrix[2][2] + matrix[3][2]
+        return Point3D( x: newX, y: newY, z: newZ )
+    }
+    
+    func addTranslation( translation: Point3D ) -> Matrix3D {
+        var matrix = self.matrix
+        matrix[3][0] += translation.x
+        matrix[3][1] += translation.y
+        matrix[3][2] += translation.z
+        return Matrix3D( matrix: matrix )
     }
 }
 
