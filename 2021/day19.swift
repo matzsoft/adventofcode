@@ -12,7 +12,6 @@ import Foundation
 
 let overlapThreshold = 12
 
-typealias Orientation = Int
 struct OtherBeacon {
     let position: Point3D
     let distance: Int
@@ -51,11 +50,9 @@ struct Scanner: CustomStringConvertible {
     
     let number: Int
     let beacons: [Beacon]
-    let orientation: Orientation
     
     init( lines: [String] ) {
         number = Int( lines[0].split( separator: " " )[2] )!
-        orientation = 0
         let beacons = lines.dropFirst().map { line -> Point3D in
             let words = line.split( separator: "," )
             return Point3D( x: Int( words[0] )!, y: Int( words[1] )!, z: Int( words[2] )! )
@@ -63,7 +60,9 @@ struct Scanner: CustomStringConvertible {
         
         self.beacons = beacons.map { beacon in
             let otherBeacons = beacons.compactMap { other in
-                return beacon == other ? nil : OtherBeacon( position: other, distance: beacon.distance( other: other ) )
+                return beacon == other
+                    ? nil
+                    : OtherBeacon( position: other, distance: beacon.distance( other: other ) )
             }.sorted( by: { $0.distance < $1.distance } )
             return Beacon( position: beacon, others: otherBeacons )
         }
@@ -91,11 +90,9 @@ struct Region {
         beacons = Set( scanner.beacons.map { $0.position } )
     }
     
-    mutating func addScanner( scanner: Scanner, transformation: Matrix3D ) -> Void {
+    mutating func add( scanner: Scanner, transformation: Matrix3D ) -> Void {
         let scannerX = transformation.transform( point: Point3D( x: 0, y: 0, z: 0 ) )
         let beaconsX = scanner.beacons.map { transformation.transform( point: $0.position ) }
-//        print( "After transform" )
-//        print( beaconsX.map { "\($0)" }.joined( separator: "\n" ) )
         scanners.append( scannerX )
         beacons.formUnion( beaconsX )
     }
@@ -122,15 +119,14 @@ func buildTrials() -> [Matrix3D] {
     return trials
 }
 
-func findIt( trials: [Matrix3D], matches: [ ( Point3D, Point3D ) ] ) -> Matrix3D {
-    let threshold = 9
+func findTransform( trials: [Matrix3D], matches: [ ( Point3D, Point3D ) ] ) throws -> Matrix3D {
+    let threshold = 4
     for trial in trials {
         let translationVectors = matches[..<threshold].map { $0.0 - trial.transform( point: $0.1 ) }
         let matching = translationVectors.filter { $0 == translationVectors[0] }
-        if matching.count >= threshold { return trial }
+        if matching.count >= threshold { return trial.add( translation: translationVectors[0] ) }
     }
-    print( "No trial match." )
-    exit( 1 )
+    throw RuntimeError( "No trial match." )
 }
 
 
@@ -152,11 +148,9 @@ func parse( input: AOCinput ) -> Region {
     func makeMatrix( scannerIndex: Int, seen: Set<Int> ) -> Matrix3D? {
         if let final = matrices[scannerIndex] { return final }
         if let matches = regions[scannerIndex]![0] {
-            let matrix = findIt( trials: trials, matches: matches )
-            let translation = matches[0].0 - matrix.transform( point: matches[0].1 )
-            let final = matrix.addTranslation( translation: translation )
-            matrices[scannerIndex] = final
-            return final
+            let matrix = try! findTransform( trials: trials, matches: matches )
+            matrices[scannerIndex] = matrix
+            return matrix
         } else {
             for nextIndex in regions[scannerIndex]!.filter( { !seen.contains( $0.key ) } ).map( { $0.key } ) {
                 let newSeen = seen.union( [ scannerIndex ] )
@@ -164,9 +158,8 @@ func parse( input: AOCinput ) -> Region {
                     let matches = nextIndex < scannerIndex
                         ? regions[scannerIndex]![nextIndex]!
                         : regions[scannerIndex]![nextIndex]!.map { ( $0.1, $0.0 ) }
-                    let matrix = findIt( trials: trials, matches: matches )
-                    let translation = matches[0].0 - matrix.transform( point: matches[0].1 )
-                    let final = matrix.addTranslation( translation: translation ).multiply( by: intermediate )
+                    let matrix = try! findTransform( trials: trials, matches: matches )
+                    let final = matrix.multiply( by: intermediate )
                     matrices[scannerIndex] = final
                     return final
                 }
@@ -180,7 +173,7 @@ func parse( input: AOCinput ) -> Region {
     }
     
     let region = scanners.indices.dropFirst().reduce( into: Region( scanner: scanners[0] ) ) {
-        $0.addScanner( scanner: scanners[$1], transformation: matrices[$1]! )
+        $0.add( scanner: scanners[$1], transformation: matrices[$1]! )
     }
     
     return region

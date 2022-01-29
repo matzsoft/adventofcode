@@ -635,7 +635,7 @@ struct Matrix3D {
         return Point3D( x: newX, y: newY, z: newZ )
     }
     
-    func addTranslation( translation: Point3D ) -> Matrix3D {
+    func add( translation: Point3D ) -> Matrix3D {
         var matrix = self.matrix
         matrix[3][0] += translation.x
         matrix[3][1] += translation.y
