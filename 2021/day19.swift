@@ -134,13 +134,8 @@ func findIt( trials: [Matrix3D], matches: [ ( Point3D, Point3D ) ] ) -> Matrix3D
 }
 
 
-func parse( input: AOCinput ) -> [Scanner] {
-    return input.paragraphs.map { Scanner( lines: $0 ) }
-}
-
-
-func part1( input: AOCinput ) -> String {
-    let scanners = parse( input: input )
+func parse( input: AOCinput ) -> Region {
+    let scanners = input.paragraphs.map { Scanner( lines: $0 ) }
     let trials = buildTrials()
     var regions = [ Int : [ Int : [ ( Point3D, Point3D ) ] ] ]()
     var matrices = [ 0 : Matrix3D.identity ]
@@ -188,16 +183,32 @@ func part1( input: AOCinput ) -> String {
         $0.addScanner( scanner: scanners[$1], transformation: matrices[$1]! )
     }
     
+    return region
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let region = parse( input: input )
+    
     return "\( region.beacons.count )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    return ""
+    let region = parse( input: input )
+    var maxDistance = 0
+    
+    for firstIndex in region.scanners.indices.dropLast() {
+        for secondIndex in region.scanners.indices.dropFirst( firstIndex + 1 ) {
+            let distance = region.scanners[firstIndex].distance( other: region.scanners[secondIndex] )
+            maxDistance = max( maxDistance, distance )
+        }
+    }
+    return "\(maxDistance)"
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )
