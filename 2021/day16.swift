@@ -10,40 +10,50 @@
 
 import Foundation
 
-let hexTable: [ Character : [Int] ] = [
-    "0" : [ 0, 0, 0, 0 ], "1" : [ 0, 0, 0, 1 ], "2" : [ 0, 0, 1, 0 ], "3" : [ 0, 0, 1, 1 ],
-    "4" : [ 0, 1, 0, 0 ], "5" : [ 0, 1, 0, 1 ], "6" : [ 0, 1, 1, 0 ], "7" : [ 0, 1, 1, 1 ],
-    "8" : [ 1, 0, 0, 0 ], "9" : [ 1, 0, 0, 1 ], "A" : [ 1, 0, 1, 0 ], "B" : [ 1, 0, 1, 1 ],
-    "C" : [ 1, 1, 0, 0 ], "D" : [ 1, 1, 0, 1 ], "E" : [ 1, 1, 1, 0 ], "F" : [ 1, 1, 1, 1 ]
-]
+struct HexTable {
+    let mapping: [ Character : [Int] ]
+    
+    subscript( hexDigit: Character ) -> [Int]? { return mapping[hexDigit] }
+
+    init() {
+        mapping = [
+            "0" : [ 0, 0, 0, 0 ], "1" : [ 0, 0, 0, 1 ], "2" : [ 0, 0, 1, 0 ], "3" : [ 0, 0, 1, 1 ],
+            "4" : [ 0, 1, 0, 0 ], "5" : [ 0, 1, 0, 1 ], "6" : [ 0, 1, 1, 0 ], "7" : [ 0, 1, 1, 1 ],
+            "8" : [ 1, 0, 0, 0 ], "9" : [ 1, 0, 0, 1 ], "A" : [ 1, 0, 1, 0 ], "B" : [ 1, 0, 1, 1 ],
+            "C" : [ 1, 1, 0, 0 ], "D" : [ 1, 1, 0, 1 ], "E" : [ 1, 1, 1, 0 ], "F" : [ 1, 1, 1, 1 ]
+        ]
+    }
+}
+
+let hexTable = HexTable()
 
 struct Packet {
     enum Kind: Int { case sum, product, minimum, maximum, literal, greater, less, equal }
     
     let version: Int
     let type: Kind
-    let value: Int?
+    let literalValue: Int?
     let subpackets: [ Packet ]
     
     var versionSum: Int { version + subpackets.reduce( 0 ) { $0 + $1.versionSum } }
-    var packetValue: Int {
+    var value: Int {
         switch type {
         case .sum:
-            return subpackets.reduce( 0 ) { $0 + $1.packetValue }
+            return subpackets.reduce( 0 ) { $0 + $1.value }
         case .product:
-            return subpackets.reduce( 1 ) { $0 * $1.packetValue }
+            return subpackets.reduce( 1 ) { $0 * $1.value }
         case .minimum:
-            return subpackets.map { $0.packetValue }.min()!
+            return subpackets.map { $0.value }.min()!
         case .maximum:
-            return subpackets.map { $0.packetValue }.max()!
+            return subpackets.map { $0.value }.max()!
         case .literal:
-            return value!
+            return literalValue!
         case .greater:
-            return subpackets[0].packetValue > subpackets[1].packetValue ? 1 : 0
+            return subpackets[0].value > subpackets[1].value ? 1 : 0
         case .less:
-            return subpackets[0].packetValue < subpackets[1].packetValue ? 1 : 0
+            return subpackets[0].value < subpackets[1].value ? 1 : 0
         case .equal:
-            return subpackets[0].packetValue == subpackets[1].packetValue ? 1 : 0
+            return subpackets[0].value == subpackets[1].value ? 1 : 0
         }
     }
     
@@ -53,10 +63,10 @@ struct Packet {
         
         switch type {
         case .literal:
-            value = bits.getLiteral()
+            literalValue = bits.getLiteral()
             subpackets = []
         default:
-            value = nil
+            literalValue = nil
             
             // lengthTypeID = bits.getChunk( size: 1 )
             switch bits.getChunk( size: 1 ) {
@@ -119,7 +129,7 @@ func part1( input: AOCinput ) -> String {
 func part2( input: AOCinput ) -> String {
     let bits = Bits( line: input.line )
     let packet = try! Packet( bits: bits )
-    return "\( packet.packetValue )"
+    return "\( packet.value )"
 }
 
 
