@@ -56,7 +56,6 @@ func part2( input: AOCinput ) -> String {
     let xMax = target.max.x
     let yMin = target.min.y
     let yMax = -target.min.y - 1
-    let bounds = Rect2D( min: Point2D( x: xMin, y: yMin ), max: Point2D( x: xMax, y: yMax ) )
     var count = 0
 
     for x in xMin ... xMax {
@@ -72,6 +71,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )
