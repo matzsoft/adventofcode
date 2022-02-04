@@ -11,21 +11,22 @@
 import Foundation
 
 struct HexTable {
-    let mapping: [ Character : [Int] ]
+    static private let mapping = [
+        [ 0, 0, 0, 0 ], [ 0, 0, 0, 1 ], [ 0, 0, 1, 0 ], [ 0, 0, 1, 1 ],     // 0x0, 0x1, 0x2, 0x3,
+        [ 0, 1, 0, 0 ], [ 0, 1, 0, 1 ], [ 0, 1, 1, 0 ], [ 0, 1, 1, 1 ],     // 0x4, 0x5, 0x6, 0x7,
+        [ 1, 0, 0, 0 ], [ 1, 0, 0, 1 ], [ 1, 0, 1, 0 ], [ 1, 0, 1, 1 ],     // 0x8, 0x9, 0xA, 0xB,
+        [ 1, 1, 0, 0 ], [ 1, 1, 0, 1 ], [ 1, 1, 1, 0 ], [ 1, 1, 1, 1 ]      // 0xC, 0xD, 0xE, 0xF
+    ]
     
-    subscript( hexDigit: Character ) -> [Int]? { return mapping[hexDigit] }
-
-    init() {
-        mapping = [
-            "0" : [ 0, 0, 0, 0 ], "1" : [ 0, 0, 0, 1 ], "2" : [ 0, 0, 1, 0 ], "3" : [ 0, 0, 1, 1 ],
-            "4" : [ 0, 1, 0, 0 ], "5" : [ 0, 1, 0, 1 ], "6" : [ 0, 1, 1, 0 ], "7" : [ 0, 1, 1, 1 ],
-            "8" : [ 1, 0, 0, 0 ], "9" : [ 1, 0, 0, 1 ], "A" : [ 1, 0, 1, 0 ], "B" : [ 1, 0, 1, 1 ],
-            "C" : [ 1, 1, 0, 0 ], "D" : [ 1, 1, 0, 1 ], "E" : [ 1, 1, 1, 0 ], "F" : [ 1, 1, 1, 1 ]
-        ]
+    static subscript( hexDigit: Character ) -> [Int] {
+        if let value = Int( String( hexDigit ), radix: 16 ) {
+            return mapping[value]
+        }
+        print( "Invalid hex digit \(hexDigit)" )
+        exit( 1 )
     }
 }
 
-let hexTable = HexTable()
 
 struct Packet {
     enum Kind: Int { case sum, product, minimum, maximum, literal, greater, less, equal }
@@ -96,7 +97,7 @@ class Bits {
     var count: Int { bits.count }
     
     init( line: String ) {
-        bits = line.flatMap { hexTable[$0]! }
+        bits = line.flatMap { HexTable[$0] }
     }
     
     func getChunk( size: Int ) -> Int {
