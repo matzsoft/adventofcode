@@ -32,8 +32,12 @@ enum SnailfishElement: CustomStringConvertible {
 class SnailfishNumber: CustomStringConvertible {
     enum ParseState { case initial, lhs, needComma, rhs, needClose, final }
     var contents: [SnailfishElement]
+    var index: Int
     
     var description: String { contents.map { "\($0)" }.joined() }
+    var next: SnailfishElement { let element = contents[index]; index += 1; return element }
+    var peek: SnailfishElement { contents[index] }
+    var advance: Void { index += 1 }
     var magnitude: Int {
         let tree = try! SnailfishTree( number: self )
         return tree.magnitude
@@ -41,6 +45,7 @@ class SnailfishNumber: CustomStringConvertible {
     
     init( contents: [SnailfishElement] ) {
         self.contents = contents
+        index = contents.startIndex
     }
     
     init( line: String ) throws {
@@ -109,6 +114,7 @@ class SnailfishNumber: CustomStringConvertible {
         if state != .final {
             throw RuntimeError( "Unbalanced brackets." )
         }
+        index = contents.startIndex
     }
     
     func explode() -> Bool {
@@ -203,39 +209,31 @@ struct SnailfishTree: CustomStringConvertible {
     var magnitude: Int { 3 * left.magnitude + 2 * right.magnitude }
 
     init( number: SnailfishNumber ) throws {
-        var index = 0
-        try self.init( elements: number.contents, index: &index )
-    }
-    
-    init( elements: [SnailfishElement], index: inout Int ) throws {
-        guard case .leftBracket = elements[index] else { throw RuntimeError( "Unexpected parse error 1." ) }
+        guard case .leftBracket = number.next else { throw RuntimeError( "Unexpected parse error 1." ) }
         
-        index += 1
-        switch elements[index] {
+        switch number.peek {
         case .leftBracket:
-            left = SnailfishNode.Snailfish( try SnailfishTree( elements: elements, index: &index ) )
+            left = SnailfishNode.Snailfish( try SnailfishTree( number: number ) )
         case .number( let int ):
             left = SnailfishNode.regular( int )
-            index += 1
+            number.advance
         default:
             throw RuntimeError( "Unexpected parse error 2." )
         }
         
-        guard case .comma = elements[index] else { throw RuntimeError( "Unexpected parse error 3." ) }
+        guard case .comma = number.next else { throw RuntimeError( "Unexpected parse error 3." ) }
 
-        index += 1
-        switch elements[index] {
+        switch number.peek {
         case .leftBracket:
-            right = SnailfishNode.Snailfish( try SnailfishTree( elements: elements, index: &index ) )
+            right = SnailfishNode.Snailfish( try SnailfishTree( number: number ) )
         case .number( let int ):
             right = SnailfishNode.regular( int )
-            index += 1
+            number.advance
         default:
             throw RuntimeError( "Unexpected parse error 4." )
         }
 
-        guard case .rightBracket = elements[index] else { throw RuntimeError( "Unexpected parse error 1." ) }
-        index += 1
+        guard case .rightBracket = number.next else { throw RuntimeError( "Unexpected parse error 1." ) }
     }
 }
 
@@ -275,53 +273,25 @@ func part1( input: AOCinput ) -> String {
     
     switch runtype {
     case .parse:
-        let strings = numbers.map { "\($0)" }
-        let zipped = zip( input.lines, strings )
-        var count = 0
-        
-        for ( original, parsed ) in zipped {
-            if original == parsed { count += 1 }
-        }
-//        let correctCount = zipped.reduce( 0 ) { $0 += ( $1.0 != $1.1 ? 0 : 1 ) }
-        return "\(count)"
+        return "\( zip( input.lines, numbers.map { "\($0)" } ).filter { $0.0 == $0.1 }.count )"
     case .explode:
-        if numbers[0].explode() {
-            return "\(numbers[0])"
-        }
+        if numbers[0].explode() { return "\(numbers[0])" }
         return "No explosion required"
     case .reduce:
         numbers[0].reduce()
         return "\(numbers[0])"
     case .add:
-        var sum: SnailfishNumber?
-        
-        for number in numbers {
-            if sum == nil {
-                sum = number
-            } else {
-                sum = sum!.add( rhs: number )
-            }
-        }
-        return "\(sum!)"
+        return "\( numbers.dropFirst().reduce( numbers.first! ) { $0.add( rhs: $1 ) } )"
     case .magnitude:
         return "\( numbers[0].magnitude )"
     case .homework:
-        var sum: SnailfishNumber?
-        
-        for number in numbers {
-            if sum == nil {
-                sum = number
-            } else {
-                sum = sum!.add( rhs: number )
-            }
-        }
-        return "\(sum!.magnitude)"
+        return "\( numbers.dropFirst().reduce( numbers.first! ) { $0.add( rhs: $1 ) }.magnitude )"
     }
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let ( runtype, numbers ) = parse( input: input )
+    let ( _, numbers ) = parse( input: input )
     var biggest = 0
     
     for index1 in 0 ..< numbers.count - 1 {
@@ -336,6 +306,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )
