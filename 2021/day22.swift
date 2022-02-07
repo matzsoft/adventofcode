@@ -36,10 +36,6 @@ struct Region3D {
     
     var volume: Int { rects.reduce( 0 ) { $0 + $1.volume } }
     
-    init() {
-        rects = []
-    }
-
     init( rects: [Rect3D] ) {
         self.rects = rects
     }
@@ -117,11 +113,10 @@ func parse( input: AOCinput ) -> [Cuboid] {
 
 
 func part1( input: AOCinput ) -> String {
-    let steps = parse( input: input )
-    let valid = steps.filter {
+    let steps = parse( input: input ).filter {
         validZone.contains( point: $0.cube.min ) && validZone.contains( point: $0.cube.max )
     }
-    let onCubes = valid.reduce( into: Set<Point3D>() ) {
+    let onCubes = steps.reduce( into: Set<Point3D>() ) {
         if $1.action == .on {
             $0.formUnion( $1.cube.points )
         } else {
@@ -135,22 +130,12 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let steps = parse( input: input )
-//    let onRegion = steps.reduce( Region3D() ) {
-//        if $1.action == .on {
-//            return $0.add( rect: $1.cube )
-//        } else {
-//            return $0.subtract( rect: $1.cube )
-//        }
-//    }
-    var onRegion = Region3D()
-    for step in steps {
-        switch step.action {
+    let onRegion = steps.reduce( Region3D( rects: [] ) ) {
+        switch $1.action {
         case .on:
-            let region = onRegion.add( rect: step.cube )
-            onRegion = region
+            return $0.add( rect: $1.cube )
         case .off:
-            let region = onRegion.subtract( rect: step.cube )
-            onRegion = region
+            return $0.subtract( rect: $1.cube )
         }
     }
     
