@@ -32,7 +32,7 @@ struct Cuboid {
 }
 
 struct Region3D {
-    let rects: [Rect3D]
+    var rects: [Rect3D]
     
     var volume: Int { rects.reduce( 0 ) { $0 + $1.volume } }
     
@@ -40,35 +40,19 @@ struct Region3D {
         self.rects = rects
     }
     
-    func add( rect: Rect3D ) -> Region3D {
-        if rects.isEmpty { return Region3D( rects: [ rect ] ) }
-//        let residual = rects.reduce( Region3D( rects: [ rect ] ) ) { $0.subtract( rect: $1 ) }
-        var residual = Region3D( rects: [ rect ] )
-        for oldRect in rects {
-            residual = residual.subtract( rect: oldRect )
-            if residual.rects.isEmpty {
-                return self
-            }
-        }
-        return Region3D( rects: rects + residual.rects )
+    mutating func add( rect: Rect3D ) -> Void {
+        subtract( rect: rect )
+        rects.append( rect )
     }
 
-    func subtract( rect: Rect3D ) -> Region3D {
-        return Region3D( rects: rects.flatMap { rect.subtract( from: $0 ) } )
+    mutating func subtract( rect: Rect3D ) -> Void {
+        rects = rects.flatMap { rect.subtract( from: $0 ) }
     }
 }
 
 extension Rect3D {
-    func add( to: Rect3D ) -> [Rect3D] {
-        guard let intersection = self.intersection( with: to ) else { return [ to, self ] }
-        
-//        let sorted = [ self, to ].sorted( by: { $0.volume > $1.volume } )
-//
-//        return [ sorted[0] ] + intersection.subtract( from: sorted[1] )
-        return [ to ] + intersection.subtract( from: self )
-    }
-    
     func subtract( from: Rect3D ) -> [Rect3D] {
+        if intersection( with: from ) == nil { return [ from ] }
         let choppers = [
             Rect3D(
                 min: Point3D( x: Int.min, y: Int.min, z: Int.min ),
@@ -95,13 +79,7 @@ extension Rect3D {
                 max: Point3D( x: max.x, y: Int.max,   z: max.z )
             ),
         ]
-        
-//        let chopped = choppers.map { $0.intersection( with: from ) }
-        var chopped = [Rect3D?]()
-        for chopper in choppers {
-            let result = chopper.intersection( with: from )
-            chopped.append( result )
-        }
+
         return choppers.compactMap { $0.intersection( with: from ) }
     }
 }
@@ -130,12 +108,12 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let steps = parse( input: input )
-    let onRegion = steps.reduce( Region3D( rects: [] ) ) {
+    let onRegion = steps.reduce( into: Region3D( rects: [] ) ) {
         switch $1.action {
         case .on:
-            return $0.add( rect: $1.cube )
+            $0.add( rect: $1.cube )
         case .off:
-            return $0.subtract( rect: $1.cube )
+            $0.subtract( rect: $1.cube )
         }
     }
     
