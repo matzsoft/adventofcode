@@ -55,10 +55,8 @@ func performOpen( package: String ) throws -> Void {
     let libraryFolder = try findDirectory( name: "Library" )
     let pattern = "\(libraryFolder)/*.swift"
     let libraryFiles = glob( pattern: pattern )
-    let removalFiles = [
-        "\(sourcesFolder)/\(package).swift",
-        "Tests/\(package)Tests/\(package)Tests.swift"
-    ]
+    let packageSwift = "\(sourcesFolder)/\(package).swift"
+    let testSwift = "Tests/\(package)Tests/\(package)Tests.swift"
 
     guard fileManager.fileExists( atPath: swiftFile ) else {
         var stderr = FileHandlerOutputStream( FileHandle.standardError )
@@ -85,9 +83,9 @@ func performOpen( package: String ) throws -> Void {
         throw ExitCode.failure
     }
 
-    for file in removalFiles {
-        try fileManager.removeItem( atPath: file )
-    }
+    try fileManager.removeItem( atPath: packageSwift )
+    try fileManager.removeItem( atPath: testSwift )
+    fileManager.createFile( atPath: testSwift, contents: nil )
     try fileManager.copyItem( atPath: "../\(swiftFile)", toPath: mainSwift )
     try fileManager.copyItem( atPath: "Package.swift", toPath: "stock-Package.swift" )
     for file in libraryFiles {
