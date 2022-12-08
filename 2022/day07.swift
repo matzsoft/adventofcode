@@ -41,45 +41,29 @@ class Directory {
 }
 
 
-func parse( input: AOCinput ) throws -> Directory {
-    var index = 0
+func parse( input: AOCinput ) -> Directory {
     let root = Directory( name: "/", parent: nil )
     var cwd = root
     
-    while index < input.lines.count {
-        let words = input.lines[index].split( separator: " " ).map { String( $0 ) }
-        guard words[0] == "$" else { throw RuntimeError( "Expecting command." ) }
+    for line in input.lines {
+        let words = line.split( separator: " " ).map { String( $0 ) }
         
-        switch words[1] {
-        case "cd":
-            switch words[2] {
-            case "/":
-                cwd = root
-            case "..":
-                guard let parent = cwd.parent else { throw RuntimeError( "Can't go up from root." ) }
-                cwd = parent
-            default:
-                if let dir = cwd.directories.first( where: { $0.name == words[2] } ) {
-                    cwd = dir
-                } else {
-                    throw RuntimeError( "Unknown directory." )
+        switch words[0] {
+        case "dir":
+            cwd.directories.append( Directory( name: words[1], parent: cwd ) )
+        case "$":
+            if words[1] == "cd" {
+                switch words[2] {
+                case "/":
+                    cwd = root
+                case "..":
+                    cwd = cwd.parent!
+                default:
+                    cwd = cwd.directories.first( where: { $0.name == words[2] } )!
                 }
-            }
-            index += 1
-        case "ls":
-            index += 1
-            while index < input.lines.count && input.lines[index].first! != "$" {
-                let words = input.lines[index].split( separator: " " ).map { String( $0 ) }
-                
-                if words[0] == "dir" {
-                    cwd.directories.append( Directory( name: words[1], parent: cwd ) )
-                } else {
-                    cwd.files.append( File( name: words[1], size: Int( words[0] )! ) )
-                }
-                index += 1
             }
         default:
-            throw RuntimeError( "Unknown command." )
+            cwd.files.append( File( name: words[1], size: Int( words[0] )! ) )
         }
     }
     
@@ -88,7 +72,7 @@ func parse( input: AOCinput ) throws -> Directory {
 
 
 func part1( input: AOCinput ) -> String {
-    let root = try! parse( input: input )
+    let root = parse( input: input )
     _ = root.usage()
     let answer = root.flatten.filter { $0.size <= 100000 }.reduce( 0, { $0 + $1.size } )
     
@@ -99,7 +83,7 @@ func part1( input: AOCinput ) -> String {
 func part2( input: AOCinput ) -> String {
     let capacity = 70000000
     let required = 30000000
-    let root = try! parse( input: input )
+    let root = parse( input: input )
     let unused = capacity - root.usage()
     let needed = required - unused
     let directories = root.flatten.sorted( by: { $0.size < $1.size } )
