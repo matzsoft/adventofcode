@@ -21,19 +21,18 @@ func parse( input: AOCinput ) -> [[Int]] {
 func part1( input: AOCinput ) -> String {
     let map = parse( input: input )
     var counts = Array( repeating: Array( repeating: 0, count: map[0].count ), count: map.count )
+    func visibleCheck( row: Int, col: Int, maximum: Int ) -> Int {
+        guard maximum < map[row][col] else { return maximum }
+        counts[row][col] += 1
+        return map[row][col]
+    }
 
     for row in 0 ..< map[0].count {
         var left = -1
         var right = -1
         for col in 0 ..< map.count {
-            if left < map[row][col] {
-                counts[row][col] += 1
-                left = map[row][col]
-            }
-            if right < map[row][ map.count - 1 - col ] {
-                counts[row][ map.count - 1 - col ] += 1
-                right = map[row][ map.count - 1 - col ]
-            }
+            left = visibleCheck( row: row, col: col, maximum: left )
+            right = visibleCheck( row: row, col: map.count - 1 - col, maximum: right )
         }
     }
     
@@ -41,31 +40,24 @@ func part1( input: AOCinput ) -> String {
         var top = -1
         var bottom = -1
         for row in 0 ..< map[0].count {
-            if top < map[row][col] {
-                counts[row][col] += 1
-                top = map[row][col]
-            }
-            if bottom < map[ map[0].count - 1 - row ][col] {
-                counts[ map[0].count - 1 - row ][col] += 1
-                bottom = map[ map[0].count - 1 - row ][col]
-            }
+            top = visibleCheck( row: row, col: col, maximum: top )
+            bottom = visibleCheck( row: map[0].count - 1 - row, col: col, maximum: bottom )
         }
     }
     
-    let dork = counts.flatMap { $0 }.filter { $0 > 0 }.count
-    return "\(dork)"
+    return "\( counts.flatMap { $0 }.filter { $0 > 0 }.count )"
 }
 
 
-func leftUp( index: Int, tree: Int? ) -> Int {
-    guard tree != nil else { return index }
-    return index - tree!
+func viewingDistance( index: Int, where predicate: (Int) -> Bool ) -> Int {
+    guard let tree = ( 0 ..< index ).reversed().first( where: predicate ) else { return index }
+    return index - tree
 }
 
 
-func rightDown( index: Int, limit: Int, tree: Int? ) -> Int {
-    guard tree != nil else { return limit - 1 - index }
-    return tree! - index
+func viewingDistance( index: Int, limit: Int, where predicate: (Int) -> Bool ) -> Int {
+    guard let tree = ( index + 1 ..< limit ).first( where: predicate ) else { return limit - 1 - index }
+    return tree - index
 }
 
 
@@ -74,24 +66,19 @@ func part2( input: AOCinput ) -> String {
     var counts = Array( repeating: Array( repeating: 0, count: map[0].count ), count: map.count )
     for row in 0 ..< map.count {
         for col in 0 ..< map[row].count {
-            let up = ( 0 ..< row ).reversed().first( where: { map[$0][col] >= map[row][col] } )
-            let upCount = leftUp( index: row, tree: up )
+            let upCount = viewingDistance( index: row, where: { map[$0][col] >= map[row][col] } )
+            let downCount = viewingDistance(
+                index: row, limit: map.count, where: { map[$0][col] >= map[row][col] } )
             
-            let down = ( row + 1 ..< map.count ).first( where: { map[$0][col] >= map[row][col] } )
-            let downCount = rightDown( index: row, limit: map.count, tree: down )
-            
-            let left = ( 0 ..< col ).reversed().first( where: { map[row][$0] >= map[row][col] } )
-            let leftCount = leftUp( index: col, tree: left )
-            
-            let right = ( col + 1 ..< map[row].count ).first( where: { map[row][$0] >= map[row][col] } )
-            let rightCount = rightDown( index: col, limit: map[row].count, tree: right )
+            let leftCount = viewingDistance( index: col, where: { map[row][$0] >= map[row][col] } )
+            let rightCount = viewingDistance(
+                index: col, limit: map[row].count, where: { map[row][$0] >= map[row][col] } )
             
             counts[row][col] = upCount * downCount * leftCount * rightCount
         }
     }
     
-    let dork = counts.flatMap { $0 }.max()!
-    return "\(dork)"
+    return "\( counts.flatMap { $0 }.max()! )"
 }
 
 
