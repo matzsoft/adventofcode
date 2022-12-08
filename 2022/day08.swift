@@ -55,30 +55,26 @@ func viewingDistance( index: Int, where predicate: (Int) -> Bool ) -> Int {
 }
 
 
-func viewingDistance( index: Int, limit: Int, where predicate: (Int) -> Bool ) -> Int {
-    guard let tree = ( index + 1 ..< limit ).first( where: predicate ) else { return limit - 1 - index }
-    return tree - index
+func viewingDistance( _ range: Range<Int>, where predicate: (Int) -> Bool ) -> Int {
+    guard let tree = range.first( where: predicate ) else { return range.upperBound - range.lowerBound }
+    return tree + 1 - range.lowerBound
 }
 
 
 func part2( input: AOCinput ) -> String {
     let map = parse( input: input )
-    var counts = Array( repeating: Array( repeating: 0, count: map[0].count ), count: map.count )
-    for row in 0 ..< map.count {
-        for col in 0 ..< map[row].count {
-            let upCount = viewingDistance( index: row, where: { map[$0][col] >= map[row][col] } )
-            let downCount = viewingDistance(
-                index: row, limit: map.count, where: { map[$0][col] >= map[row][col] } )
+    let scenicScores = (  0 ..< map.count ).map { row in
+        ( 0 ..< map[row].count ).map { col in
+            let upCount = viewingDistance( index: row ) { map[$0][col] >= map[row][col] }
+            let downCount = viewingDistance( row + 1 ..< map.count ) { map[$0][col] >= map[row][col] }
+            let leftCount = viewingDistance( index: col ) { map[row][$0] >= map[row][col] }
+            let rightCount = viewingDistance( col + 1 ..< map[row].count ) { map[row][$0] >= map[row][col] }
             
-            let leftCount = viewingDistance( index: col, where: { map[row][$0] >= map[row][col] } )
-            let rightCount = viewingDistance(
-                index: col, limit: map[row].count, where: { map[row][$0] >= map[row][col] } )
-            
-            counts[row][col] = upCount * downCount * leftCount * rightCount
+            return upCount * downCount * leftCount * rightCount
         }
     }
     
-    return "\( counts.flatMap { $0 }.max()! )"
+    return "\( scenicScores.flatMap { $0 }.max()! )"
 }
 
 
