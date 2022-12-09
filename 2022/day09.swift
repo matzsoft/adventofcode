@@ -20,6 +20,31 @@ extension Point2D {
     func isAdjacent( _ other: Point2D ) -> Bool {
         abs( x - other.x ) < 2 && abs( y - other.y ) < 2
     }
+    
+    func moveToward( _ other: Point2D ) -> Point2D {
+        let vector = other - self
+        return self + Point2D( x: vector.x.signum(), y: vector.y.signum() )
+    }
+}
+
+
+func trackTail( input: AOCinput, knotCount: Int ) -> Int {
+    let motions = parse( input: input )
+    var knots = Array( repeating: Point2D( x: 0, y: 0 ), count: knotCount )
+    var visited = Set<Point2D>( [ knots[0] ] )
+    
+    for motion in motions {
+        for _ in 0 ..< motion.magnitude {
+            knots[0] = knots[0] + motion.direction
+            for knotNumber in 1 ..< knots.count {
+                if !knots[knotNumber].isAdjacent( knots[ knotNumber - 1 ] ) {
+                    knots[knotNumber] = knots[knotNumber].moveToward( knots[ knotNumber - 1 ] )
+                }
+            }
+            visited.insert( knots.last! )
+        }
+    }
+    return visited.count
 }
 
 
@@ -32,43 +57,12 @@ func parse( input: AOCinput ) -> [Motion] {
 
 
 func part1( input: AOCinput ) -> String {
-    let motions = parse( input: input )
-    var head =  Point2D( x: 0, y: 0 )
-    var tail =  head
-    var visited = Set<Point2D>( [ tail ] )
-    
-    for motion in motions {
-        for _ in 0 ..< motion.magnitude {
-            head = head + motion.direction
-            if !tail.isAdjacent( head ) {
-                let vector = head - tail
-                tail = tail + Point2D( x: vector.x.signum(), y: vector.y.signum() )
-                visited.insert( tail )
-            }
-        }
-    }
-    return "\(visited.count)"
+    return "\( trackTail( input: input, knotCount: 2 ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let motions = parse( input: input )
-    var knots = Array( repeating: Point2D( x: 0, y: 0 ), count: 10 )
-    var visited = Set<Point2D>( [ knots[0] ] )
-    
-    for motion in motions {
-        for _ in 0 ..< motion.magnitude {
-            knots[0] = knots[0] + motion.direction
-            for knotNumber in 1 ..< knots.count {
-                if !knots[knotNumber].isAdjacent( knots[ knotNumber - 1 ] ) {
-                    let vector = knots[ knotNumber - 1 ] - knots[knotNumber]
-                    knots[knotNumber] = knots[knotNumber] + Point2D( x: vector.x.signum(), y: vector.y.signum() )
-                }
-            }
-            visited.insert( knots.last! )
-        }
-    }
-    return "\(visited.count)"
+    return "\( trackTail( input: input, knotCount: 10 ) )"
 }
 
 
