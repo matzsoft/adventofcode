@@ -23,6 +23,12 @@ enum Opcode: String {
 struct Instruction {
     let opcode: Opcode
     let value:  Int
+    
+    init( line: String ) {
+        let words = line.split( separator: " " ).map { String( $0 ) }
+        opcode = Opcode( rawValue: words[0] )!
+        value = words.count == 2 ? Int( words[1] )! : 0
+    }
 }
 
 struct CPU {
@@ -32,11 +38,7 @@ struct CPU {
     let memory: [Instruction]
     
     init( lines: [String] ) {
-        memory = lines.map {
-            let words = $0.split( separator: " " ).map { String( $0 ) }
-            let value = words.count == 2 ? Int( words[1] )! : 0
-            return Instruction( opcode: Opcode( rawValue: words[0] )!, value: value )
-        }
+        memory = lines.map { Instruction( line: $0 ) }
     }
     
     mutating func advance( to cycle: Int ) -> Int {
@@ -50,13 +52,8 @@ struct CPU {
 }
 
 
-func parse( input: AOCinput ) -> CPU {
-    return CPU( lines: input.lines )
-}
-
-
 func part1( input: AOCinput ) -> String {
-    var cpu = parse( input: input )
+    var cpu = CPU( lines: input.lines )
     let sum = stride( from: 20, through: 220, by: 40 ).reduce( 0 ) { sum, cycle in
         return sum + cycle * cpu.advance( to: cycle )
     }
@@ -68,7 +65,7 @@ func part1( input: AOCinput ) -> String {
 func part2( input: AOCinput ) -> String {
     let rows = 6
     let cols = 40
-    var cpu = parse( input: input )
+    var cpu = CPU( lines: input.lines )
     var pixels = Array( repeating: Array( repeating: false, count: cols ), count: rows )
     let bld = try! BlockLetterDictionary( from: "L5x6+0.txt" )
 
