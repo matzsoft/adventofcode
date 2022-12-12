@@ -10,22 +10,26 @@
 
 import Foundation
 
-
-func parse( input: AOCinput ) -> ( [[Int]], Point2D, Point2D ) {
-    var start = Point2D( x: 0, y: 0 )
-    var target = start
-    let map = input.lines.enumerated().map { rowIndex, row in
-        row.enumerated().map { colIndex, character in
-            if character == "S" {
-                start = Point2D( x: colIndex, y: rowIndex )
-                return 0
-            } else if character == "E" {
-                target = Point2D( x: colIndex, y: rowIndex )
-                return 25
-            }
+func parse( input: AOCinput ) -> ( [ Point2D : Int ], Point2D, Point2D ) {
+    let raw = input.lines.enumerated().reduce( into: [ Point2D : Character ]()) { dict, tuple in
+        let ( rowIndex, row ) = tuple
+        dict = row.enumerated().reduce( into: dict ) { dict, tuple in
+            let ( colIndex, character ) = tuple
+            dict[ Point2D( x: colIndex, y: rowIndex ) ] = character
+        }
+    }
+    let map = raw.mapValues { character in
+        switch character {
+        case "S":
+            return 0
+        case "E":
+            return 25
+        default:
             return Int( character.asciiValue! - Character( "a" ).asciiValue! )
         }
     }
+    let start = raw.first( where: { $1 == "S" } )!.key
+    let target = raw.first( where: { $1 == "E" } )!.key
     return ( map, start, target )
 }
 
@@ -35,9 +39,8 @@ struct Position {
     let distance: Int
 }
 
-func shortestPath( map: [[Int]], start: Point2D, target: Point2D ) -> Int? {
+func shortestPath( map: [ Point2D : Int ], start: Point2D, target: Point2D ) -> Int? {
     var visited = Set( [ start ] )
-    let bounds = Rect2D( min: Point2D(x: 0, y: 0), width: map[0].count, height: map.count )!
     var queue = [ Position( position: start, distance: 0 ) ]
     
     while !queue.isEmpty {
@@ -46,8 +49,8 @@ func shortestPath( map: [[Int]], start: Point2D, target: Point2D ) -> Int? {
         
         for direction in DirectionUDLR.allCases {
             let next = position.position.move( direction: direction )
-            if !visited.contains( next ) && bounds.contains( point: next ) {
-                if map[next.y][next.x] < map[position.position.y][position.position.x] + 2 {
+            if !visited.contains( next ) && map[next] != nil {
+                if map[next]! < map[position.position]! + 2 {
                     queue.append( Position( position: next, distance: position.distance + 1 ) )
                     visited.insert( next )
                 }
@@ -69,11 +72,7 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let ( map, _, target ) = parse( input: input )
-    let startPoints = map.indices.flatMap { row in
-        map[row].indices.compactMap { col in
-            return map[row][col] == 0 ? Point2D( x: col, y: row ) : nil
-        }
-    }
+    let startPoints = map.filter { $0.value == 0 }.map { $0.key }
     let distance = startPoints.compactMap { shortestPath( map: map, start: $0, target: target ) }.min()!
     return "\(distance)"
 }
