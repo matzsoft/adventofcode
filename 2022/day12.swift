@@ -10,26 +10,36 @@
 
 import Foundation
 
+extension [String] {
+    func find( first character: Character ) -> Point2D? {
+        guard let rowIndex = self.firstIndex( where: { $0.contains( character ) } ) else { return nil }
+        guard let colIndex = self[rowIndex].firstIndex( where: { $0 == character } ) else { return nil }
+        let row = distance( from: startIndex, to: rowIndex )
+        let col = self[row].distance( from: self[row].startIndex, to: colIndex )
+        
+        return Point2D( x: col, y: row )
+    }
+}
+
+func height( from character: Character ) -> Int {
+    switch character {
+    case "S":
+        return 0
+    case "E":
+        return 25
+    default:
+        return Int( character.asciiValue! - Character( "a" ).asciiValue! )
+    }
+}
+
+
 func parse( input: AOCinput ) -> ( [ Point2D : Int ], Point2D, Point2D ) {
-    let raw = input.lines.enumerated().reduce( into: [ Point2D : Character ]()) { dict, tuple in
+    let map = input.lines.enumerated().reduce( into: [ Point2D : Int ]()) { dict, tuple in
         let ( rowIndex, row ) = tuple
-        dict = row.enumerated().reduce( into: dict ) { dict, tuple in
-            let ( colIndex, character ) = tuple
-            dict[ Point2D( x: colIndex, y: rowIndex ) ] = character
-        }
+        row.enumerated().forEach { dict[ Point2D( x: $0, y: rowIndex ) ] = height( from: $1 ) }
     }
-    let map = raw.mapValues { character in
-        switch character {
-        case "S":
-            return 0
-        case "E":
-            return 25
-        default:
-            return Int( character.asciiValue! - Character( "a" ).asciiValue! )
-        }
-    }
-    let start = raw.first( where: { $1 == "S" } )!.key
-    let target = raw.first( where: { $1 == "E" } )!.key
+    let start = input.lines.find( first: "S" )!
+    let target = input.lines.find( first: "E" )!
     return ( map, start, target )
 }
 
