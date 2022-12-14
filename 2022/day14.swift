@@ -10,6 +10,10 @@
 
 import Foundation
 
+// Note - in order to use existing Direction8, treat gravity as pulling the sand North.
+let directions: [Direction8] = [ .N, .NW, .NE ]
+let drip = Point2D( x: 500, y: 0 )
+
 extension Array {
     var pairs: [ ( Element, Element ) ] {
         return ( 0 ..< count - 1 ).map { ( self[$0], self[$0+1] ) }
@@ -17,18 +21,18 @@ extension Array {
 }
 
 
-func django( first: Point2D, second: Point2D ) -> Set<Point2D> {
-    if first.x == second.x {
-        let start = min( first.y, second.y )
-        let end = max( first.y, second.y )
+func line( from: Point2D, to: Point2D ) -> Set<Point2D> {
+    if from.x == to.x {
+        let start = min( from.y, to.y )
+        let end = max( from.y, to.y )
         return ( start ... end ).reduce( into: Set<Point2D>() ) { set, y in
-            set.insert( Point2D( x: first.x, y: y ) )
+            set.insert( Point2D( x: from.x, y: y ) )
         }
-    } else if first.y == second.y {
-        let start = min( first.x, second.x )
-        let end = max( first.x, second.x )
+    } else if from.y == to.y {
+        let start = min( from.x, to.x )
+        let end = max( from.x, to.x )
         return ( start ... end ).reduce( into: Set<Point2D>() ) { set, x in
-            set.insert( Point2D( x: x, y: first.y ) )
+            set.insert( Point2D( x: x, y: from.y ) )
         }
     }
     fatalError( "Can't do diagonal lines" )
@@ -40,42 +44,29 @@ func parse( input: AOCinput ) -> Set<Point2D> {
         $0.split( whereSeparator: { " ->".contains( $0 ) } ).map { pair in
             let coordinates = pair.split( separator: "," ).map { Int( $0 )! }
             return Point2D( x: coordinates[0], y: coordinates[1] )
-        }.pairs.map { django( first: $0.0, second: $0.1 ) }
+        }.pairs.map { line( from: $0.0, to: $0.1 ) }
     }
     return structures.flatMap { $0 }.reduce( Set<Point2D>() ) { $0.union( $1 ) }
 }
 
 
-// Note - in order to use existing Direction8, treat gravity as pulling the sand North.
 func part1( input: AOCinput ) -> String {
     let blocks = parse( input: input )
-    let drip = Point2D( x: 500, y: 0 )
     let bounds = Rect2D( points: Array( blocks ) ).expand( with: drip )
     var sand = Set<Point2D>()
     
     while true {
         var next = drip
         
+        FALL:
         while true {
-            var trial = next.move( direction: Direction8.N )
-            if !bounds.contains( point: trial ) { return "\(sand.count)" }
-            guard blocks.contains( trial ) || sand.contains( trial ) else {
-                next = trial
-                continue
-            }
-            
-            trial = next.move( direction: Direction8.NW )
-            if !bounds.contains( point: trial ) { return "\(sand.count)" }
-            guard blocks.contains( trial ) || sand.contains( trial ) else {
-                next = trial
-                continue
-            }
-            
-            trial = next.move( direction: Direction8.NE )
-            if !bounds.contains( point: trial ) { return "\(sand.count)" }
-            guard blocks.contains( trial ) || sand.contains( trial ) else {
-                next = trial
-                continue
+            for direction in directions {
+                let trial = next.move( direction: direction )
+                if !bounds.contains( point: trial ) { return "\(sand.count)" }
+                guard blocks.contains( trial ) || sand.contains( trial ) else {
+                    next = trial
+                    continue FALL
+                }
             }
             
             sand.insert( next )
@@ -87,7 +78,6 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let blocks = parse( input: input )
-    let drip = Point2D( x: 500, y: 0 )
     let bounds = Rect2D( points: Array( blocks ) ).expand( with: drip )
     let limit = bounds.max.y + 1
     var sand = Set<Point2D>()
@@ -95,27 +85,18 @@ func part2( input: AOCinput ) -> String {
     while true {
         var next = drip
         
+        FALL:
         while true {
             if next.y == limit {
                 sand.insert( next )
                 break
             }
-            var trial = next.move( direction: Direction8.N )
-            guard blocks.contains( trial ) || sand.contains( trial ) else {
-                next = trial
-                continue
-            }
-            
-            trial = next.move( direction: Direction8.NW )
-            guard blocks.contains( trial ) || sand.contains( trial ) else {
-                next = trial
-                continue
-            }
-            
-            trial = next.move( direction: Direction8.NE )
-            guard blocks.contains( trial ) || sand.contains( trial ) else {
-                next = trial
-                continue
+            for direction in directions {
+                let trial = next.move( direction: direction )
+                guard blocks.contains( trial ) || sand.contains( trial ) else {
+                    next = trial
+                    continue FALL
+                }
             }
             
             sand.insert( next )
