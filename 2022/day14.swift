@@ -39,6 +39,35 @@ func line( from: Point2D, to: Point2D ) -> Set<Point2D> {
 }
 
 
+func sandCount( blocks: Set<Point2D>, bounds: Rect2D, limit: Int? ) -> Int {
+    var sand = Set<Point2D>()
+    
+    while true {
+        var next = drip
+        
+        FALL:
+        while true {
+            if next.y == limit {
+                sand.insert( next )
+                break
+            }
+            for direction in directions {
+                let trial = next.move( direction: direction )
+                if limit == nil && !bounds.contains( point: trial ) { return sand.count }
+                guard blocks.contains( trial ) || sand.contains( trial ) else {
+                    next = trial
+                    continue FALL
+                }
+            }
+            
+            sand.insert( next )
+            if next == drip { return sand.count }
+            break
+        }
+    }
+}
+
+
 func parse( input: AOCinput ) -> Set<Point2D> {
     let structures = input.lines.map {
         $0.split( whereSeparator: { " ->".contains( $0 ) } ).map { pair in
@@ -53,57 +82,16 @@ func parse( input: AOCinput ) -> Set<Point2D> {
 func part1( input: AOCinput ) -> String {
     let blocks = parse( input: input )
     let bounds = Rect2D( points: Array( blocks ) ).expand( with: drip )
-    var sand = Set<Point2D>()
-    
-    while true {
-        var next = drip
-        
-        FALL:
-        while true {
-            for direction in directions {
-                let trial = next.move( direction: direction )
-                if !bounds.contains( point: trial ) { return "\(sand.count)" }
-                guard blocks.contains( trial ) || sand.contains( trial ) else {
-                    next = trial
-                    continue FALL
-                }
-            }
-            
-            sand.insert( next )
-            break
-        }
-    }
+
+    return "\( sandCount( blocks: blocks, bounds: bounds, limit: nil ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let blocks = parse( input: input )
     let bounds = Rect2D( points: Array( blocks ) ).expand( with: drip )
-    let limit = bounds.max.y + 1
-    var sand = Set<Point2D>()
-    
-    while true {
-        var next = drip
-        
-        FALL:
-        while true {
-            if next.y == limit {
-                sand.insert( next )
-                break
-            }
-            for direction in directions {
-                let trial = next.move( direction: direction )
-                guard blocks.contains( trial ) || sand.contains( trial ) else {
-                    next = trial
-                    continue FALL
-                }
-            }
-            
-            sand.insert( next )
-            if next == drip { return "\(sand.count)" }
-            break
-        }
-    }
+
+    return "\( sandCount( blocks: blocks, bounds: bounds, limit: bounds.max.y + 1 ) )"
 }
 
 
