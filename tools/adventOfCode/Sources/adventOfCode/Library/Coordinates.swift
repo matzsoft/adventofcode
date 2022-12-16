@@ -334,6 +334,15 @@ struct Rect2D: Hashable {
         return Rect2D( min: Point2D( x: minX, y: minY ), max: Point2D( x: maxX, y: maxY ) )
     }
 
+    func expand( with other: Rect2D ) -> Rect2D {
+        let minX = Swift.min( min.x, other.min.x )
+        let maxX = Swift.max( max.x, other.max.x )
+        let minY = Swift.min( min.y, other.min.y )
+        let maxY = Swift.max( max.y, other.max.y )
+
+        return Rect2D( min: Point2D( x: minX, y: minY ), max: Point2D( x: maxX, y: maxY ) )
+    }
+
     func pad( byMinX: Int = 0, byMaxX: Int = 0, byMinY: Int = 0, byMaxY: Int = 0 ) -> Rect2D {
         return Rect2D( min: Point2D( x: min.x - byMinX, y: min.y - byMinY ),
                        max: Point2D( x: max.x + byMaxX, y: max.y + byMaxY ) )
