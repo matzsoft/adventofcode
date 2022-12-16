@@ -22,9 +22,10 @@ extension Range where Bound: Comparable {
 
 extension [Range<Int>] {
     var condensed: [Range<Int>] {
-        var condensed = [ self[0] ]
+        let sorted = self.sorted { $0.lowerBound < $1.lowerBound }
+        var condensed = [ sorted[0] ]
         
-        for range in self.dropFirst() {
+        for range in sorted.dropFirst() {
             if let union = condensed.last!.union( other: range ) {
                 condensed[ condensed.count - 1 ] = union
             } else {
@@ -83,10 +84,7 @@ func parse( input: AOCinput ) -> [Sensor] {
 func part1( input: AOCinput ) -> String {
     let sensors = parse( input: input )
     let y = Int( input.extras[0] )!
-    let ranges = sensors
-        .compactMap { $0.yExclusion( at: y ) }
-        .sorted { $0.lowerBound < $1.lowerBound }
-        .condensed
+    let ranges = sensors.compactMap { $0.yExclusion( at: y ) }.condensed
     let beacons = Set( sensors.filter { $0.beacon.y == y }.map { $0.beacon } )
     
     return "\( ranges.reduce( 0, { $0 + $1.count } ) - beacons.count )"
@@ -137,7 +135,6 @@ func part2( input: AOCinput ) -> String {
     let candidates = ( 0 ... limit ).reduce( into: [ Int : [Int] ]() ) { dict, y in
         let exclusions = sensors
             .compactMap { $0.yExclusion( at: y, xRange: 0 ..< limit + 1 ) }
-            .sorted { $0.lowerBound < $1.lowerBound }
             .condensed
         if exclusions.count > 1 {
             for index in 0 ..< exclusions.count - 1 {
