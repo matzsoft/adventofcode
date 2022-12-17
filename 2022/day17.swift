@@ -76,7 +76,7 @@ func part1( input: AOCinput ) -> String {
                 shape = down
             } else {
                 dropped.formUnion( shape.points )
-                available = Point2D( x: 0, y: dropped.map { $0.y }.max()! + 1 )
+                available = Point2D( x: 0, y: max( available.y, shape.bounds.max.y + 1 ) )
                 break
             }
         } while true
