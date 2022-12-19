@@ -129,6 +129,8 @@ func isAdjacent( point: Point2D, water: Set<Point2D> ) -> Bool {
     Direction4.allCases.contains { water.contains( point.move( direction: $0 ) ) }
 }
 
+
+// For debug purposes - no longer used
 func chamberPrint( chamber: Rect2D, available: Point2D, rocks: Set<Point2D>, water: Set<Point2D> ) -> Void {
     for y in ( 0 ... available.y ).reversed() {
         var row = Array( repeating: ".", count: chamber.width )
@@ -167,6 +169,7 @@ struct Status {
     }
 }
 
+
 func part2( input: AOCinput ) -> String {
     let ( directions, shapes ) = parse( input: input )
     let dropLimit = 1000000000000
@@ -192,24 +195,24 @@ func part2( input: AOCinput ) -> String {
                     let cycleSize = status.drop - match.drop
                     let cycleCount = ( dropLimit - drop ) / cycleSize
                     let heightDifference = cycleCount * ( status.available.y - match.available.y )
-                    // Adjust here
-                    print( "Found cycle of size \(cycleSize), count \(cycleCount)" )
+                    let heightVector = Point2D( x: 0, y: heightDifference )
+
                     drop += cycleCount * cycleSize
-                    available = Point2D( x: available.x, y: available.y + heightDifference )
-                    shape = Shape( points: shape.points.map {
-                        Point2D(x: $0.x, y: $0.y + heightDifference )
-                    } )
-                    dropped = Set( dropped.map { Point2D( x: $0.x, y: $0.y + heightDifference ) } )
+                    available = available + heightVector
+                    shape = Shape( points: shape.points.map { $0 + heightVector } )
+                    dropped = Set( dropped.map { $0 + heightVector } )
                     needCycle = false
                 } else {
                     history.append( status )
                 }
             }
+            
             let blown = shape + directions[ time % directions.count ].vector
             time += 1
             if chamber.contains( other: blown.bounds ) && blown.points.isDisjoint( with: dropped ) {
                 shape = blown
             }
+            
             let down = shape + Direction4.south.vector
             if chamber.contains( other: down.bounds ) && down.points.isDisjoint( with: dropped ) {
                 shape = down
