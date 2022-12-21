@@ -71,6 +71,10 @@ struct List: CustomStringConvertible {
     func nextRight( entry: Entry, by: Int ) -> Entry {
         ( 1 ... by ).reduce( entry ) { old, _ in entries[old.right] }
     }
+    
+    mutating func expand( by expansion: Int ) -> Void {
+        entries = entries.map { Entry( value: $0.value * expansion, left: $0.left, right: $0.right ) }
+    }
 }
 
 
@@ -92,8 +96,16 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    return ""
+    var initial = parse( input: input )
+    let decryptionKey = 811589153
+    
+    initial.expand( by: decryptionKey )
+    for _ in 1 ... 10 { initial.mix() }
+    let zero = initial.entries.first( where: { $0.value == 0 } )!
+    let first = initial.nextRight( entry: zero, by: 1000 )
+    let second = initial.nextRight( entry: first, by: 1000 )
+    let third = initial.nextRight( entry: second, by: 1000 )
+    return "\( first.value + second.value + third.value )"
 }
 
 
