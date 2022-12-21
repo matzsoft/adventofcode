@@ -17,7 +17,7 @@ struct Entry {
 }
 
 
-struct List {
+struct List: CustomStringConvertible {
     var entries: [Entry]
     
     init( lines: [String] ) {
@@ -28,23 +28,37 @@ struct List {
         }
     }
     
+    var description: String {
+        var index = entries[0].right
+        var values = [ entries[0].value ]
+        
+        while index != 0 {
+            values.append( entries[index].value )
+            index = entries[index].right
+        }
+        
+        return values.map { String( $0 ) }.joined( separator: ", " )
+    }
+    
     mutating func mix() -> Void {
         for index in entries.indices {
-            if entries[index].value < 0 {
-                let onLeft = ( entries[index].value ..< 1 ).reduce( index ) { old, _ in entries[old].left }
+            let value = entries[index].value % ( entries.count - 1 )
+            if value < 0 {
+                let onLeft = ( value ..< 1 ).reduce( index ) { old, _ in entries[old].left }
                 
                 move( at: index, to: onLeft )
-            } else if entries[index].value > 0 {
-                let onLeft = ( 0 ..< entries[index].value ).reduce( index ) { old, _ in entries[old].right }
+            } else if value > 0 {
+                let onLeft = ( 0 ..< value ).reduce( index ) { old, _ in entries[old].right }
                 
                 move( at: index, to: onLeft )
             }
+            // print( self )
         }
     }
     
     mutating func move( at index: Int, to onLeft: Int ) -> Void {
         let onRight = entries[onLeft].right
-        
+
         entries[entries[index].left].right = entries[index].right
         entries[entries[index].right].left = entries[index].left
         
