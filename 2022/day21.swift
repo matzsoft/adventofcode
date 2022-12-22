@@ -10,6 +10,14 @@
 
 import Foundation
 
+extension Double {
+    func signum() -> Double {
+        if self < 0 { return -1 }
+        if self > 0 { return 1 }
+        return self
+    }
+}
+
 
 class Monkey {
     enum MonkeyType { case number, math }
@@ -17,7 +25,7 @@ class Monkey {
     
     let name: String
     let monkeyType: MonkeyType
-    var value: Int
+    var value: Double
     let operationType: OperationType
     let left: String
     let right: String
@@ -29,7 +37,7 @@ class Monkey {
         switch words.count {
         case 2:
             monkeyType = .number
-            value = Int( words[1] )!
+            value = Double( words[1] )!
             operationType = .add
             left = ""
             right = ""
@@ -44,7 +52,7 @@ class Monkey {
         }
     }
     
-    init( name: String, value: Int ) {
+    init( name: String, value: Double ) {
         self.name = name
         monkeyType = .number
         self.value = value
@@ -53,7 +61,7 @@ class Monkey {
         right = ""
     }
     
-    func value( monkeys: [ String : Monkey ] ) -> Int {
+    func value( monkeys: [ String : Monkey ] ) -> Double {
         switch monkeyType {
         case .number:
             break
@@ -83,7 +91,7 @@ class Monkeys {
     }
     
     func evaluate( human: Int ) -> Node {
-        monkeys["humn"] = Monkey( name: "humn", value: human )
+        monkeys["humn"] = Monkey( name: "humn", value: Double(human) )
         
         let root = monkeys["root"]!
         _ = root.value( monkeys: monkeys )
@@ -104,22 +112,18 @@ func parse( input: AOCinput ) -> Monkeys {
 
 func part1( input: AOCinput ) -> String {
     let monkeys = parse( input: input )
-    return "\( monkeys.monkeys["root"]!.value( monkeys: monkeys.monkeys ) )"
+    return "\( Int( monkeys.monkeys["root"]!.value( monkeys: monkeys.monkeys ) ) )"
 }
 
 
 struct Node {
     let human: Int
-    let result: Int
+    let result: Double
 }
 
-// answer < 3592056845087
+
 func part2( input: AOCinput ) -> String {
     let monkeys = parse( input: input )
-    let bracketlow = monkeys.evaluate( human: 3592056845085 )
-    let expected = monkeys.evaluate( human: 3592056845086 )
-    let actual  = monkeys.evaluate( human: 3592056845087 )
-    let brackethigh = monkeys.evaluate( human: 3592056845088 )
     var high = monkeys.evaluate( human: 1000000000000000 )
     var low  = monkeys.evaluate( human: -high.human )
     assert( low.result.signum() != high.result.signum(), "Assumption failure" )

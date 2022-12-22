@@ -72,6 +72,10 @@ struct Worry {
         Worry( value: ( left.value + right.value ) % left.modulus, modulus: left.modulus )
     }
     
+    static func /( left: Worry, right: Int ) -> Worry {
+        Worry(value: ( left.value / right ) % left.modulus, modulus: left.modulus )
+    }
+    
     func isMultiple( of: Int ) -> Bool {
         value.isMultiple( of: of )
     }
@@ -115,10 +119,10 @@ class Simian {
         self.bigN = bigN
     }
     
-    func turn( monkeys: [Simian] ) -> Void {
+    func turn( monkeys: [Simian], reduction: Bool = true ) -> Void {
         inspectionCount += items.count
         for item in items {
-            let worry = operation( item )
+            let worry = reduction ? operation( item ) / 3 : operation( item )
             monkeys[ test( worry ) ? ifTrue : ifFalse ].items.append( worry )
         }
         items = []
@@ -133,8 +137,9 @@ func extractor( input: AOCinput ) -> Int {
 
 
 func part1( input: AOCinput ) -> String {
-    let monkeys = input.paragraphs.map { Monkey( lines: $0 ) }
-    
+    let bigN = extractor( input: input )
+    let monkeys = input.paragraphs.map { Simian( lines: $0, bigN: bigN ) }
+
     for _ in 1 ... 20 {
         monkeys.forEach { $0.turn( monkeys: monkeys ) }
     }
@@ -150,7 +155,7 @@ func part2( input: AOCinput ) -> String {
     let monkeys = input.paragraphs.map { Simian( lines: $0, bigN: bigN ) }
 
     for _ in 1 ... 10000 {
-        monkeys.forEach { $0.turn( monkeys: monkeys ) }
+        monkeys.forEach { $0.turn( monkeys: monkeys, reduction: false ) }
     }
 
     let counts = Array( monkeys.map { $0.inspectionCount }.sorted().reversed() )
