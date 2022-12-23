@@ -57,7 +57,7 @@ class Elves {
             }
             return nil
         }
-        let histogram = proposals.map { $0.move }.reduce(into: [ Point2D : Int ]() ) { dict, point in
+        let histogram = proposals.map { $0.move }.reduce( into: [ Point2D : Int ]() ) { dict, point in
             dict[ point, default: 0 ] += 1
         }
         let successful = proposals.filter { histogram[$0.move] == 1 }
@@ -77,17 +77,6 @@ class Elves {
         }
         return 0
     }
-}
-
-
-func parse( input: AOCinput ) -> Set<Point2D> {
-    let list = input.lines.enumerated().reduce(into: [Point2D]() ) { array, tuple in
-        let ( row, line ) = tuple
-        line.enumerated().forEach { col, character in
-            if character == "#" { array.append( Point2D( x: col, y: -row ) ) }
-        }
-    }
-    return Set( list )
 }
 
 
