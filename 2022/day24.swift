@@ -72,17 +72,36 @@ struct Blizzards {
         return prefix + revised.joined( separator: "\n" ) + suffix
     }
     
-    func strike( time: Int, farts: Set<Point2D> ) -> Set<Point2D> {
-        var farts = farts
+    func strike( time: Int, potential: Set<Point2D> ) -> Set<Point2D> {
+        var potential = potential
         
         for blizzard in blizzards {
             let test = blizzard.position( time )
-            if farts.contains( test ) {
-                farts.remove( test )
-                if farts.isEmpty { break }
+            if potential.contains( test ) {
+                potential.remove( test )
+                if potential.isEmpty { break }
             }
         }
-        return farts
+        return potential
+    }
+    
+    func traverse( entry: Point2D, exit: Point2D, time: Int ) -> Int? {
+        var possibles = [ Elf( position: entry, time: time ) ]
+        
+        while true {
+            var candidatesSet = Set<Elf>()
+            for elf in possibles {
+                let next = elf.options( blizzards: self )
+
+                if let solution = next.first( where: { $0.position == exit } ) { return solution.time + 1 }
+                candidatesSet.formUnion( next )
+            }
+            let candidates = candidatesSet
+                .sorted { $0.position.distance( other: exit ) < $1.position.distance( other: exit ) }
+            guard let bestDistance = candidates.first?.position.distance( other: exit ) else { return nil }
+            
+            possibles = candidates.filter { $0.position.distance( other: exit ) < bestDistance + 35 }
+        }
     }
 }
 
@@ -94,74 +113,44 @@ struct Elf: Hashable {
         let potential = DirectionUDLR.allCases
             .map { position + $0.vector }
             .filter { blizzards.bounds.contains( point: $0 ) }
-        let actual = blizzards.strike( time: time + 1, farts: Set( potential ).union( [ position ] ) )
+        let actual = blizzards.strike( time: time + 1, potential: Set( potential ).union( [ position ] ) )
         
         return Set( actual.map { Elf( position: $0, time: time + 1 ) } )
     }
 }
 
 
-func parse( input: AOCinput ) -> ( [ (Int) -> Point2D ], Rect2D ) {
-    let rows = input.lines.count - 2
-    let cols = input.lines[0].count - 2
-    let blizzards = input.lines.dropFirst().dropLast().enumerated().reduce( into: [ (Int) -> Point2D ]() ) {
-        array, tuple in
-        let ( y, line ) = tuple
-        line.dropFirst().dropLast().enumerated().forEach { x, character in
-            if let direction = DirectionUDLR( rawValue: String( character ) ) {
-                switch direction {
-                case .up:
-                    array.append(
-                        { ( time: Int ) -> Point2D in Point2D( x: x, y: ( y - time ).mod( rows ) ) }
-                    )
-                case .down:
-                    array.append(
-                        { ( time: Int ) -> Point2D in Point2D( x: x, y: ( y + time ).mod( rows ) ) }
-                    )
-                case .left:
-                    array.append(
-                        { ( time: Int ) -> Point2D in Point2D( x: ( x - time ).mod( rows ), y: y ) }
-                    )
-                case .right:
-                    array.append(
-                        { ( time: Int ) -> Point2D in Point2D( x: ( x + time ).mod( rows ), y: y ) }
-                    )
-                }
-            }
-        }
-    }
-    return ( blizzards, Rect2D( min: Point2D( x: 0, y: 0 ), width: cols, height: rows )! )
-}
-
-
 func part1( input: AOCinput ) -> String {
     let blizzards = Blizzards( lines: input.lines )
-    let entry = blizzards.bounds.min + DirectionUDLR.up.vector
-    let exit  = blizzards.bounds.max
-    var possibles = [ Elf( position: entry, time: 0 ) ]
     
-    for _ in 1 ... Int.max {
-        var weasles = Set<Elf>()
-        for elf in possibles {
-            let next = elf.options( blizzards: blizzards )
-
-            if let solution = next.first( where: { $0.position == exit } ) { return "\(solution.time + 1 )" }
-            weasles.formUnion( next )
-        }
-        let candidates = weasles
-            .sorted { $0.position.distance( other: exit ) < $1.position.distance( other: exit ) }
-        guard let bestDistance = candidates.first?.position.distance( other: exit ) else { break }
-        
-        possibles = candidates.filter { $0.position.distance( other: exit ) < bestDistance + 35 }
-    }
-
-    return "No solution"
+    guard let time = blizzards.traverse(
+        entry: blizzards.bounds.min + DirectionUDLR.up.vector,
+        exit: blizzards.bounds.max, time: 0
+    ) else { return "No solution" }
+    
+    return "\(time)"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    return ""
+    let blizzards = Blizzards( lines: input.lines )
+    
+    guard let first = blizzards.traverse(
+        entry: blizzards.bounds.min + DirectionUDLR.up.vector,
+        exit: blizzards.bounds.max, time: 0
+    ) else { return "No solution" }
+    
+    guard let second = blizzards.traverse(
+        entry: blizzards.bounds.max + DirectionUDLR.down.vector,
+        exit: blizzards.bounds.min, time: first
+    ) else { return "No solution" }
+    
+    guard let third = blizzards.traverse(
+        entry: blizzards.bounds.min + DirectionUDLR.up.vector,
+        exit: blizzards.bounds.max, time: second
+    ) else { return "No solution" }
+    
+    return "\(third)"
 }
 
 
