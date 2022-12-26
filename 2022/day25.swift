@@ -19,51 +19,32 @@ func snafuToInt( string: String ) -> Int {
 
 
 func intToSnafu( number: Int ) -> String {
-//    let sign = number.signum()
     var number = number
     var place  = 1
     var result = ""
 
-    while true {
-        if abs( number ) <= 5 * place / 2 {
-            let basis = ( number + number.signum() * place / 2 )
-            let digit = basis / place
-            
-            result = intToQuint[digit]!
-            number -= digit * place
-            break
-        }
-        place *= 5
-    }
-    
-    while place > 1 {
-        place /= 5
-        let basis = ( number + number.signum() * place / 2 )
-        let digit = basis / place
+    while abs( number ) > 5 * place / 2 { place *= 5 }
+    while place > 0 {
+        let digit = ( number + number.signum() * place / 2 ) / place
         
         result += intToQuint[digit]!
         number -= digit * place
+        place /= 5
     }
     
     return result
 }
 
 
-func parse( input: AOCinput ) -> Any? {
-    return nil
-}
-
-
 func part1( input: AOCinput ) -> String {
     let numbers = input.lines.map { snafuToInt( string: $0 ) }
     let sum = numbers.reduce( 0, + )
-//    numbers.forEach { print( $0 ) }
-    return "\(intToSnafu(number: sum ))"
+
+    return "\(intToSnafu( number: sum ))"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
     return ""
 }
 
