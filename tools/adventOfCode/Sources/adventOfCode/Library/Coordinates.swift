@@ -288,7 +288,7 @@ struct Point2D: Hashable {
     }
 }
 
-struct Rect2D: Hashable {
+struct Rect2D: Hashable, CustomStringConvertible {
     let min:    Point2D
     let max:    Point2D
     let width:  Int
@@ -321,9 +321,14 @@ struct Rect2D: Hashable {
         self.init( min: bounds.min, max: bounds.max )
     }
     
+    var xRange: ClosedRange<Int> { min.x ... max.x }
+    var yRange: ClosedRange<Int> { min.y ... max.y }
+    var description: String {
+        "(\(min.x),\(min.y) \(width)x\(height))"
+    }
     var points: [Point2D] {
          ( min.y ... max.y ).flatMap { y in ( min.x ... max.x ).map { x in Point2D( x: x, y: y ) } }
-     }
+    }
 
     func expand( with point: Point2D ) -> Rect2D {
         let minX = Swift.min( min.x, point.x )
@@ -369,11 +374,14 @@ struct Rect2D: Hashable {
     }
 }
 
-struct Point3D: Hashable {
+struct Point3D: Hashable, CustomStringConvertible {
     let x: Int
     let y: Int
     let z: Int
 
+    var description: String {
+        "(\(x),\(y),\(z))"
+    }
     func distance( other: Point3D ) -> Int {
         return abs( x - other.x ) + abs( y - other.y ) + abs( z - other.z )
     }
@@ -384,6 +392,10 @@ struct Point3D: Hashable {
     
     static func -( left: Point3D, right: Point3D ) -> Point3D {
         return Point3D( x: left.x - right.x, y: left.y - right.y, z: left.z - right.z )
+    }
+    
+    static func *( left: Int, right: Point3D ) -> Point3D {
+        return Point3D( x: left * right.x, y: left * right.y, z: left * right.z )
     }
     
     static func ==( left: Point3D, right: Point3D ) -> Bool {
