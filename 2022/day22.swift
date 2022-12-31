@@ -47,6 +47,42 @@ extension Point3D{
 }
 
 
+class Tile: Hashable {
+    enum TileType: String { case open = ".", wall = "#" }
+
+    struct OffEdge {
+        let newPosition: Point2D
+        let newDirection: DirectionUDLR
+    }
+    
+    let tileType: TileType
+    let location: Point2D
+    var neighbors = [ DirectionUDLR : OffEdge ]()
+    
+    static func == ( lhs: Tile, rhs: Tile ) -> Bool {
+        lhs.location == rhs.location
+    }
+    
+    init( tileType: TileType, location: Point2D ) {
+        self.tileType = tileType
+        self.location = location
+    }
+    
+    func hash( into hasher: inout Hasher ) {
+        hasher.combine( location )
+    }
+    
+    func wire( _ direction: DirectionUDLR, newPosition: Point2D, newDirection: DirectionUDLR ) -> Void {
+        neighbors[direction] = OffEdge( newPosition: newPosition, newDirection: newDirection )
+    }
+    
+    func neighbor( direction: DirectionUDLR ) -> ( Point2D, DirectionUDLR ) {
+        if let offEdge = neighbors[direction] { return ( offEdge.newPosition, offEdge.newDirection ) }
+        return ( location + direction.vector, direction )
+    }
+}
+
+
 struct Map {
     enum Step: CustomStringConvertible {
         case move( Int ), turn( Turn )
@@ -109,6 +145,35 @@ struct Map {
         return [ mapLines, pathLines ].joined( separator: "\n\n" )
     }
     
+    func wireTiles() -> Void {
+        for row in map {
+            for tile in row.compactMap( { $0 } ) {
+                let edgeCases = DirectionUDLR.allCases.filter { self[ tile.location + $0.vector ] == nil }
+                
+                for direction in edgeCases {
+                    switch direction {
+                    case .up:
+                        let newY = ( 0 ..< map.count ).last( where: { map[$0][tile.location.x] != nil } )!
+                        let newPos = Point2D( x: tile.location.x, y: newY )
+                        tile.wire( direction, newPosition: newPos, newDirection: direction )
+                    case .down:
+                        let newY = ( 0 ..< map.count ).first( where: { map[$0][tile.location.x] != nil } )!
+                        let newPos = Point2D( x: tile.location.x, y: newY )
+                        tile.wire( direction, newPosition: newPos, newDirection: direction )
+                    case .left:
+                        let newX = map[tile.location.y].lastIndex( where: { $0 != nil } )!
+                        let newPos = Point2D( x: newX, y: tile.location.y )
+                        tile.wire( direction, newPosition: newPos, newDirection: direction )
+                    case .right:
+                        let newX = map[tile.location.y].firstIndex( where: { $0 != nil } )!
+                        let newPos = Point2D( x: newX, y: tile.location.y )
+                        tile.wire( direction, newPosition: newPos, newDirection: direction )
+                    }
+                }
+            }
+        }
+    }
+    
     mutating func followPath() -> Int {
         for step in path {
             switch step {
@@ -117,50 +182,20 @@ struct Map {
             case .move( let number ):
                 MOVEMENT:
                 for _ in 1 ... number {
-                    let next = position + direction.vector
+                    let ( nextPosition, nextDirection ) = self[position]!.neighbor( direction: direction )
                     
-                    if !bounds.contains( point: next ) {
-                        if isWallOnOtherSide() { break MOVEMENT }
-                    } else {
-                        switch self[next]?.tileType {
-                        case .open:
-                            position = next
-                        case .wall:
-                            break MOVEMENT
-                        case nil:
-                            if isWallOnOtherSide() { break MOVEMENT }
-                        }
+                    switch self[nextPosition]?.tileType {
+                    case .open:
+                        ( position, direction ) = ( nextPosition, nextDirection )
+                    case .wall:
+                        break MOVEMENT
+                    case nil:
+                        fatalError( "Bad Bones" )
                     }
                 }
             }
         }
         return 1000 * ( position.y + 1 ) + 4 * ( position.x + 1 ) + direction.toInt
-    }
-    
-    mutating func isWallOnOtherSide() -> Bool {
-        switch direction {
-        case .up:
-            let newY = ( 0 ..< map.count ).last( where: { map[$0][position.x] != nil } )!
-            let newPos = Point2D( x: position.x, y: newY )
-            if self[newPos]?.tileType == .wall { return true }
-            position = newPos
-        case .down:
-            let newY = ( 0 ..< map.count ).first( where: { map[$0][position.x] != nil } )!
-            let newPos = Point2D( x: position.x, y: newY )
-            if self[newPos]?.tileType == .wall { return true }
-            position = newPos
-        case .left:
-            let newX = map[position.y].lastIndex( where: { $0 != nil } )!
-            let newPos = Point2D( x: newX, y: position.y )
-            if self[newPos]?.tileType == .wall { return true }
-            position = newPos
-        case .right:
-            let newX = map[position.y].firstIndex( where: { $0 != nil } )!
-            let newPos = Point2D( x: newX, y: position.y )
-            if self[newPos]?.tileType == .wall { return true }
-            position = newPos
-        }
-        return false
     }
 }
 
@@ -174,7 +209,6 @@ class Face: Hashable, CustomStringConvertible {
     var base: Point3D
     var topVector: Point3D
     var leftVector: Point3D
-//    var tiles: [[Tile]]
     var faces = [ DirectionUDLR : Face ]()
     
     static func == ( lhs: Face, rhs: Face ) -> Bool {
@@ -188,22 +222,12 @@ class Face: Hashable, CustomStringConvertible {
         self.base = Point3D( x: bounds.min.x, y: bounds.min.y, z: 0 )
         self.topVector = Point3D( x: bounds.width - 1, y: 0, z: 0 )
         self.leftVector = Point3D( x: 0, y: bounds.height - 1, z: 0 )
-//        self.tiles = []
-//        self.tiles = ( bounds.min.x ... bounds.max.x ).map { x in
-//            ( bounds.min.y ... bounds.max.y ).map { y in
-//                Tile( location: Point2D( x: x, y: y ) )
-//            }
-//        }
     }
     
     func hash( into hasher: inout Hasher ) {
         hasher.combine( id )
     }
 
-//    subscript( point: Point2D ) -> Tile {
-//        return tiles[ point.y - bounds.min.y ][ point.x - bounds.min.x ]
-//    }
-    
     var description: String {
         let faces = self.faces.map { "\($0.key.rawValue) → \($0.value.id)" }.joined( separator: ", " )
         return "\(id): \(bounds) \(base) \(topVector) \(leftVector)\n   \(faces)"
@@ -258,31 +282,8 @@ class Face: Hashable, CustomStringConvertible {
 }
 
 
-class Tile: Hashable {
-    enum TileType: String { case open = ".", wall = "#" }
-
-    let tileType: TileType
-    let location: Point2D
-    var neighbors = [ DirectionUDLR : Point2D ]()
-    var transitions = [ DirectionUDLR : DirectionUDLR ]()
-    
-    static func == ( lhs: Tile, rhs: Tile ) -> Bool {
-        lhs.location == rhs.location
-    }
-    
-    init( tileType: TileType, location: Point2D ) {
-        self.tileType = tileType
-        self.location = location
-    }
-    
-    func hash( into hasher: inout Hasher ) {
-        hasher.combine( location )
-    }
-}
-
-
 struct Cube {
-    let map: Map
+    var map: Map
     let faces: [Face]
     let edges: Int
     let bounds: Rect3D
@@ -407,22 +408,153 @@ struct Cube {
         
         face.faces[direction] = other
     }
+    
+    func wireTiles() -> Void {
+        for face in faces {
+            let center = Point2D(
+                x: ( face.bounds.min.x + face.bounds.max.x ) / 2,
+                y: ( face.bounds.min.y + face.bounds.max.y ) / 2
+            )
+            for ( direction, other ) in face.faces {
+                guard map[ center + edges * direction.vector ] == nil else { continue }
+                let reverseDirection = other.faces.first { $0.value == face }!.key
+                let back = reverseDirection.turn( .back )
+                
+                switch direction {
+                case .up:
+                    let tiles = face.bounds.xRange.map { map[ Point2D( x: $0, y: face.bounds.min.y ) ]! }
+                    switch reverseDirection {
+                    case .up:
+                        let neighbors = other.bounds.xRange.reversed().map {
+                            Point2D( x: $0, y: other.bounds.min.y )
+                        }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .down:
+                        let neighbors = other.bounds.xRange.map { Point2D( x: $0, y: other.bounds.max.y ) }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .left:
+                        let neighbors = other.bounds.yRange.map { Point2D( x: other.bounds.min.x, y: $0 ) }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .right:
+                        let neighbors = other.bounds.yRange.reversed().map {
+                            Point2D( x: other.bounds.max.x, y: $0 )
+                        }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    }
+                case .down:
+                    let tiles = face.bounds.xRange.map { map[ Point2D( x: $0, y: face.bounds.max.y ) ]! }
+                    switch reverseDirection {
+                    case .up:
+                        let neighbors = other.bounds.xRange.map { Point2D( x: $0, y: other.bounds.min.y ) }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .down:
+                        let neighbors = other.bounds.xRange.reversed().map {
+                            Point2D( x: $0, y: other.bounds.max.y )
+                        }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .left:
+                        let neighbors = other.bounds.yRange.reversed().map {
+                            Point2D( x: other.bounds.min.x, y: $0 )
+                        }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .right:
+                        let neighbors = other.bounds.yRange.map { Point2D( x: other.bounds.max.x, y: $0 ) }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    }
+                case .left:
+                    let tiles = face.bounds.yRange.map { map[ Point2D( x: face.bounds.min.x, y: $0 ) ]! }
+                    switch reverseDirection {
+                    case .up:
+                        let neighbors = other.bounds.xRange.map { Point2D( x: $0, y: other.bounds.min.y ) }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .down:
+                        let neighbors = other.bounds.xRange.reversed().map {
+                            Point2D( x: $0, y: other.bounds.max.y )
+                        }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .left:
+                        let neighbors = other.bounds.yRange.reversed().map {
+                            Point2D( x: other.bounds.min.x, y: $0 )
+                        }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .right:
+                        let neighbors = other.bounds.yRange.map { Point2D( x: other.bounds.max.x, y: $0 ) }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    }
+                case .right:
+                    let tiles = face.bounds.yRange.map { map[ Point2D( x: face.bounds.max.x, y: $0 ) ]! }
+                    switch reverseDirection {
+                    case .up:
+                        let neighbors = other.bounds.xRange.reversed().map {
+                            Point2D( x: $0, y: other.bounds.min.y )
+                        }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .down:
+                        let neighbors = other.bounds.xRange.map { Point2D( x: $0, y: other.bounds.max.y ) }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .left:
+                        let neighbors = other.bounds.yRange.map { Point2D( x: other.bounds.min.x, y: $0 ) }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    case .right:
+                        let neighbors = other.bounds.yRange.reversed().map {
+                            Point2D( x: other.bounds.max.x, y: $0 )
+                        }
+                        zip( tiles, neighbors ).forEach {
+                            $0.0.wire( direction, newPosition: $0.1, newDirection: back )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 
 func part1( input: AOCinput ) -> String {
     var map = Map( paragraphs: input.paragraphs )
-//    print( map.dump )
+    
+    // print( map.dump )
+    map.wireTiles()
     return "\(map.followPath())"
 }
 
-
 func part2( input: AOCinput ) -> String {
-    let cube = Cube( input: input )
+    var cube = Cube( input: input )
     
-    cube.faces.forEach { print( "\($0)" ) }
-    print( cube.representation )
-    return ""
+    // cube.faces.forEach { print( "\($0)" ) }
+    // print( cube.representation )
+    cube.wireTiles()
+    return "\(cube.map.followPath())"
 }
 
 
