@@ -1,0 +1,1 @@
+1. Day22 at the least try to find a better way than nested switch statements for Cube.wireTiles.
