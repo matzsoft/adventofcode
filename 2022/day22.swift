@@ -44,6 +44,16 @@ extension Point3D{
     var reversed: Point3D {
         Point3D( x: -x, y: -y, z: -z )
     }
+    
+    func cross( other: Point3D ) -> Point3D {
+        Point3D( x: y * other.z - z * other.y, y: x * other.z - z * other.x, z: x * other.y - y * other.x )
+    }
+}
+
+extension Point2D {
+    func cross( other: Point2D ) -> Int {
+        x * other.y - y * other.x
+    }
 }
 
 
@@ -229,12 +239,31 @@ class Face: Hashable, CustomStringConvertible {
     }
 
     var description: String {
-        let faces = self.faces.map { "\($0.key.rawValue) → \($0.value.id)" }.joined( separator: ", " )
-        return "\(id): \(bounds) \(base) \(topVector) \(leftVector)\n   \(faces)"
+        let normal = topVector.cross( other: leftVector )
+        let faces = self.faces.map {
+            let reverse = $0.value.faces.first { $0.value == self }!.key
+            let otherNormal = $0.value.topVector.cross( other: $0.value.leftVector )
+            let cross = normal.cross( other: otherNormal )
+            return "   \($0.key.rawValue) → \($0.value.id) → \(reverse.rawValue) \(otherNormal) \(cross)"
+        }.joined( separator: "\n" )
+        return "\(id): \(bounds) \(base) \(topVector) \(leftVector) \(normal)\n\(faces)"
     }
     
     var corners: [Point3D] {
         [ base, base + topVector, base + leftVector, base + topVector + leftVector ]
+    }
+    
+    func edge( direction: DirectionUDLR ) -> [Tile] {
+        switch direction {
+        case .up:
+            return bounds.xRange.map { map[ Point2D( x: $0, y: bounds.min.y ) ]! }
+        case .down:
+            return bounds.xRange.map { map[ Point2D( x: $0, y: bounds.max.y ) ]! }
+        case .left:
+            return bounds.yRange.map { map[ Point2D( x: bounds.min.x, y: $0 ) ]! }
+        case .right:
+            return bounds.yRange.map { map[ Point2D( x: bounds.max.x, y: $0 ) ]! }
+        }
     }
     
     func connectLeft( other: Face, cubeBounds: Rect3D ) -> Void {
@@ -419,117 +448,83 @@ struct Cube {
                 guard map[ center + edges * direction.vector ] == nil else { continue }
                 let reverseDirection = other.faces.first { $0.value == face }!.key
                 let back = reverseDirection.turn( .back )
+                let tiles = face.edge( direction: direction )
+                let neighbors = other.edge( direction: reverseDirection ).map { $0.location }
                 
                 switch direction {
                 case .up:
-                    let tiles = face.bounds.xRange.map { map[ Point2D( x: $0, y: face.bounds.min.y ) ]! }
                     switch reverseDirection {
                     case .up:
-                        let neighbors = other.bounds.xRange.reversed().map {
-                            Point2D( x: $0, y: other.bounds.min.y )
-                        }
-                        zip( tiles, neighbors ).forEach {
+                        zip( tiles, neighbors.reversed() ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .down:
-                        let neighbors = other.bounds.xRange.map { Point2D( x: $0, y: other.bounds.max.y ) }
                         zip( tiles, neighbors ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .left:
-                        let neighbors = other.bounds.yRange.map { Point2D( x: other.bounds.min.x, y: $0 ) }
                         zip( tiles, neighbors ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .right:
-                        let neighbors = other.bounds.yRange.reversed().map {
-                            Point2D( x: other.bounds.max.x, y: $0 )
-                        }
-                        zip( tiles, neighbors ).forEach {
+                        zip( tiles, neighbors.reversed() ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     }
                 case .down:
-                    let tiles = face.bounds.xRange.map { map[ Point2D( x: $0, y: face.bounds.max.y ) ]! }
                     switch reverseDirection {
                     case .up:
-                        let neighbors = other.bounds.xRange.map { Point2D( x: $0, y: other.bounds.min.y ) }
                         zip( tiles, neighbors ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .down:
-                        let neighbors = other.bounds.xRange.reversed().map {
-                            Point2D( x: $0, y: other.bounds.max.y )
-                        }
-                        zip( tiles, neighbors ).forEach {
+                        zip( tiles, neighbors.reversed() ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .left:
-                        let neighbors = other.bounds.yRange.reversed().map {
-                            Point2D( x: other.bounds.min.x, y: $0 )
-                        }
-                        zip( tiles, neighbors ).forEach {
+                        zip( tiles, neighbors.reversed() ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .right:
-                        let neighbors = other.bounds.yRange.map { Point2D( x: other.bounds.max.x, y: $0 ) }
                         zip( tiles, neighbors ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     }
                 case .left:
-                    let tiles = face.bounds.yRange.map { map[ Point2D( x: face.bounds.min.x, y: $0 ) ]! }
                     switch reverseDirection {
                     case .up:
-                        let neighbors = other.bounds.xRange.map { Point2D( x: $0, y: other.bounds.min.y ) }
                         zip( tiles, neighbors ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .down:
-                        let neighbors = other.bounds.xRange.reversed().map {
-                            Point2D( x: $0, y: other.bounds.max.y )
-                        }
-                        zip( tiles, neighbors ).forEach {
+                        zip( tiles, neighbors.reversed() ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .left:
-                        let neighbors = other.bounds.yRange.reversed().map {
-                            Point2D( x: other.bounds.min.x, y: $0 )
-                        }
-                        zip( tiles, neighbors ).forEach {
+                        zip( tiles, neighbors.reversed() ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .right:
-                        let neighbors = other.bounds.yRange.map { Point2D( x: other.bounds.max.x, y: $0 ) }
                         zip( tiles, neighbors ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     }
                 case .right:
-                    let tiles = face.bounds.yRange.map { map[ Point2D( x: face.bounds.max.x, y: $0 ) ]! }
                     switch reverseDirection {
                     case .up:
-                        let neighbors = other.bounds.xRange.reversed().map {
-                            Point2D( x: $0, y: other.bounds.min.y )
-                        }
-                        zip( tiles, neighbors ).forEach {
+                        zip( tiles, neighbors.reversed() ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .down:
-                        let neighbors = other.bounds.xRange.map { Point2D( x: $0, y: other.bounds.max.y ) }
                         zip( tiles, neighbors ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .left:
-                        let neighbors = other.bounds.yRange.map { Point2D( x: other.bounds.min.x, y: $0 ) }
                         zip( tiles, neighbors ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     case .right:
-                        let neighbors = other.bounds.yRange.reversed().map {
-                            Point2D( x: other.bounds.max.x, y: $0 )
-                        }
-                        zip( tiles, neighbors ).forEach {
+                        zip( tiles, neighbors.reversed() ).forEach {
                             $0.0.wire( direction, newPosition: $0.1, newDirection: back )
                         }
                     }
