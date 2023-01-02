@@ -26,21 +26,6 @@ extension DirectionUDLR {
 }
 
 extension Point3D{
-    func orthogonal( other: Point3D ) -> Point3D? {
-        let magnitude = magnitude
-        guard x * other.x + y * other.y + z * other.z == 0 else { return nil }
-        guard magnitude == other.magnitude else { return nil }
-        
-        let unitVector1 = Point3D( x: x / magnitude, y: y / magnitude, z: z / magnitude )
-        let unitVector2 = Point3D( x: other.x / magnitude, y: other.y / magnitude, z: other.z / magnitude )
-        
-        return Point3D(
-            x: unitVector1.y * unitVector2.z - unitVector2.y * unitVector1.z,
-            y: unitVector1.x * unitVector2.z - unitVector2.x * unitVector1.z,
-            z: unitVector1.x * unitVector2.y - unitVector2.x * unitVector1.y
-        )
-    }
-    
     var reversed: Point3D {
         Point3D( x: -x, y: -y, z: -z )
     }
@@ -230,8 +215,8 @@ class Face: Hashable, CustomStringConvertible {
         self.map = map
         self.bounds = bounds
         self.base = Point3D( x: bounds.min.x, y: bounds.min.y, z: 0 )
-        self.topVector = Point3D( x: bounds.width - 1, y: 0, z: 0 )
-        self.leftVector = Point3D( x: 0, y: bounds.height - 1, z: 0 )
+        self.topVector = Point3D( x: 1, y: 0, z: 0 )
+        self.leftVector = Point3D( x: 0, y: 1, z: 0 )
     }
     
     func hash( into hasher: inout Hasher ) {
@@ -250,7 +235,11 @@ class Face: Hashable, CustomStringConvertible {
     }
     
     var corners: [Point3D] {
-        [ base, base + topVector, base + leftVector, base + topVector + leftVector ]
+        let delta = bounds.width - 1
+        return [
+            base, base + delta * topVector,
+            base + delta * leftVector, base + delta * ( topVector + leftVector )
+        ]
     }
     
     func edge( direction: DirectionUDLR ) -> [Tile] {
@@ -267,11 +256,11 @@ class Face: Hashable, CustomStringConvertible {
     }
     
     func connectLeft( other: Face, cubeBounds: Rect3D ) -> Void {
-        guard let unit = topVector.orthogonal( other: leftVector ) else { return }
-        let full = ( bounds.width - 1 ) * unit
+        let unit = topVector.cross( other: leftVector )
+        let delta = bounds.width - 1
         
-        other.topVector = cubeBounds.contains( point: base + unit ) ? full.reversed : full
-        other.base = base - other.topVector
+        other.topVector = cubeBounds.contains( point: base + unit ) ? unit.reversed : unit
+        other.base = base - delta * other.topVector
         other.leftVector = leftVector
         
         faces[.left] = other
@@ -279,23 +268,23 @@ class Face: Hashable, CustomStringConvertible {
     }
     
     func connectDown( other: Face, cubeBounds: Rect3D ) -> Void {
-        guard let unit = topVector.orthogonal( other: leftVector ) else { return }
-        let full = ( bounds.width - 1 ) * unit
+        let unit = topVector.cross( other: leftVector )
+        let delta = bounds.width - 1
 
-        other.base = base + leftVector
+        other.base = base + delta * leftVector
         other.topVector = topVector
-        other.leftVector = cubeBounds.contains( point: other.base + unit ) ? full : full.reversed
+        other.leftVector = cubeBounds.contains( point: other.base + unit ) ? unit : unit.reversed
         
         faces[.down] = other
         other.faces[.up] = self
     }
     
     func connectRight( other: Face, cubeBounds: Rect3D ) -> Void {
-        guard let unit = topVector.orthogonal( other: leftVector ) else { return }
-        let full = ( bounds.width - 1 ) * unit
+        let unit = topVector.cross( other: leftVector )
+        let delta = bounds.width - 1
 
-        other.base = base + topVector
-        other.topVector = cubeBounds.contains( point: other.base + unit ) ? full : full.reversed
+        other.base = base + delta * topVector
+        other.topVector = cubeBounds.contains( point: other.base + unit ) ? unit : unit.reversed
         other.leftVector = leftVector
         
         faces[.right] = other
@@ -431,8 +420,9 @@ struct Cube {
     }
     
     func connect( face: Face, direction: DirectionUDLR, vector1: Point3D, vector2: Point3D ) -> Void {
-        let point1 = face.base + vector1
-        let point2 = point1 + vector2
+        let delta = bounds.width - 1
+        let point1 = face.base + delta * vector1
+        let point2 = point1 + delta * vector2
         let other = faces.first { $0 != face && Set( $0.corners ).isSuperset( of: [ point1, point2 ] ) }!
         
         face.faces[direction] = other
