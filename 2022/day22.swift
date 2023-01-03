@@ -214,9 +214,9 @@ class Face: Hashable, CustomStringConvertible {
         self.id = id
         self.map = map
         self.bounds = bounds
-        self.base = Point3D( x: bounds.min.x, y: bounds.min.y, z: 0 )
+        self.base = Point3D( x: 0, y: bounds.width - 1, z: bounds.width - 1 )
         self.topVector = Point3D( x: 1, y: 0, z: 0 )
-        self.leftVector = Point3D( x: 0, y: 1, z: 0 )
+        self.leftVector = Point3D( x: 0, y: -1, z: 0 )
     }
     
     func hash( into hasher: inout Hasher ) {
@@ -320,9 +320,7 @@ struct Cube {
         self.map   = map
         self.faces = faces
         self.edges = edges
-        self.bounds = Rect3D(
-            min: Point3D( x: faces[0].bounds.min.x, y: faces[0].bounds.min.y, z: 0 ),
-            width: edges, length: edges, height: edges )!
+        self.bounds = Rect3D( min: Point3D( x: 0, y: 0, z: 0 ), width: edges, length: edges, height: edges )!
         
         fold()
         connect()
@@ -375,7 +373,7 @@ struct Cube {
             
             established.insert( face )
             let neighbors = faces
-                .map { ( face.vector(other: $0 ), $0 ) }
+                .map { ( face.vector( other: $0 ), $0 ) }
                 .filter { $0.0.magnitude == 1 && !established.contains( $0.1 ) }
             
             for ( vector, neighbor ) in neighbors {
