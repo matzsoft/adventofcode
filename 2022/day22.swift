@@ -224,7 +224,7 @@ class Face: Hashable, CustomStringConvertible {
     }
 
     var description: String {
-        let normal = topVector.cross( other: leftVector )
+        let normal = leftVector.cross( other: topVector )
         let faces = self.faces.map {
             let reverse = $0.value.faces.first { $0.value == self }!.key
             let otherNormal = $0.value.topVector.cross( other: $0.value.leftVector )
