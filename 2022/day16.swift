@@ -13,19 +13,6 @@ import Foundation
 let startValve = "AA"
 let timeLimit  = 30
 
-class Answer {
-    var anwser: [Int]
-    
-    init( size: Int ) {
-        anwser = Array( repeating: 0, count: size )
-    }
-    
-    subscript( index: Int ) -> Int {
-        get { anwser[index] }
-        set { anwser[index] = newValue }
-    }
-}
-
 struct Vertex {
     let name: String
     let clock: Int
@@ -86,7 +73,7 @@ func part1( input: AOCinput ) -> String {
                 }
             }
         }
-        fullMatrix[row.key]![row.key] = nil
+//        fullMatrix[row.key]![row.key] = nil
     }
     let prunedMatrix = fullMatrix
         .filter { nodes.contains( $0.key ) }
@@ -95,23 +82,22 @@ func part1( input: AOCinput ) -> String {
     let valveMasks = working.enumerated().reduce( into: [String : Int]() ) { valveMasks, tuple in
         valveMasks[tuple.element] = 1 << tuple.offset
     }
-    let answer = Answer( size: 2 * valveMasks.values.max()! )
+    var answer = Array( repeating: 0, count: 2 * valveMasks.values.max()! )
 
 //    print( matrix: sparseMatrix )
 //    print( matrix: fullMatrix )
     print( matrix: prunedMatrix )
     
-    func visit( valve: String, clock: Int, state: Int, flow: Int, answer: Answer ) -> [Int] {
+    func visit( valve: String, clock: Int, state: Int, flow: Int ) -> Void {
         answer[state] = max( answer[state], flow )
-        for next in working.filter( { $0 != valve } ) {
+        for next in working/*.filter( { $0 != valve } )*/ {
             let newClock = clock - prunedMatrix[valve]![next]! - 1
             if ( valveMasks[next]! & state ) == 0 && newClock > 0 {
                 let newState = state | valveMasks[next]!
                 let newFlow = flow + newClock * flowRates[next]!
-                visit( valve: next, clock: newClock, state: newState, flow: newFlow, answer: answer )
+                visit( valve: next, clock: newClock, state: newState, flow: newFlow )
             }
         }
-        return answer.anwser
     }
     
     func trial( sequence: [String] ) -> Int {
@@ -128,7 +114,8 @@ func part1( input: AOCinput ) -> String {
         return flowRates[end]! * clock
     }
     
-    return "\( visit( valve: startValve, clock: timeLimit, state: 0, flow: 0, answer: answer ).max()! )"
+    visit( valve: startValve, clock: timeLimit, state: 0, flow: 0 )
+    return "\( answer.max()! )"
     var queue = working
     var vertices = working.reduce( into: [ startValve : Vertex( pressure: Int.max ) ] ) { vertices, name in
         let clock = timeLimit - prunedMatrix[startValve]![name]! - 1
