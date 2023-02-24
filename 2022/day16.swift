@@ -43,7 +43,7 @@ struct Volcano {
             }
         }
         let nodes = Set( [ startValve ] + working )
-        let prunedMatrix = fullMatrix
+        let prunedMatrix = fullMatrix                   // Not needed but useful for debug.
             .filter { nodes.contains( $0.key ) }
             .mapValues { $0.filter { $0.key != startValve } }
         let valveMasks = working.enumerated().reduce( into: [String : Int]() ) { valveMasks, tuple in
@@ -56,6 +56,10 @@ struct Volcano {
         self.timeLimit = timeLimit
         self.valveMasks = valveMasks
         self.answer = Array( repeating: 0, count: 2 * valveMasks.values.max()! )
+    }
+    
+    mutating func visit() -> Void {
+        visit( valve: startValve, clock: timeLimit, state: 0, flow: 0 )
     }
     
     mutating func visit( valve: String, clock: Int, state: Int, flow: Int ) -> Void {
@@ -72,6 +76,7 @@ struct Volcano {
 }
 
 
+// No longer used.  Useful for debug.
 func print( matrix: [ String : [ String : Int ] ] ) -> Void {
     let list = matrix.keys.sorted()
     print( "," + list.joined( separator: "," ) )
@@ -83,18 +88,23 @@ func print( matrix: [ String : [ String : Int ] ] ) -> Void {
 
 
 func part1( input: AOCinput ) -> String {
-    let timeLimit = 30
-    var volcano = Volcano( lines: input.lines, timeLimit: timeLimit )
+    var volcano = Volcano( lines: input.lines, timeLimit: 30 )
 
-    volcano.visit( valve: startValve, clock: timeLimit, state: 0, flow: 0 )
+    volcano.visit()
     return "\( volcano.answer.max()! )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let timeLimit = 26
-    let volcano = Volcano( lines: input.lines, timeLimit: timeLimit )
-    return ""
+    var volcano = Volcano( lines: input.lines, timeLimit: 26 )
+    
+    volcano.visit()
+    let disjoint = ( 0 ..< volcano.answer.count - 1 ).reduce( into: [Int]() ) { disjoint, index1 in
+        ( index1 + 1 ..< volcano.answer.count ).forEach { index2 in
+            if index1 & index2 == 0 { disjoint.append( volcano.answer[index1] + volcano.answer[index2] ) }
+        }
+    }
+    return "\(disjoint.max()!)"
 }
 
 
