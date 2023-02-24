@@ -13,25 +13,6 @@ import Foundation
 let startValve = "AA"
 let timeLimit  = 30
 
-struct Vertex {
-    let name: String
-    let clock: Int
-    let pressure: Int
-    
-    internal init( name: String, clock: Int, pressure: Int ) {
-        self.name = name
-        self.clock = clock
-        self.pressure = pressure
-    }
-    
-    init( pressure: Int ) {
-        self.name = startValve
-        self.clock = timeLimit
-        self.pressure = pressure
-    }
-}
-
-
 func parse( input: AOCinput ) -> ( [String], [ String : Int ], [ String : [ String : Int ] ] ) {
     let words = input.lines.map {
         $0.split( whereSeparator: { " =;,".contains( $0 ) } ).map { String( $0 ) }
@@ -73,7 +54,6 @@ func part1( input: AOCinput ) -> String {
                 }
             }
         }
-//        fullMatrix[row.key]![row.key] = nil
     }
     let prunedMatrix = fullMatrix
         .filter { nodes.contains( $0.key ) }
@@ -86,11 +66,11 @@ func part1( input: AOCinput ) -> String {
 
 //    print( matrix: sparseMatrix )
 //    print( matrix: fullMatrix )
-    print( matrix: prunedMatrix )
+//    print( matrix: prunedMatrix )
     
     func visit( valve: String, clock: Int, state: Int, flow: Int ) -> Void {
         answer[state] = max( answer[state], flow )
-        for next in working/*.filter( { $0 != valve } )*/ {
+        for next in working {
             let newClock = clock - prunedMatrix[valve]![next]! - 1
             if ( valveMasks[next]! & state ) == 0 && newClock > 0 {
                 let newState = state | valveMasks[next]!
@@ -100,51 +80,8 @@ func part1( input: AOCinput ) -> String {
         }
     }
     
-    func trial( sequence: [String] ) -> Int {
-        let answer = sequence.reduce( into: [ Vertex( pressure: 0 ) ] ) { answer, name in
-            let clock = answer.last!.clock - prunedMatrix[answer.last!.name]![name]! - 1
-            let pressure = answer.last!.pressure + clock * flowRates[name]!
-            if clock > 0 { answer.append( Vertex( name: name, clock: clock, pressure: pressure ) ) }
-        }
-        return answer.last!.pressure
-    }
-    
-    func potential( start: String, end: String, clock: Int ) -> Int {
-        let clock = clock - prunedMatrix[start]![end]! - 1
-        return flowRates[end]! * clock
-    }
-    
     visit( valve: startValve, clock: timeLimit, state: 0, flow: 0 )
     return "\( answer.max()! )"
-    var queue = working
-    var vertices = working.reduce( into: [ startValve : Vertex( pressure: Int.max ) ] ) { vertices, name in
-        let clock = timeLimit - prunedMatrix[startValve]![name]! - 1
-        let initial = potential( start: startValve, end: name, clock: timeLimit )
-        let following = working.filter { $0 != name }.map {
-            potential( start: name, end: $0, clock: clock )
-        }.reduce( 0, + )
-        vertices[name] = Vertex( name: name, clock: clock, pressure: initial + following )
-    }
-
-    while !queue.isEmpty {
-        let next = queue.max { vertices[$0]!.pressure < vertices[$1]!.pressure }!
-        queue = queue.filter { $0 != next }
-        
-        for neighbor in queue {
-            let clock = vertices[next]!.clock - prunedMatrix[next]![neighbor]! - 1
-            let initial = potential( start: next, end: neighbor, clock: vertices[next]!.clock )
-            let following = queue.filter { $0 != neighbor }.map {
-                potential( start: neighbor, end: $0, clock: clock )
-            }.reduce( 0, + )
-            vertices[neighbor] = Vertex( name: neighbor, clock: clock, pressure: initial + following )
-        }
-    }
-
-    let sequence = vertices.sorted { $0.value.clock > $1.value.clock }.map { $0.value.name }
-    print( "=================" )
-    print( "\( sequence.joined( separator: "," ) )" )
-    print( "=================" )
-    return "\( trial( sequence: Array( sequence.dropFirst() ) ) )"
 }
 
 
