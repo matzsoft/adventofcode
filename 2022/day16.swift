@@ -13,26 +13,18 @@ import Foundation
 let startValve = "AA"
 let timeLimit  = 30
 
-struct Valve {
-    let name: String
-    let flowRate: Int
-    let tunnels: [ String : Int ]
+class Answer {
+    var anwser: [Int]
     
-    internal init( name: String, flowRate: Int, tunnels: [String : Int] ) {
-        self.name = name
-        self.flowRate = flowRate
-        self.tunnels = tunnels
+    init( size: Int ) {
+        anwser = Array( repeating: 0, count: size )
     }
     
-    init( line: String ) {
-        let words = line.split( whereSeparator: { " =;,".contains( $0 ) } ).map { String( $0 ) }
-        
-        name = words[1]
-        flowRate = Int( words[5] )!
-        tunnels = words[10...].reduce( into: [ String: Int ](), { $0[$1] = 1 } )
+    subscript( index: Int ) -> Int {
+        get { anwser[index] }
+        set { anwser[index] = newValue }
     }
 }
-
 
 struct Vertex {
     let name: String
@@ -53,11 +45,18 @@ struct Vertex {
 }
 
 
-func parse( input: AOCinput ) -> [ String : Valve ] {
-    return input.lines.reduce( into: [ String : Valve ]() ) {
-        let valve = Valve( line: $1 )
-        $0[valve.name] = valve
+func parse( input: AOCinput ) -> ( [String], [ String : Int ], [ String : [ String : Int ] ] ) {
+    let words = input.lines.map {
+        $0.split( whereSeparator: { " =;,".contains( $0 ) } ).map { String( $0 ) }
     }
+    let flowRates = words.reduce( into: [ String : Int ]() ) { $0[$1[1]] = Int( $1[5] )! }
+    let working = flowRates.keys.filter { flowRates[$0]! > 0 }.map { String( $0 ) }
+    let tunnels = words.reduce(into: [ String : [ String : Int ] ]() ) { tunnels, line in
+        tunnels[line[1]] = line[10...].reduce( into: [ String: Int ](), { $0[$1] = 1 } )
+    }
+    let matrix = tunnels.reduce( into: [ String : [ String : Int ] ]() ) { $0[$1.key] = $1.value }
+
+    return ( working, flowRates, matrix )
 }
 
 
@@ -72,13 +71,8 @@ func print( matrix: [ String : [ String : Int ] ] ) -> Void {
 
 
 func part1( input: AOCinput ) -> String {
-    let valves = parse( input: input )
-    let working = valves.filter { $0.value.flowRate > 0 }.map { $0.key }
+    let ( working, flowRates, sparseMatrix ) = parse( input: input )
     let nodes = Set( [ startValve ] + working )
-    let sparseMatrix = valves.values.reduce( into: [ String : [ String : Int ] ]() ) {
-        $0[$1.name] = $1.tunnels
-    }
-//    print( matrix: sparseMatrix )
     let fullMatrix = sparseMatrix.reduce( into: sparseMatrix ) { fullMatrix, row in
         for distance in 1 ... fullMatrix.count {
             let neighbors = fullMatrix[row.key]!.filter { $0.value == distance }.map { $0.key }
@@ -96,121 +90,74 @@ func part1( input: AOCinput ) -> String {
     }
     let prunedMatrix = fullMatrix
         .filter { nodes.contains( $0.key ) }
-        .mapValues { $0.filter { $0.key != startValve && nodes.contains( $0.key ) } }
+        .mapValues { $0.filter { $0.key != startValve } }
 
+    let valveMasks = working.enumerated().reduce( into: [String : Int]() ) { valveMasks, tuple in
+        valveMasks[tuple.element] = 1 << tuple.offset
+    }
+    let answer = Answer( size: 2 * valveMasks.values.max()! )
+
+//    print( matrix: sparseMatrix )
 //    print( matrix: fullMatrix )
     print( matrix: prunedMatrix )
     
-    let relative = working.reduce( into: [ String : [ String : Int ] ]() ) { relative, first in
-        relative[first] = working.reduce( into: [ String : Int ]() ) { row, second in
-            if first == second { return }
-            let firstTime = timeLimit - prunedMatrix[startValve]![first]! - 1
-            let secondTime = firstTime - prunedMatrix[first]![second]! - 1
-            row[second] = firstTime * valves[first]!.flowRate + secondTime * valves[second]!.flowRate
+    func visit( valve: String, clock: Int, state: Int, flow: Int, answer: Answer ) -> [Int] {
+        answer[state] = max( answer[state], flow )
+        for next in working.filter( { $0 != valve } ) {
+            let newClock = clock - prunedMatrix[valve]![next]! - 1
+            if ( valveMasks[next]! & state ) == 0 && newClock > 0 {
+                let newState = state | valveMasks[next]!
+                let newFlow = flow + newClock * flowRates[next]!
+                visit( valve: next, clock: newClock, state: newState, flow: newFlow, answer: answer )
+            }
         }
+        return answer.anwser
     }
-    print( "---------------" )
-    print( matrix: relative )
     
-    let times = working.reduce( into: [ String : [ String : Int ] ]() ) { times, first in
-        times[first] = working.reduce( into: [ String : Int ]() ) { row, second in
-            if first == second { return }
-            let firstTime = timeLimit - prunedMatrix[startValve]![first]! - 1
-            let secondTime = firstTime - prunedMatrix[first]![second]! - 1
-            row[second] = firstTime + secondTime
-        }
-    }
-    print( "---------------" )
-    print( matrix: times )
-
     func trial( sequence: [String] ) -> Int {
         let answer = sequence.reduce( into: [ Vertex( pressure: 0 ) ] ) { answer, name in
             let clock = answer.last!.clock - prunedMatrix[answer.last!.name]![name]! - 1
-            let pressure = answer.last!.pressure + clock * valves[name]!.flowRate
+            let pressure = answer.last!.pressure + clock * flowRates[name]!
             if clock > 0 { answer.append( Vertex( name: name, clock: clock, pressure: pressure ) ) }
         }
         return answer.last!.pressure
     }
     
+    func potential( start: String, end: String, clock: Int ) -> Int {
+        let clock = clock - prunedMatrix[start]![end]! - 1
+        return flowRates[end]! * clock
+    }
+    
+    return "\( visit( valve: startValve, clock: timeLimit, state: 0, flow: 0, answer: answer ).max()! )"
+    var queue = working
     var vertices = working.reduce( into: [ startValve : Vertex( pressure: Int.max ) ] ) { vertices, name in
         let clock = timeLimit - prunedMatrix[startValve]![name]! - 1
-        let potential = valves[name]!.flowRate * clock
-        vertices[name] = Vertex( name: name, clock: clock, pressure: potential )
+        let initial = potential( start: startValve, end: name, clock: timeLimit )
+        let following = working.filter { $0 != name }.map {
+            potential( start: name, end: $0, clock: clock )
+        }.reduce( 0, + )
+        vertices[name] = Vertex( name: name, clock: clock, pressure: initial + following )
     }
-    var queue = [ startValve ] + working
-    
+
     while !queue.isEmpty {
         let next = queue.max { vertices[$0]!.pressure < vertices[$1]!.pressure }!
         queue = queue.filter { $0 != next }
         
         for neighbor in queue {
             let clock = vertices[next]!.clock - prunedMatrix[next]![neighbor]! - 1
-            let potential = max( clock * valves[neighbor]!.flowRate, 0 )
-            vertices[neighbor] = Vertex( name: neighbor, clock: clock, pressure: potential )
+            let initial = potential( start: next, end: neighbor, clock: vertices[next]!.clock )
+            let following = queue.filter { $0 != neighbor }.map {
+                potential( start: neighbor, end: $0, clock: clock )
+            }.reduce( 0, + )
+            vertices[neighbor] = Vertex( name: neighbor, clock: clock, pressure: initial + following )
         }
-    }
-    
-    let theSequence = vertices.sorted { $0.value.clock > $1.value.clock }.map { $0.value.name }
-    print( "=================" )
-    print( "\( theSequence.joined( separator: "," ) )" )
-    print( "=================" )
-    return "\( trial( sequence: Array( theSequence.dropFirst() ) ) )"
-
-    var remaining = Set( working )
-    var sequence = [String]()
-    var start = startValve
-    var clock = timeLimit
-    var pressure = 0
-    
-    while !remaining.isEmpty{
-        let relative = remaining.reduce( into: [ String : [ String : Int ] ]() ) { relative, first in
-            relative[first] = remaining.reduce( into: [ String : Int ]() ) { row, second in
-                if first == second { return }
-                let firstTime = clock - prunedMatrix[start]![first]! - 1
-                let secondTime = firstTime - prunedMatrix[first]![second]! - 1
-                row[second] =
-                    ( firstTime > 0 ? firstTime * valves[first]!.flowRate : 0 ) +
-                    ( secondTime > 0 ? secondTime * valves[second]!.flowRate : 0 )
-            }
-        }
-        let results = remaining.map { first in
-            let revised = remaining.filter { $0 != first }
-            let trialSequence = sequence + [first] + revised.sorted { relative[$0]![$1]! > relative[$1]![$0]! }
-            let result = trial( sequence: trialSequence )
-            return ( first, result )
-        }
-        let best = results.max( by: { $0.1 < $1.1 } )!
-        
-        clock -= prunedMatrix[start]![best.0]! + 1
-        start = best.0
-        pressure += clock > 0 ? clock * valves[best.0]!.flowRate : 0
-        remaining.remove( start )
-    }
-    
-    return "\(pressure)"
-    let ultimatum = nodes.reduce( into: [ String : [ String : [ String : Int ] ] ]() ) { ultimatum, start in
-        ultimatum[start] = working.reduce( into: [ String : [ String : Int ] ]() ) { relative, first in
-            if start == first { return }
-            relative[first] = working.reduce( into: [ String : Int ]() ) { row, second in
-                if start == second || first == second { return }
-                let firstTime = timeLimit - prunedMatrix[start]![first]! - 1
-                let secondTime = firstTime - prunedMatrix[first]![second]! - 1
-                row[second] = firstTime * valves[first]!.flowRate + secondTime * valves[second]!.flowRate
-            }
-        }
-    }
-    
-    print( "---------------" )
-    let results = working.map { start in
-        let revised = working.filter { $0 != start }
-        let sequence = [ start ] + revised.sorted { ultimatum[start]![$0]![$1]! > ultimatum[start]![$1]![$0]! }
-        let result = trial( sequence: sequence )
-        print( "\( sequence.joined( separator: "," ) ) = \(result)" )
-        return result
     }
 
-    // 1825 is too low, 1847 is wrong
-    return "\( results.max()! )"
+    let sequence = vertices.sorted { $0.value.clock > $1.value.clock }.map { $0.value.name }
+    print( "=================" )
+    print( "\( sequence.joined( separator: "," ) )" )
+    print( "=================" )
+    return "\( trial( sequence: Array( sequence.dropFirst() ) ) )"
 }
 
 
