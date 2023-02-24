@@ -11,20 +11,64 @@
 import Foundation
 
 let startValve = "AA"
-let timeLimit  = 30
 
-func parse( input: AOCinput ) -> ( [String], [ String : Int ], [ String : [ String : Int ] ] ) {
-    let words = input.lines.map {
-        $0.split( whereSeparator: { " =;,".contains( $0 ) } ).map { String( $0 ) }
+struct Volcano {
+    let working: [String]
+    let flowRates: [ String : Int ]
+    let distances: [ String : [ String : Int ] ]
+    let timeLimit: Int
+    let valveMasks: [ String : Int ]
+    var answer: [Int]
+    
+    init( lines: [String], timeLimit: Int ) {
+        let words = lines.map { $0.split( whereSeparator: { " =;,".contains( $0 ) } ).map { String( $0 ) } }
+        let flowRates = words.reduce( into: [ String : Int ]() ) { $0[$1[1]] = Int( $1[5] )! }
+        let working = flowRates.keys.filter { flowRates[$0]! > 0 }.map { String( $0 ) }
+        let tunnels = words.reduce(into: [ String : [ String : Int ] ]() ) { tunnels, line in
+            tunnels[line[1]] = line[10...].reduce( into: [ String: Int ](), { $0[$1] = 1 } )
+        }
+        let sparseMatrix = tunnels.reduce( into: [ String : [ String : Int ] ]() ) { $0[$1.key] = $1.value }
+        let fullMatrix = sparseMatrix.reduce( into: sparseMatrix ) { fullMatrix, row in
+            for distance in 1 ... fullMatrix.count {
+                let neighbors = fullMatrix[row.key]!.filter { $0.value == distance }.map { $0.key }
+                if neighbors.isEmpty { break }
+                for neighbor in neighbors {
+                    let onceRemoved = fullMatrix[neighbor]!.filter { $0.value == 1 }.map { $0.key }
+                    for candidate in onceRemoved {
+                        if fullMatrix[row.key]![candidate] == nil {
+                            fullMatrix[row.key]![candidate] = distance + 1
+                        }
+                    }
+                }
+            }
+        }
+        let nodes = Set( [ startValve ] + working )
+        let prunedMatrix = fullMatrix
+            .filter { nodes.contains( $0.key ) }
+            .mapValues { $0.filter { $0.key != startValve } }
+        let valveMasks = working.enumerated().reduce( into: [String : Int]() ) { valveMasks, tuple in
+            valveMasks[tuple.element] = 1 << tuple.offset
+        }
+        
+        self.working = working
+        self.flowRates = flowRates
+        self.distances = prunedMatrix
+        self.timeLimit = timeLimit
+        self.valveMasks = valveMasks
+        self.answer = Array( repeating: 0, count: 2 * valveMasks.values.max()! )
     }
-    let flowRates = words.reduce( into: [ String : Int ]() ) { $0[$1[1]] = Int( $1[5] )! }
-    let working = flowRates.keys.filter { flowRates[$0]! > 0 }.map { String( $0 ) }
-    let tunnels = words.reduce(into: [ String : [ String : Int ] ]() ) { tunnels, line in
-        tunnels[line[1]] = line[10...].reduce( into: [ String: Int ](), { $0[$1] = 1 } )
+    
+    mutating func visit( valve: String, clock: Int, state: Int, flow: Int ) -> Void {
+        answer[state] = max( answer[state], flow )
+        for next in working {
+            let newClock = clock - distances[valve]![next]! - 1
+            if ( valveMasks[next]! & state ) == 0 && newClock > 0 {
+                let newState = state | valveMasks[next]!
+                let newFlow = flow + newClock * flowRates[next]!
+                visit( valve: next, clock: newClock, state: newState, flow: newFlow )
+            }
+        }
     }
-    let matrix = tunnels.reduce( into: [ String : [ String : Int ] ]() ) { $0[$1.key] = $1.value }
-
-    return ( working, flowRates, matrix )
 }
 
 
@@ -39,54 +83,17 @@ func print( matrix: [ String : [ String : Int ] ] ) -> Void {
 
 
 func part1( input: AOCinput ) -> String {
-    let ( working, flowRates, sparseMatrix ) = parse( input: input )
-    let nodes = Set( [ startValve ] + working )
-    let fullMatrix = sparseMatrix.reduce( into: sparseMatrix ) { fullMatrix, row in
-        for distance in 1 ... fullMatrix.count {
-            let neighbors = fullMatrix[row.key]!.filter { $0.value == distance }.map { $0.key }
-            if neighbors.isEmpty { break }
-            for neighbor in neighbors {
-                let onceRemoved = fullMatrix[neighbor]!.filter { $0.value == 1 }.map { $0.key }
-                for candidate in onceRemoved {
-                    if fullMatrix[row.key]![candidate] == nil {
-                        fullMatrix[row.key]![candidate] = distance + 1
-                    }
-                }
-            }
-        }
-    }
-    let prunedMatrix = fullMatrix
-        .filter { nodes.contains( $0.key ) }
-        .mapValues { $0.filter { $0.key != startValve } }
+    let timeLimit = 30
+    var volcano = Volcano( lines: input.lines, timeLimit: timeLimit )
 
-    let valveMasks = working.enumerated().reduce( into: [String : Int]() ) { valveMasks, tuple in
-        valveMasks[tuple.element] = 1 << tuple.offset
-    }
-    var answer = Array( repeating: 0, count: 2 * valveMasks.values.max()! )
-
-//    print( matrix: sparseMatrix )
-//    print( matrix: fullMatrix )
-//    print( matrix: prunedMatrix )
-    
-    func visit( valve: String, clock: Int, state: Int, flow: Int ) -> Void {
-        answer[state] = max( answer[state], flow )
-        for next in working {
-            let newClock = clock - prunedMatrix[valve]![next]! - 1
-            if ( valveMasks[next]! & state ) == 0 && newClock > 0 {
-                let newState = state | valveMasks[next]!
-                let newFlow = flow + newClock * flowRates[next]!
-                visit( valve: next, clock: newClock, state: newState, flow: newFlow )
-            }
-        }
-    }
-    
-    visit( valve: startValve, clock: timeLimit, state: 0, flow: 0 )
-    return "\( answer.max()! )"
+    volcano.visit( valve: startValve, clock: timeLimit, state: 0, flow: 0 )
+    return "\( volcano.answer.max()! )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
+    let timeLimit = 26
+    let volcano = Volcano( lines: input.lines, timeLimit: timeLimit )
     return ""
 }
 
