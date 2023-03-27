@@ -42,6 +42,12 @@ class SinglyLinkedList<T: Comparable> {
         count = 1
     }
     
+    init( list: [T] ) {
+        head = nil
+        count = 0
+        merge( elements: list )
+    }
+    
     func merge( elements: [T] ) -> Void {
         if elements.isEmpty { return }
         if isEmpty {
@@ -128,7 +134,6 @@ struct Blueprint: CustomStringConvertible {
 
 class Status: Comparable, CustomStringConvertible {
     let clock: Int
-    let firstGeode: Bool
     let robots: [ ResourceType : Int ]
     let resources: [ ResourceType : Int ]
     var prev: Status?
@@ -143,7 +148,6 @@ class Status: Comparable, CustomStringConvertible {
     
     init() {
         clock = 1
-        firstGeode = false
         robots = [
             ResourceType.ore : 1, ResourceType.clay : 0,
             ResourceType.obsidian : 0, ResourceType.geode : 0
@@ -155,11 +159,9 @@ class Status: Comparable, CustomStringConvertible {
     }
     
     init(
-        clock: Int, robots: [ ResourceType : Int ],
-        resources: [ ResourceType : Int ], firstGeode: Bool = false, prev: Status? = nil
+        clock: Int, robots: [ ResourceType : Int ], resources: [ ResourceType : Int ], prev: Status? = nil
     ) {
         self.clock = clock
-        self.firstGeode = firstGeode
         self.robots = robots
         self.resources = resources
         self.prev = prev
@@ -167,7 +169,6 @@ class Status: Comparable, CustomStringConvertible {
     
     static func == (lhs: Status, rhs: Status) -> Bool {
         guard lhs.clock == rhs.clock else { return false }
-        guard lhs.firstGeode == rhs.firstGeode else { return false }
         guard lhs.robots == rhs.robots else { return false }
         guard lhs.resources == rhs.resources else { return false }
         
@@ -183,10 +184,7 @@ class Status: Comparable, CustomStringConvertible {
         let newResources = resources.reduce( into: resources ) { newResources, resource in
             newResources[resource.key] = resource.value + robots[resource.key]! * time
         }
-        return Status(
-            clock: clock + time, robots: robots, resources: newResources,
-            firstGeode: firstGeode, prev: self
-        )
+        return Status( clock: clock + time, robots: robots, resources: newResources, prev: self )
     }
     
     func build( blueprint: Blueprint, type: ResourceType ) -> Status {
@@ -196,10 +194,7 @@ class Status: Comparable, CustomStringConvertible {
         }
 
         newRobots[ type, default: 0 ] += 1
-        return Status(
-            clock: clock, robots: newRobots, resources: newResources,
-            firstGeode: type == .geode && robots[.geode] == 0, prev: prev
-        )
+        return Status( clock: clock, robots: newRobots, resources: newResources, prev: prev )
     }
     
     func nextBuilds( blueprint: Blueprint ) -> [Status] {
@@ -240,6 +235,34 @@ func parse( input: AOCinput ) -> [Blueprint] {
     return input.lines.map { Blueprint( line: $0 ) }
 }
 
+func nextGeodeRobots( blueprint: Blueprint, start: [Status] ) -> [Status] {
+    var firstGeodeTime = timeLimit
+    let queue = SinglyLinkedList( list: start )
+    var candidates = [Status]()
+    
+    while !queue.isEmpty {
+        let next = queue.removeFirst
+        let builds = next.nextBuilds( blueprint: blueprint ).filter {
+            if $0.clock > firstGeodeTime { return false }
+            guard $0.robots[.geode]! > next.robots[.geode]! else { return true }
+            
+            if $0.clock == firstGeodeTime {
+                candidates.append( $0 )
+            } else {
+                firstGeodeTime = $0.clock
+                candidates = [ $0 ]
+            }
+            return false
+        }
+        
+        if !builds.isEmpty {
+            queue.merge( elements: builds )
+        }
+    }
+    
+    return candidates.sorted()
+}
+
 
 func part1( input: AOCinput ) -> String {
     let blueprints = parse( input: input )
@@ -247,28 +270,20 @@ func part1( input: AOCinput ) -> String {
     //print( blueprints.map { $0.description }.joined( separator: "\n" ) )
 
     let qualities = blueprints.map { blueprint in
-        var maxGeodes = 0
-        var firstGeodeTime = timeLimit
-        let queue = SinglyLinkedList( value: Status() )
+        var candidates = [ Status() ]
         
-        while !queue.isEmpty {
-            let next = queue.removeFirst
-            let builds = next.nextBuilds( blueprint: blueprint ).filter {
-                if $0.clock > firstGeodeTime && $0.robots[.geode]! == 0 { return false }
-                guard $0.firstGeode else { return true }
-                guard $0.clock <= firstGeodeTime else { return false }
-                firstGeodeTime = $0.clock
-                return true
+        while !candidates.isEmpty {
+            let newCandidates = nextGeodeRobots( blueprint: blueprint, start: candidates )
+            
+            if newCandidates.isEmpty {
+                let advanced = candidates[0].advanced( by: timeLimit - candidates[0].clock + 1 )
+                return blueprint.id * advanced.resources[.geode]!
             }
             
-            if !builds.isEmpty {
-                queue.merge( elements: builds )
-            } else {
-                let advanced = next.advanced( by: timeLimit - next.clock + 1 )                
-                maxGeodes = max( maxGeodes, advanced.resources[.geode]! )
-            }
+            candidates = newCandidates
         }
-        return blueprint.id * maxGeodes
+        
+        fatalError( "No solution for blueprint \(blueprint.id)" )
     }
     
     return "\( qualities.reduce( 0, + ) )"
