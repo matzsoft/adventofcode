@@ -139,7 +139,7 @@ class Status: Comparable, CustomStringConvertible {
     var prev: Status?
 
     var description: String {
-        let timeString = "== Minute \(clock - 1) =="
+        let timeString = "== Minute \(clock) =="
         let robotsStrings = robots.filter { $0.value > 0 }.map { "\($0.value) \($0.key) robot" }
         let resourcesStrings = resources.filter { $0.value > 0 }.map { "\($0.value) \($0.key)" }
             
@@ -147,7 +147,7 @@ class Status: Comparable, CustomStringConvertible {
     }
     
     init() {
-        clock = 1
+        clock = 0
         robots = [
             ResourceType.ore : 1, ResourceType.clay : 0,
             ResourceType.obsidian : 0, ResourceType.geode : 0
@@ -276,7 +276,7 @@ func part1( input: AOCinput ) -> String {
             let newCandidates = nextGeodeRobots( blueprint: blueprint, start: candidates )
             
             if newCandidates.isEmpty {
-                let advanced = candidates[0].advanced( by: timeLimit - candidates[0].clock + 1 )
+                let advanced = candidates[0].advanced( by: timeLimit - candidates[0].clock )
                 return blueprint.id * advanced.resources[.geode]!
             }
             
