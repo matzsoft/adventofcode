@@ -153,6 +153,11 @@ class Status: Comparable, CustomStringConvertible {
         }.sorted()
     }
     
+    func potential( blueprint: Blueprint ) -> Int {
+        let remaining = blueprint.timeLimit - clock
+        return resources[.geode]! + robots[.geode]! * remaining + remaining * ( remaining - 1 ) / 2
+    }
+    
     var chain: [Status] {
         var array = [ self ]
         var current = self
@@ -231,21 +236,23 @@ func part2( input: AOCinput ) -> String {
     let blueprints = allBlueprints.count < 3 ? allBlueprints : Array( allBlueprints[..<3] )
 
     let geodes = blueprints.map { blueprint in
-        var candidates = [ Status() ]
+        var queue = [ Status() ]
+        var maxGeodes = 0
         
-        while !candidates.isEmpty {
-            let newCandidates = nextGeodeRobots( blueprint: blueprint, start: candidates )
+        while !queue.isEmpty {
+            let next = queue.removeFirst()
+            if next.potential( blueprint: blueprint ) < maxGeodes { continue }
+            let builds = next.nextBuilds( blueprint: blueprint )
             
-            if newCandidates.isEmpty {
-                let advanced = candidates[0].advanced( by: blueprint.timeLimit - candidates[0].clock )
-//                print( advanced.chainString )
-                return advanced.resources[.geode]!
+            if !builds.isEmpty {
+                queue = builds + queue
+            } else {
+                let advanced = next.advanced( by: blueprint.timeLimit - next.clock )
+                maxGeodes = max( maxGeodes, advanced.resources[.geode]! )
             }
-            
-            candidates = newCandidates
         }
         
-        fatalError( "No solution for blueprint \(blueprint.id)" )
+        return maxGeodes
     }
     
     return "\( geodes.reduce( 1, * ) )"
