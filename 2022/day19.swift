@@ -12,48 +12,6 @@ import Foundation
 
 enum ResourceType: String { case ore, clay, obsidian, geode }
 
-class SinglyLinkedList<T: Comparable> {
-    class Node {
-        let value: T
-        var pointer: Node?
-
-        internal init( value: T, pointer: SinglyLinkedList<T>.Node? = nil ) {
-            self.value = value
-            self.pointer = pointer
-        }
-    }
-    
-    var head: Node?
-    var count = 0
-    
-    var isEmpty: Bool { head == nil }
-    var first: T? { head?.value }
-    var removeFirst: T {
-        let retval = head!.value
-        head = head?.pointer
-        count -= 1
-        return retval
-    }
-    
-    init( value: T ) {
-        head = Node( value: value )
-        count = 1
-    }
-    
-    init( list: [T] ) {
-        head = nil
-        count = 0
-        merge( elements: list )
-    }
-    
-    func merge( elements: [T] ) -> Void {
-        if elements.isEmpty { return }
-        elements.reversed().forEach { head = Node( value: $0, pointer: head ) }
-        count += elements.count
-    }
-}
-
-
 struct Robot: CustomStringConvertible {
     let resource: ResourceType
     let costs: [ ResourceType: Int ]
@@ -215,11 +173,11 @@ class Status: Comparable, CustomStringConvertible {
 
 func nextGeodeRobots( blueprint: Blueprint, start: [Status] ) -> [Status] {
     var firstGeodeTime = blueprint.timeLimit
-    let queue = SinglyLinkedList( list: start )
+    var queue = start
     var candidates = [Status]()
     
     while !queue.isEmpty {
-        let next = queue.removeFirst
+        let next = queue.removeFirst()
         let builds = next.nextBuilds( blueprint: blueprint ).filter {
             if $0.clock > firstGeodeTime { return false }
             guard $0.robots[.geode]! > next.robots[.geode]! else { return true }
@@ -234,7 +192,7 @@ func nextGeodeRobots( blueprint: Blueprint, start: [Status] ) -> [Status] {
         }
         
         if !builds.isEmpty {
-            queue.merge( elements: builds )
+            queue = builds + queue
         }
     }
     
@@ -280,7 +238,7 @@ func part2( input: AOCinput ) -> String {
             
             if newCandidates.isEmpty {
                 let advanced = candidates[0].advanced( by: blueprint.timeLimit - candidates[0].clock )
-                print( advanced.chainString )
+//                print( advanced.chainString )
                 return advanced.resources[.geode]!
             }
             
