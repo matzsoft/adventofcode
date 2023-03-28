@@ -50,25 +50,7 @@ class SinglyLinkedList<T: Comparable> {
     
     func merge( elements: [T] ) -> Void {
         if elements.isEmpty { return }
-        if isEmpty {
-            elements.reversed().forEach { head = Node( value: $0, pointer: head ) }
-        } else if elements[0] < head!.value {
-            head = Node( value: elements[0], pointer: head )
-            merge( elements: Array( elements[1...] ) )
-        } else {
-            var prev = head
-            elements.forEach { element in
-                while let next = prev?.pointer {
-                    if element < next.value {
-                        prev!.pointer = Node( value: element, pointer: next )
-                        return
-                    }
-                    prev = next
-                }
-                prev!.pointer = Node( value: element, pointer: nil )
-                prev = prev!.pointer
-            }
-        }
+        elements.reversed().forEach { head = Node( value: $0, pointer: head ) }
         count += elements.count
     }
 }
