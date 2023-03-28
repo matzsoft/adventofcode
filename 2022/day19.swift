@@ -47,9 +47,9 @@ struct Blueprint: CustomStringConvertible {
     }
     
     var description: String {
-        let lines = [ "Blueprint \(id):" ] +
-        robots.values.map { $0.description } +
-        [ "  Maximums: " + maximums.map { "\($0.key) = \($0.value)"}.joined( separator: ", " ) ]
+        let lines = [ "Blueprint \(id):" ]
+            + robots.values.map { $0.description }
+            + [ "  Maximums: " + maximums.map { "\($0.key) = \($0.value)"}.joined( separator: ", " ) ]
         return lines.joined( separator: "\n" )
     }
     
@@ -231,28 +231,46 @@ func part1( input: AOCinput ) -> String {
 }
 
 
+func maxGeodes( blueprint: Blueprint ) -> Int {
+    var queue = [ Status() ]
+    var maxGeodes = 0
+    
+    while !queue.isEmpty {
+        let next = queue.removeFirst()
+        if next.potential( blueprint: blueprint ) < maxGeodes { continue }
+        let builds = next.nextBuilds( blueprint: blueprint )
+        
+        if !builds.isEmpty {
+            queue = builds + queue
+        } else {
+            let advanced = next.advanced( by: blueprint.timeLimit - next.clock )
+            maxGeodes = max( maxGeodes, advanced.resources[.geode]! )
+        }
+    }
+    
+    return maxGeodes
+}
+
+
+func part1a( input: AOCinput ) -> String {
+    let blueprints = input.lines.map { Blueprint( line: $0, timeLimit: 24 ) }
+    
+    //print( blueprints.map { $0.description }.joined( separator: "\n" ) )
+
+    let qualities = blueprints.map { blueprint in
+        return blueprint.id * maxGeodes( blueprint: blueprint )
+    }
+    
+    return "\( qualities.reduce( 0, + ) )"
+}
+
+
 func part2( input: AOCinput ) -> String {
     let allBlueprints = input.lines.map { Blueprint( line: $0, timeLimit: 32 ) }
     let blueprints = allBlueprints.count < 3 ? allBlueprints : Array( allBlueprints[..<3] )
 
     let geodes = blueprints.map { blueprint in
-        var queue = [ Status() ]
-        var maxGeodes = 0
-        
-        while !queue.isEmpty {
-            let next = queue.removeFirst()
-            if next.potential( blueprint: blueprint ) < maxGeodes { continue }
-            let builds = next.nextBuilds( blueprint: blueprint )
-            
-            if !builds.isEmpty {
-                queue = builds + queue
-            } else {
-                let advanced = next.advanced( by: blueprint.timeLimit - next.clock )
-                maxGeodes = max( maxGeodes, advanced.resources[.geode]! )
-            }
-        }
-        
-        return maxGeodes
+        return maxGeodes( blueprint: blueprint )
     }
     
     return "\( geodes.reduce( 1, * ) )"
@@ -260,7 +278,9 @@ func part2( input: AOCinput ) -> String {
 
 
 try print( projectInfo() )
-try runTests( part1: part1 )
+try runTests( part1: part1, label: "original" )
+try runTests( part1: part1a, label: "revised" )
 try runTests( part2: part2 )
-try solve( part1: part1 )
+try solve( part1: part1, label: "original" )
+try solve( part1: part1a, label: "revised" )
 try solve( part2: part2 )
