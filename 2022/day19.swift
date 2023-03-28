@@ -10,8 +10,6 @@
 
 import Foundation
 
-let timeLimit = 24
-
 enum ResourceType: String { case ore, clay, obsidian, geode }
 
 class SinglyLinkedList<T: Comparable> {
@@ -82,6 +80,7 @@ struct Robot: CustomStringConvertible {
 
 struct Blueprint: CustomStringConvertible {
     let id: Int
+    let timeLimit: Int
     let robots: [ ResourceType : Robot ]
     let maximums: [ ResourceType : Int ]
     
@@ -96,9 +95,10 @@ struct Blueprint: CustomStringConvertible {
         return lines.joined( separator: "\n" )
     }
     
-    init( line: String ) {
+    init( line: String, timeLimit: Int ) {
         let sentences = line.split( whereSeparator:  { ":.".contains( $0 ) } )
         id = Int( sentences[0].split( separator: " " )[1] )!
+        self.timeLimit = timeLimit
         robots = sentences[1...].reduce( into: [ ResourceType : Robot ]() ) { robots, sentence in
             let robot = Robot( line: String( sentence ) )
             robots[robot.resource] = robot
@@ -185,10 +185,10 @@ class Status: Comparable, CustomStringConvertible {
             let time = blueprint[robot.key].costs.map { resource in
                 let needed = resource.value - resources[resource.key]!
                 guard needed > 0 else { return 0 }
-                guard robots[resource.key]! > 0 else { return timeLimit }
+                guard robots[resource.key]! > 0 else { return blueprint.timeLimit }
                 return ( needed + robots[resource.key]! - 1 ) / robots[resource.key]!
             }.max()!
-            if clock + time < timeLimit { times[robot.key] = time }
+            if clock + time < blueprint.timeLimit { times[robot.key] = time }
         }
         return times.map {
             return advanced( by: $0.value + 1 ).build( blueprint: blueprint, type: $0.key )
@@ -213,12 +213,8 @@ class Status: Comparable, CustomStringConvertible {
 }
 
 
-func parse( input: AOCinput ) -> [Blueprint] {
-    return input.lines.map { Blueprint( line: $0 ) }
-}
-
 func nextGeodeRobots( blueprint: Blueprint, start: [Status] ) -> [Status] {
-    var firstGeodeTime = timeLimit
+    var firstGeodeTime = blueprint.timeLimit
     let queue = SinglyLinkedList( list: start )
     var candidates = [Status]()
     
@@ -247,7 +243,7 @@ func nextGeodeRobots( blueprint: Blueprint, start: [Status] ) -> [Status] {
 
 
 func part1( input: AOCinput ) -> String {
-    let blueprints = parse( input: input )
+    let blueprints = input.lines.map { Blueprint( line: $0, timeLimit: 24 ) }
     
     //print( blueprints.map { $0.description }.joined( separator: "\n" ) )
 
@@ -258,7 +254,7 @@ func part1( input: AOCinput ) -> String {
             let newCandidates = nextGeodeRobots( blueprint: blueprint, start: candidates )
             
             if newCandidates.isEmpty {
-                let advanced = candidates[0].advanced( by: timeLimit - candidates[0].clock )
+                let advanced = candidates[0].advanced( by: blueprint.timeLimit - candidates[0].clock )
                 return blueprint.id * advanced.resources[.geode]!
             }
             
@@ -273,8 +269,28 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    return ""
+    let allBlueprints = input.lines.map { Blueprint( line: $0, timeLimit: 32 ) }
+    let blueprints = allBlueprints.count < 3 ? allBlueprints : Array( allBlueprints[..<3] )
+
+    let geodes = blueprints.map { blueprint in
+        var candidates = [ Status() ]
+        
+        while !candidates.isEmpty {
+            let newCandidates = nextGeodeRobots( blueprint: blueprint, start: candidates )
+            
+            if newCandidates.isEmpty {
+                let advanced = candidates[0].advanced( by: blueprint.timeLimit - candidates[0].clock )
+                print( advanced.chainString )
+                return advanced.resources[.geode]!
+            }
+            
+            candidates = newCandidates
+        }
+        
+        fatalError( "No solution for blueprint \(blueprint.id)" )
+    }
+    
+    return "\( geodes.reduce( 1, * ) )"
 }
 
 
