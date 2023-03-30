@@ -9,7 +9,7 @@
 import Foundation
 import ArgumentParser
 
-extension adventOfCode {
+extension AdventOfCode {
     struct Close: ParsableCommand {
         static var configuration = CommandConfiguration(
             abstract: "Closes a problem solution package to prepare for git commit."
@@ -116,21 +116,5 @@ func updateLibrary( libraryFolder: String, sourceFile: String ) throws -> Void {
                 try copyFile( atPath: sourceFile, toPath: libraryFile )
             }
         }
-    }
-}
-
-
-func askYN( prompt: String, expected: Bool ) -> Bool {
-    let defaultPrompt = expected ? " [Y/n]? " : " [y/N]? "
-    
-    while true {
-        print( "\(prompt)\(defaultPrompt)", terminator: "" )
-        
-        let answer = readLine( strippingNewline: true )
-        
-        guard let value = answer else { return expected }
-        if value.isEmpty { return expected }
-        if value.first!.lowercased() == "y" { return true }
-        if value.first!.lowercased() == "n" { return false }
     }
 }

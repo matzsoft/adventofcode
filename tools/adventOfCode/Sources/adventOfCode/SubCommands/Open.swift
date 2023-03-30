@@ -9,21 +9,7 @@
 import Foundation
 import ArgumentParser
 
-func shell( stdout: FileHandle? = nil, _ args: String... ) -> Int32 {
-    let task = Process()
-    
-    task.launchPath = "/usr/bin/env"
-    task.arguments = args
-    if let stdout = stdout {
-        task.standardOutput = stdout
-    }
-    task.launch()
-    task.waitUntilExit()
-    return task.terminationStatus
-}
-
-
-extension adventOfCode {
+extension AdventOfCode {
     struct Open: ParsableCommand {
         static var configuration = CommandConfiguration(
             abstract: "Create the Swift Package Manager structure for a solution."

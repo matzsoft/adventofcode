@@ -9,23 +9,7 @@
 import Foundation
 import ArgumentParser
 
-struct FileHandlerOutputStream: TextOutputStream {
-    private let fileHandle: FileHandle
-    let encoding: String.Encoding
-
-    init(_ fileHandle: FileHandle, encoding: String.Encoding = .utf8) {
-        self.fileHandle = fileHandle
-        self.encoding = encoding
-    }
-
-    mutating func write(_ string: String) {
-        if let data = string.data(using: encoding) {
-            fileHandle.write(data)
-        }
-    }
-}
-
-struct adventOfCode: ParsableCommand {
+struct AdventOfCode: ParsableCommand {
     // Customize your command's help and subcommands by implementing the
     // `configuration` property.
     static var configuration = CommandConfiguration(
@@ -47,4 +31,4 @@ struct adventOfCode: ParsableCommand {
     )
 }
 
-adventOfCode.main()
+AdventOfCode.main()

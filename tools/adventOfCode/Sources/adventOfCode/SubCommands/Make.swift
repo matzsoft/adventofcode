@@ -10,7 +10,7 @@ import Foundation
 import ArgumentParser
 import Mustache
 
-extension adventOfCode {
+extension AdventOfCode {
     struct Make: ParsableCommand {
         static var configuration = CommandConfiguration(
             abstract: "Create a new problem solution."
@@ -165,19 +165,5 @@ extension adventOfCode {
             
             return true
         }
-    }
-}
-
-
-func getString( prompt: String, preferred: String? ) -> String {
-    let defaultPrompt = preferred == nil ? ": " : " [\(preferred!)]: "
-    
-    while true {
-        print( "\(prompt)\(defaultPrompt)", terminator: "" )
-        
-        let answer = readLine( strippingNewline: true )
-        
-        if answer != nil && answer! != "" { return answer! }
-        if preferred != nil { return preferred! }
     }
 }
