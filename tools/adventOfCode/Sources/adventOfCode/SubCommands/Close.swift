@@ -18,14 +18,17 @@ extension AdventOfCode {
         @Argument( help: "Name of the solution package to close." )
         var package: String
         
-        func validate() throws {
-            if package.hasSuffix( ".swift" )  {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Must specify package name not a .swift file", to: &stderr )
-                throw ExitCode.failure
+        mutating func validate() throws {
+            if let determined = determinePackage( package: package ) {
+                package = determined
+                return
             }
+
+            var stderr = FileHandlerOutputStream( FileHandle.standardError )
+            print( "Cannot determine package from \(package)", to: &stderr )
+            throw ExitCode.failure
         }
-        
+
         func run() throws -> Void {
             let fileManager = FileManager.default
             let swiftFile = "\(package).swift"

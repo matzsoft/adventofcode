@@ -39,7 +39,12 @@ A very few of the problems require an external library in order to run.  In that
 # adventOfCode make day01
 ```
 
-The **adventOfCode** tool has a subcommand for each of its 3 primary tasks.  They are make, open, and close.
+The **adventOfCode** tool has a subcommand for each of its 3 primary tasks.  They are make, open, and close.  These 3 subcommands takes a single argument, the package identifier.  A package identifier may be:
+
+1. A number between 1 and 25.  Leading zeroes are permitted.
+1. A package identifier of type (1) preceeded by the string "day".
+1. A package identifier of type {1) or (2) followed by a "-" and a label.  The label indicates an alternate solution for that day.
+1. A package identifier of any other type followed by a file extension.  The file extension is stripped away and ignored.
 
 ### Make subcommand
 

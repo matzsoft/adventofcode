@@ -75,7 +75,7 @@ func findDirectory( name: String ) throws -> String {
     while directory != "/" {
         var isDir : ObjCBool = false
         
-        if fileManager.fileExists(atPath: "\(directory)/\(name)", isDirectory:&isDir) {
+        if fileManager.fileExists( atPath: "\(directory)/\(name)", isDirectory:&isDir ) {
             if isDir.boolValue {
                 return "\(directory)/\(name)"
             }
@@ -107,7 +107,7 @@ func formatElapsed( startTime: CFAbsoluteTime ) -> String {
 func getAOCinput() throws -> AOCinput {
     let inputDirectory = try findDirectory( name: "input" )
     let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
-    let filename = "\(inputDirectory)/\(project).txt"
+    let filename = "\(inputDirectory)/\(project.prefix( 5 )).txt"
     
     return try AOCinput( filename: filename )
 }
@@ -116,7 +116,7 @@ func getAOCinput() throws -> AOCinput {
 func getTests() throws -> [AOCinput] {
     let inputDirectory = try findDirectory( name: "testfiles" )
     let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
-    let pattern = "\(inputDirectory)/\(project)*.txt"
+    let pattern = "\(inputDirectory)/\(project.prefix( 5 ))*.txt"
     
     return try glob( pattern: pattern ).map { try AOCinput( filename: $0 ) }
 }

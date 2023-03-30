@@ -19,12 +19,15 @@ extension AdventOfCode {
         @Argument( help: "Name of the solution package to create." )
         var package: String
         
-        func validate() throws {
-            if package.hasSuffix( ".swift" )  {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Must specify package name not a .swift file", to: &stderr )
-                throw ExitCode.failure
+        mutating func validate() throws {
+            if let determined = determinePackage( package: package ) {
+                package = determined
+                return
             }
+
+            var stderr = FileHandlerOutputStream( FileHandle.standardError )
+            print( "Cannot determine package from \(package)", to: &stderr )
+            throw ExitCode.failure
         }
         
         func run() throws -> Void {
@@ -62,7 +65,8 @@ extension AdventOfCode {
             let fileManager = FileManager.default
             let inputFolder = "input"
             let testsFolder = "testfiles"
-            let inputFile = "\(inputFolder)/\(package).txt"
+            let base        = package.prefix( 5 )
+            let inputFile = "\(inputFolder)/\(base).txt"
             
             if !fileManager.fileExists( atPath: inputFolder ) {
                 try fileManager.createDirectory( atPath: inputFolder, withIntermediateDirectories: false, attributes: nil )
@@ -146,12 +150,12 @@ extension AdventOfCode {
                 return false
             }
             
-            guard fileManager.fileExists(atPath: sessionFile ) else {
+            guard fileManager.fileExists( atPath: sessionFile ) else {
                 print( "\(sessionFile) doesn't exist." )
                 return false
             }
             
-            let day = Int( package.dropFirst( 3 ) )!
+            let day = Int( package.prefix( 5 ).dropFirst( 3 ) )!
             let session = try String( contentsOfFile: sessionFile )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
             let status = shell(
