@@ -76,14 +76,6 @@ extension AdventOfCode {
                 try fileManager.createDirectory( atPath: testsFolder, withIntermediateDirectories: false, attributes: nil )
             }
             
-            if fileManager.fileExists( atPath: inputFile ) {
-                if !askYN( prompt: "\(inputFile) already exists, add header", expected: true ) {
-                    var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                    print( "Unable to proceed.", to: &stderr )
-                    throw ExitCode.failure
-                }
-            }
-            
             return inputFile
         }
         
@@ -114,6 +106,16 @@ extension AdventOfCode {
 
         func createInput( inputFile: String ) throws -> Void {
             let fileManager = FileManager.default
+
+            if fileManager.fileExists( atPath: inputFile ) {
+                let prompt = "\(inputFile) already exist, do you want to recreate"
+                if !askYN( prompt: prompt, expected: false ) { return }
+                
+                let oldFile = "old-\(inputFile)"
+                print( "Moving \(inputFile) to \(oldFile)" )
+                try fileManager.moveItem( atPath: inputFile, toPath: oldFile )
+            }
+            
             let part1 = getString( prompt: "Enter part1 solution", preferred: "" )
             let part2 = getString( prompt: "Enter part2 solution", preferred: "" )
             var extras = [String]()
@@ -126,7 +128,7 @@ extension AdventOfCode {
             
             var inputLines = [ part1, part2 ] + extras + [ "--------------------" ]
             
-            if try fileManager.fileExists( atPath: inputFile ) || getDataCurl( inputFile: inputFile ) {
+            if try getDataCurl( inputFile: inputFile ) {
                 inputLines.append(
                     contentsOf: try String( contentsOfFile: inputFile ).components( separatedBy: "\n" ) )
             } else {

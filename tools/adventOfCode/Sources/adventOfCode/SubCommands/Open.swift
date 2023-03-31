@@ -44,8 +44,9 @@ func performOpen( package: String ) throws -> Void {
     let libraryFolder = try findDirectory( name: "Library" )
     let pattern = "\(libraryFolder)/*.swift"
     let libraryFiles = glob( pattern: pattern )
-    let packageSwift = "\(sourcesFolder)/\(package).swift"
-    let testSwift = "Tests/\(package)Tests/\(package)Tests.swift"
+    let modifiedPackage = String( package.map { $0 == "-" ? "_" : $0 } )    // swift package init does this
+    let packageSwift = "\(sourcesFolder)/\(modifiedPackage).swift"
+    let testSwift = "Tests/\(package)Tests/\(modifiedPackage)Tests.swift"
 
     guard fileManager.fileExists( atPath: swiftFile ) else {
         var stderr = FileHandlerOutputStream( FileHandle.standardError )
