@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "adventOfCode",
+    platforms: [ .macOS( "13.0" ) ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
         // .package(url: /* package url */, from: "1.0.0"),

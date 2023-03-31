@@ -80,7 +80,7 @@ extension AdventOfCode {
         }
         
         func createSwiftSource( swiftFile: String ) throws -> String {
-            let title = getString( prompt: "Enter puzzle title", preferred: nil )
+            let title = try getTitleCurl()
             let bundleURL = Bundle.module.url( forResource: "mainswift", withExtension: "mustache" )
             guard let templateURL = bundleURL else {
                 var stderr = FileHandlerOutputStream( FileHandle.standardError )
@@ -104,6 +104,61 @@ extension AdventOfCode {
             return try template.render( templateData )
         }
 
+        func getTitleCurl() throws -> String {
+            let fileManager = FileManager.default
+            let htmlFile = "\(package).html"
+            let year = URL( fileURLWithPath: fileManager.currentDirectoryPath ).lastPathComponent
+            let sessionFile = ".session"
+            
+            guard package.hasPrefix( "day" ) else {
+                print( "Can't get day number from '\(package)'" )
+                return getTitleUser()
+            }
+            
+            guard fileManager.fileExists( atPath: sessionFile ) else {
+                print( "\(sessionFile) doesn't exist." )
+                return getTitleUser()
+            }
+            
+            let day = Int( package.prefix( 5 ).dropFirst( 3 ) )!
+            let session = try String( contentsOfFile: sessionFile )
+                .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
+            let status = shell(
+                "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", htmlFile, "https://adventofcode.com/\(year)/day/\(day)"
+                )
+            defer {
+                do {
+                    try fileManager.removeItem( atPath: htmlFile )
+                } catch {
+                    print( "Unable to delete \(htmlFile)")
+                }
+            }
+
+            guard status == 0 else {
+                print( "Can't retrieve data from adventofcode.com." )
+                return getTitleUser()
+            }
+            
+            let html = try String( contentsOfFile: htmlFile )
+            let titleRegex = try Regex( "<title>Day \\d+ - (.+)</title>", as: ( Substring, Substring ).self )
+            guard let titleMatch = try titleRegex.firstMatch( in: html ) else {
+                print( "testMatch fail" )
+                return getTitleUser()
+            }
+
+            let descriptionRegex = try Regex( "<h2>[^ ]+ (.+) [^ ]+</h2>", as: ( Substring, Substring ).self )
+            guard let descriptionMatch = try descriptionRegex.firstMatch( in: html ) else {
+                print( "Can't find description in html." )
+                return getTitleUser()
+            }
+
+            return "\(titleMatch.1) \(descriptionMatch.1)"
+        }
+
+        func getTitleUser() -> String {
+            getString( prompt: "Enter puzzle title", preferred: nil )
+        }
+        
         func createInput( inputFile: String ) throws -> Void {
             let fileManager = FileManager.default
 
