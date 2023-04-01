@@ -32,7 +32,7 @@ extension AdventOfCode {
         func run() throws -> Void {
             let fileManager = FileManager.default
             let swiftFile = "\(package).swift"
-            let sourcesFolder = "\(package)/Sources/\(package)"
+            let sourcesFolder = "\(package)/Sources"
             let mainSwift = "\(sourcesFolder)/main.swift"
             let libraryFolder = try findDirectory( name: "Library" )
             let pattern = "\(sourcesFolder)/*.swift"

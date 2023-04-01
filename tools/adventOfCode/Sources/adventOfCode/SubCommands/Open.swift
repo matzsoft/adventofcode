@@ -39,14 +39,11 @@ extension AdventOfCode {
 func performOpen( package: String ) throws -> Void {
     let fileManager = FileManager.default
     let swiftFile = package + ".swift"
-    let sourcesFolder = "Sources/\(package)"
+    let sourcesFolder = "Sources"
     let mainSwift = "\(sourcesFolder)/main.swift"
     let libraryFolder = try findDirectory( name: "Library" )
     let pattern = "\(libraryFolder)/*.swift"
     let libraryFiles = glob( pattern: pattern )
-    let modifiedPackage = String( package.map { $0 == "-" ? "_" : $0 } )    // swift package init does this
-    let packageSwift = "\(sourcesFolder)/\(modifiedPackage).swift"
-    let testSwift = "Tests/\(package)Tests/\(modifiedPackage)Tests.swift"
 
     guard fileManager.fileExists( atPath: swiftFile ) else {
         var stderr = FileHandlerOutputStream( FileHandle.standardError )
@@ -73,9 +70,7 @@ func performOpen( package: String ) throws -> Void {
         throw ExitCode.failure
     }
 
-    try fileManager.removeItem( atPath: packageSwift )
-    try fileManager.removeItem( atPath: testSwift )
-    fileManager.createFile( atPath: testSwift, contents: nil )
+    try fileManager.removeItem( atPath: mainSwift )
     try fileManager.copyItem( atPath: "../\(swiftFile)", toPath: mainSwift )
     try fileManager.copyItem( atPath: "Package.swift", toPath: "stock-Package.swift" )
     for file in libraryFiles {

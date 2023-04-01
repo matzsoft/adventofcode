@@ -55,10 +55,15 @@ struct AOCinput {
 }
 
 
+func getProjectName() -> String {
+    URL( fileURLWithPath: #file ).deletingLastPathComponent().deletingLastPathComponent().lastPathComponent
+}
+
+
 func projectInfo() throws -> String {
     let input = try URL( fileURLWithPath: findDirectory( name: "input" ) )
     let year = input.deletingLastPathComponent().lastPathComponent
-    let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
+    let project = getProjectName()
     
     #if DEBUG
     return "Advent of Code \(year) \(project), Debug Build"
@@ -106,7 +111,7 @@ func formatElapsed( startTime: CFAbsoluteTime ) -> String {
 
 func getAOCinput() throws -> AOCinput {
     let inputDirectory = try findDirectory( name: "input" )
-    let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
+    let project = getProjectName()
     let filename = "\(inputDirectory)/\(project.prefix( 5 )).txt"
     
     return try AOCinput( filename: filename )
@@ -115,7 +120,7 @@ func getAOCinput() throws -> AOCinput {
 
 func getTests() throws -> [AOCinput] {
     let inputDirectory = try findDirectory( name: "testfiles" )
-    let project = URL( fileURLWithPath: #file ).deletingLastPathComponent().lastPathComponent
+    let project = getProjectName()
     let pattern = "\(inputDirectory)/\(project.prefix( 5 ))*.txt"
     
     return try glob( pattern: pattern ).map { try AOCinput( filename: $0 ) }
