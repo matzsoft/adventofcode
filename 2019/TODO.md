@@ -7,11 +7,11 @@ This is the one with the maze with locked doors.  You need to find the matching 
 ## Day 19 - Tractor Beam
 In this one you need to figure out how the tractor beam works.  I need to confirm that my part2 works on any input.
 ## Day 21 - Springdroid Adventure
-In this one you have to guide the droid to safely jump over wholes in the hull.  I have used code to partially analyze the problem and then finished the analysis by hand to get the results.  I would like to completely automate the process.  I started to do this with day21a but did not complete it.
+In this one you have to guide the droid to safely jump over holes in the hull.  I have used code to partially analyze the problem and then finished the analysis by hand to get the results.  I would like to completely automate the process.  I started to do this with day21-a but did not complete it.
 ## Day 23 - Category Six
 In this one you monitor the traffic in a network of interconnectd Intcode computers.  My part2 takes too long to run.  I would like to speed it up.
 ## Day 25 - Cryostasis
-This probably is my favorite problem.  It is a classic text adventure game implemented in Intcode.  My initial solution was to implement a wrapper around the Inccode that allowed me to interact with the game and play it.  To make that easier I added the ability to give an initial sequence of commands so that I didn't have to type them over every time I had to restart.
+This probably is my favorite problem.  It is a classic text adventure game implemented in Intcode.  My initial solution was to implement a wrapper around the Intcode that allowed me to interact with the game and play it.  To make that easier I added the ability to give an initial sequence of commands so that I didn't have to type them over every time I had to restart.
 
 Once I completed the game manually, I could set the initial commands so that they fully solved the game.  Of course this approach only works on my input data.
 
