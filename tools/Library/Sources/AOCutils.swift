@@ -73,7 +73,7 @@ func projectInfo() throws -> String {
 }
 
 
-func findDirectory( name: String ) throws -> String {
+public func findDirectory( name: String ) throws -> String {
     let fileManager = FileManager.default
     var directory = URL( fileURLWithPath: #file ).deletingLastPathComponent().path
     

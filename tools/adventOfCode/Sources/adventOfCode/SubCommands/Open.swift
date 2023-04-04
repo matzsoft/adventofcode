@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Library
 import ArgumentParser
 
 extension AdventOfCode {
@@ -41,7 +42,7 @@ func performOpen( package: String ) throws -> Void {
     let swiftFile = package + ".swift"
     let sourcesFolder = "Sources"
     let mainSwift = "\(sourcesFolder)/main.swift"
-    let libraryFolder = try findDirectory( name: "Library" )
+    let libraryFolder = try "\(findDirectory( name: "Library" ))/Sources"
     let pattern = "\(libraryFolder)/*.swift"
     let libraryFiles = glob( pattern: pattern )
 

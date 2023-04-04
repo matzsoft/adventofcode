@@ -10,7 +10,7 @@
 
 import Foundation
 
-func glob( pattern: String ) -> [String] {
+public func glob( pattern: String ) -> [String] {
     let globFlags = GLOB_TILDE | GLOB_BRACE | GLOB_MARK
     var globObj = glob_t()
     

@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import Library
 import ArgumentParser
 
 extension AdventOfCode {
@@ -34,7 +35,7 @@ extension AdventOfCode {
             let swiftFile = "\(package).swift"
             let sourcesFolder = "\(package)/Sources"
             let mainSwift = "\(sourcesFolder)/main.swift"
-            let libraryFolder = try findDirectory( name: "Library" )
+            let libraryFolder = try "\(findDirectory( name: "Library" ))/Sources"
             let pattern = "\(sourcesFolder)/*.swift"
             let sourcesFiles = glob( pattern: pattern ).filter { $0 != mainSwift }
             var isDir: ObjCBool = false
