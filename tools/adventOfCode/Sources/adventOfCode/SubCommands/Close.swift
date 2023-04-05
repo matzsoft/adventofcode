@@ -35,9 +35,6 @@ extension AdventOfCode {
             let swiftFile = "\(package).swift"
             let sourcesFolder = "\(package)/Sources"
             let mainSwift = "\(sourcesFolder)/main.swift"
-            let libraryFolder = try "\(findDirectory( name: "Library" ))/Sources"
-            let pattern = "\(sourcesFolder)/*.swift"
-            let sourcesFiles = glob( pattern: pattern ).filter { $0 != mainSwift }
             var isDir: ObjCBool = false
 
             guard fileManager.fileExists( atPath: package, isDirectory: &isDir ) else {
@@ -63,10 +60,6 @@ extension AdventOfCode {
             } else if !fileManager.contentsEqual( atPath: mainSwift, andPath: swiftFile ){
                 try fileManager.removeItem( atPath: swiftFile )
                 try copyFile( atPath: mainSwift, toPath: swiftFile )
-            }
-            
-            for file in sourcesFiles {
-                try updateLibrary( libraryFolder: libraryFolder, sourceFile: file )
             }
             
             fileManager.createFile( atPath: "\(package).patch", contents: nil )
@@ -101,24 +94,4 @@ func copyFile( atPath: String, toPath: String ) throws -> Void {
 
     try fileManager.copyItem( atPath: atPath, toPath: toPath )
     print( "\(atPath) copied to \(toPath)" )
-}
-
-
-func updateLibrary( libraryFolder: String, sourceFile: String ) throws -> Void {
-    let fileManager = FileManager.default
-    let filename = URL( fileURLWithPath: sourceFile ).lastPathComponent
-    let libraryFile = "\(libraryFolder)/\(filename)"
-    
-    if !fileManager.fileExists( atPath: libraryFile ) {
-        if askYN( prompt: "\(sourceFile) is new.  Add to library", expected: true ) {
-            try copyFile( atPath: sourceFile, toPath: libraryFile )
-        }
-    } else {
-        if !fileManager.contentsEqual( atPath: sourceFile, andPath: libraryFile ) {
-            if askYN( prompt: "\(sourceFile) and \(libraryFile) differ.  Update library", expected: true ) {
-                try fileManager.removeItem( atPath: libraryFile )
-                try copyFile( atPath: sourceFile, toPath: libraryFile )
-            }
-        }
-    }
 }

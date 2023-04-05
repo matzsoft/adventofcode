@@ -22,7 +22,7 @@ struct RuntimeError: Error {
 }
 
 
-struct AOCinput {
+public struct AOCinput {
     let header: [String]
     let lines:  [String]
     let filename: String
@@ -30,7 +30,7 @@ struct AOCinput {
     var part1:  String?  { header[0] != "" ? header[0] : nil }
     var part2:  String?  { header[1] != "" ? header[1] : nil }
     var extras: [String] { Array( header[2...] ) }
-    var line:   String   { lines[0] }
+    public var line:   String   { lines[0] }
     var paragraphs: [[String]] {
         lines.split( separator: "", omittingEmptySubsequences: false ).map { $0.map { String( $0 ) } }
     }
@@ -55,15 +55,15 @@ struct AOCinput {
 }
 
 
-func getProjectName() -> String {
-    URL( fileURLWithPath: #file ).deletingLastPathComponent().deletingLastPathComponent().lastPathComponent
+func getProjectName( base: String = #file ) -> String {
+    URL( fileURLWithPath: base ).deletingLastPathComponent().deletingLastPathComponent().lastPathComponent
 }
 
 
-func projectInfo() throws -> String {
-    let input = try URL( fileURLWithPath: findDirectory( name: "input" ) )
+public func projectInfo( sourceFile: String = #file ) throws -> String {
+    let input = try URL( fileURLWithPath: findDirectory( name: "input", base: sourceFile ) )
     let year = input.deletingLastPathComponent().lastPathComponent
-    let project = getProjectName()
+    let project = getProjectName( base: sourceFile )
     
     #if DEBUG
     return "Advent of Code \(year) \(project), Debug Build"
@@ -73,9 +73,9 @@ func projectInfo() throws -> String {
 }
 
 
-public func findDirectory( name: String ) throws -> String {
+public func findDirectory( name: String, base: String = #file ) throws -> String {
     let fileManager = FileManager.default
-    var directory = URL( fileURLWithPath: #file ).deletingLastPathComponent().path
+    var directory = URL( fileURLWithPath: base ).deletingLastPathComponent().path
     
     while directory != "/" {
         var isDir : ObjCBool = false
@@ -109,18 +109,18 @@ func formatElapsed( startTime: CFAbsoluteTime ) -> String {
 
 // MARK: - functions for getting puzzle and test input.
 
-func getAOCinput() throws -> AOCinput {
-    let inputDirectory = try findDirectory( name: "input" )
-    let project = getProjectName()
+func getAOCinput( base: String = #file ) throws -> AOCinput {
+    let inputDirectory = try findDirectory( name: "input", base: base )
+    let project = getProjectName( base: base )
     let filename = "\(inputDirectory)/\(project.prefix( 5 )).txt"
     
     return try AOCinput( filename: filename )
 }
 
 
-func getTests() throws -> [AOCinput] {
-    let inputDirectory = try findDirectory( name: "testfiles" )
-    let project = getProjectName()
+func getTests( base: String = #file ) throws -> [AOCinput] {
+    let inputDirectory = try findDirectory( name: "testfiles", base: base )
+    let project = getProjectName( base: base )
     let pattern = "\(inputDirectory)/\(project.prefix( 5 ))*.txt"
     
     return try glob( pattern: pattern ).map { try AOCinput( filename: $0 ) }
@@ -128,16 +128,16 @@ func getTests() throws -> [AOCinput] {
 
 // MARK: - functions for running solutions and tests.
 
-func solve( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
-    let input = try getAOCinput()
+public func solve( part1: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
+    let input = try getAOCinput( base: base )
     let label = label == "" ? "Part1" : "Part1 \(label)"
     
     runSolution( label: label, function: part1, input: input, expected: input.part1 )
 }
 
 
-func solve( part2: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
-    let input = try getAOCinput()
+public func solve( part2: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
+    let input = try getAOCinput( base: base )
     let label = label == "" ? "Part2" : "Part2 \(label)"
     
     runSolution( label: label, function: part2, input: input, expected: input.part2 )
@@ -162,16 +162,16 @@ func runSolution( label: String, function: ( AOCinput ) -> String, input: AOCinp
 }
 
 
-func runTests( part1: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
-    let tests = try getTests().filter { $0.part1 != nil }.map { ( $0, $0.part1! ) }
+public func runTests( part1: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
+    let tests = try getTests( base: base ).filter { $0.part1 != nil }.map { ( $0, $0.part1! ) }
     let label = label == "" ? "Part1" : "Part1 \(label)"
     
     runTests( part: part1, tests: tests, label: label )
 }
 
 
-func runTests( part2: ( ( AOCinput ) -> String ), label: String = "" ) throws -> Void {
-    let tests = try getTests().filter { $0.part2 != nil }.map { ( $0, $0.part2! ) }
+public func runTests( part2: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
+    let tests = try getTests( base: base ).filter { $0.part2 != nil }.map { ( $0, $0.part2! ) }
     let label = label == "" ? "Part2" : "Part2 \(label)"
     
     runTests( part: part2, tests: tests, label: label )

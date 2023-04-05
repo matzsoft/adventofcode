@@ -87,3 +87,24 @@ func askYN( prompt: String, expected: Bool ) -> Bool {
         if value.first!.lowercased() == "n" { return false }
     }
 }
+
+
+extension URL {
+    func relativePath( from base: URL ) -> String? {
+        // Ensure that both URLs represent files:
+        guard self.isFileURL && base.isFileURL else { return nil }
+
+        // Remove/replace "." and "..", make paths absolute:
+        let destComponents = self.standardized.pathComponents
+        let baseComponents = base.standardized.pathComponents
+
+        // Find number of common path components:
+        let smallest = min( destComponents.count, baseComponents.count )
+        let common = ( 0 ..< smallest ).firstIndex { destComponents[$0] != baseComponents[$0] } ?? smallest
+
+        // Build relative path:
+        let prefix = Array( repeating: "..", count: baseComponents.count - common )
+        return ( prefix + destComponents[common...] ).joined( separator: "/" )
+    }
+}
+
