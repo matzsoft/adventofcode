@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func decode( line: String ) throws -> String {
     enum State { case initial, normal, backslash, backslashX, backslashXn, final }
@@ -91,6 +92,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

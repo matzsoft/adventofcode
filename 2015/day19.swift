@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func part1( input: AOCinput ) -> String {
     let elements = input.paragraphs[0].reduce( into: [ String : [String] ]() ) { dict, line in
@@ -98,6 +99,7 @@ func partZoo( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try runTests( part2: partZoo, label: "askalski" )

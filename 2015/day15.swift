@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 // Butterscotch: capacity -1, durability -2, flavor 6, texture 3, calories 8
 // Cinnamon: capacity 2, durability 3, flavor -2, texture -1, calories 3
@@ -77,6 +78,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

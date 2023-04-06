@@ -13,10 +13,10 @@ enum Turn: String, CaseIterable { case left = "L", right = "R", straight = "S", 
 
 /// Important Notice - this enum implements a coordinate system normally used in mathematics.
 /// Positive Y is north and positive X is east.
-enum Direction4: Int, CaseIterable, Direction2D {
+public enum Direction4: Int, CaseIterable, Direction2D {
     case north, east, south, west
     
-    var vector: Point2D {
+    public var vector: Point2D {
         switch self {
         case .north:
             return Point2D( x: 0, y: 1 )
@@ -29,7 +29,7 @@ enum Direction4: Int, CaseIterable, Direction2D {
         }
     }
     
-    static func fromArrows( char: String ) -> Direction4? {
+    static public func fromArrows( char: String ) -> Direction4? {
         switch char {
         case "^":
             return .north
@@ -174,10 +174,10 @@ enum DirectionUDLR: String, CaseIterable, Direction2D {
 
 /// Important Notice - this enum implements a coordinate system normally used in mathematics.
 /// Positive Y is north and positive X is east.
-enum Direction8: String, CaseIterable, Direction2D {
+public enum Direction8: String, CaseIterable, Direction2D {
     case N, NE, E, SE, S, SW, W, NW
     
-    var vector: Point2D {
+    public var vector: Point2D {
         switch self {
         case .N:
             return Point2D( x: 0, y: 1 )
@@ -248,9 +248,14 @@ enum Direction6alt: String, CaseIterable, Direction2D {
 }
 
 
-struct Point2D: Hashable {
-    let x: Int
-    let y: Int
+public struct Point2D: Hashable {
+    public let x: Int
+    public let y: Int
+    
+    public init( x: Int, y: Int ) {
+        self.x = x
+        self.y = y
+    }
     
     func distance( other: Point2D ) -> Int {
         return abs( x - other.x ) + abs( y - other.y )
@@ -263,7 +268,7 @@ struct Point2D: Hashable {
         return absY <= absX ? absX : ( absY - absX ) / 2 + absX
     }
     
-    static func +( left: Point2D, right: Point2D ) -> Point2D {
+    static public func +( left: Point2D, right: Point2D ) -> Point2D {
         return Point2D( x: left.x + right.x, y: left.y + right.y )
     }
     
@@ -275,7 +280,7 @@ struct Point2D: Hashable {
         return Point2D( x: left * right.x, y: left * right.y )
     }
     
-    static func ==( left: Point2D, right: Point2D ) -> Bool {
+    static public func ==( left: Point2D, right: Point2D ) -> Bool {
         return left.x == right.x && left.y == right.y
     }
     
@@ -288,14 +293,14 @@ struct Point2D: Hashable {
     }
 }
 
-struct Rect2D: Hashable, CustomStringConvertible {
-    let min:    Point2D
-    let max:    Point2D
+public struct Rect2D: Hashable, CustomStringConvertible {
+    public let min:    Point2D
+    public let max:    Point2D
     let width:  Int
     let height: Int
     let area:   Int
     
-    init( min: Point2D, max: Point2D ) {
+    public init( min: Point2D, max: Point2D ) {
         self.min    = Point2D( x: Swift.min( min.x, max.x ), y: Swift.min( min.y, max.y ) )
         self.max    = Point2D( x: Swift.max( min.x, max.x ), y: Swift.max( min.y, max.y ) )
         self.width  = self.max.x - self.min.x + 1
@@ -303,7 +308,7 @@ struct Rect2D: Hashable, CustomStringConvertible {
         self.area   = width * height
     }
 
-    init?( min: Point2D, width: Int, height: Int ) {
+    public init?( min: Point2D, width: Int, height: Int ) {
         guard width > 0 && height > 0 else { return nil }
         
         self.min    = min
@@ -313,7 +318,7 @@ struct Rect2D: Hashable, CustomStringConvertible {
         self.area   = width * height
     }
     
-    init( points: [Point2D] ) {
+    public init( points: [Point2D] ) {
         var bounds = Rect2D( min: points[0], max: points[0] )
         
         points[1...].forEach { bounds = bounds.expand( with: $0 ) }
@@ -323,7 +328,7 @@ struct Rect2D: Hashable, CustomStringConvertible {
     
     var xRange: ClosedRange<Int> { min.x ... max.x }
     var yRange: ClosedRange<Int> { min.y ... max.y }
-    var description: String {
+    public var description: String {
         "(\(min.x),\(min.y) \(width)x\(height))"
     }
     var points: [Point2D] {

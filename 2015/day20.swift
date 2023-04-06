@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 // I realized that the number of presents in house n is just sigma(n).  (sigma(n) is the sum of the
 // factors of n).  It turns out that using this fact and putting a lower bound on the search reduces the
@@ -48,6 +49,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

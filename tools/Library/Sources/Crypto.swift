@@ -20,7 +20,7 @@ func md5Hash( str: String ) -> String {
 }
 
 
-func md5Fast( str: String ) -> [UInt8] {
+public func md5Fast( str: String ) -> [UInt8] {
     guard let string = str.data( using: .utf8 ) else { return [] }
     
     var digest = [UInt8]( repeating: 0, count: Int( CC_MD5_DIGEST_LENGTH ) )

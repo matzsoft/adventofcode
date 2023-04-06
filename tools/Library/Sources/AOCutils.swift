@@ -9,10 +9,10 @@ import Foundation
 
 enum AOCPart { case part1, part2 }
 
-struct RuntimeError: Error {
+public struct RuntimeError: Error {
     let message: String
 
-    init( _ message: String ) {
+    public init( _ message: String ) {
         self.message = message
     }
 
@@ -24,14 +24,14 @@ struct RuntimeError: Error {
 
 public struct AOCinput {
     let header: [String]
-    let lines:  [String]
+    public let lines:  [String]
     let filename: String
 
     var part1:  String?  { header[0] != "" ? header[0] : nil }
     var part2:  String?  { header[1] != "" ? header[1] : nil }
-    var extras: [String] { Array( header[2...] ) }
+    public var extras: [String] { Array( header[2...] ) }
     public var line:   String   { lines[0] }
-    var paragraphs: [[String]] {
+    public var paragraphs: [[String]] {
         lines.split( separator: "", omittingEmptySubsequences: false ).map { $0.map { String( $0 ) } }
     }
     
