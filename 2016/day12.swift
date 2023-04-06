@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func fibonacci( _ n: Int ) -> Int {
     return Int( pow( ( 1 + sqrt( 5 ) ) / 2, Double( n ) ) / sqrt( 5 ) + 0.5 )
@@ -55,6 +56,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1Slow )
 try runTests( part2: part2 )
 try solve( part1: part1 )

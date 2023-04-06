@@ -24,13 +24,13 @@ struct BlockLetter {
     }
 }
 
-struct BlockLetterDictionary {
+public struct BlockLetterDictionary {
     let width: Int
     let height: Int
     let hSpacing: Int
     let dictionary: [ Int: Character ]
 
-    init( from file: String ) throws {
+    public init( from file: String ) throws {
         let inputDirectory = try findDirectory( name: "tools" )
         let path           = "\(inputDirectory)/figlet/\(file)"
         let contents       = try String( contentsOfFile: path )
@@ -59,7 +59,7 @@ struct BlockLetterDictionary {
         dictionary = Dictionary( uniqueKeysWithValues: zip( letters.map { $0.code }, keys ) )
     }
     
-    func makeString( screen: [[Bool]] ) -> String {
+    public func makeString( screen: [[Bool]] ) -> String {
         guard screen.count == height else { return "Bad Height" }
         guard screen.allSatisfy( { $0.count == screen[0].count } ) else { return "Inconsistent Widths" }
         

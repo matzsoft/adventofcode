@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum AOCPart { case part1, part2 }
+public enum AOCPart { case part1, part2 }
 
 public struct RuntimeError: Error {
     let message: String

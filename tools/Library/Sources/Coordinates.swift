@@ -7,9 +7,9 @@
 
 import Foundation
 
-protocol Direction2D { var vector: Point2D { get } }
+public protocol Direction2D { var vector: Point2D { get } }
 
-enum Turn: String, CaseIterable { case left = "L", right = "R", straight = "S", back = "B" }
+public enum Turn: String, CaseIterable { case left = "L", right = "R", straight = "S", back = "B" }
 
 /// Important Notice - this enum implements a coordinate system normally used in mathematics.
 /// Positive Y is north and positive X is east.
@@ -44,7 +44,7 @@ public enum Direction4: Int, CaseIterable, Direction2D {
         }
     }
     
-    func turn( direction: Turn ) -> Direction4 {
+    public func turn( direction: Turn ) -> Direction4 {
         switch direction {
         case .straight:
             return self
@@ -87,10 +87,10 @@ public enum Direction4: Int, CaseIterable, Direction2D {
 
 /// Important Notice - this enum implements a coordinate system normally used in computer images.
 /// Positive Y is down and positive X is east.
-enum DirectionUDLR: String, CaseIterable, Direction2D {
+public enum DirectionUDLR: String, CaseIterable, Direction2D {
     case up = "U", down = "D", left = "L", right = "R"
     
-    var vector: Point2D {
+    public var vector: Point2D {
         switch self {
         case .up:
             return Point2D( x: 0, y: -1 )
@@ -284,11 +284,11 @@ public struct Point2D: Hashable {
         return left.x == right.x && left.y == right.y
     }
     
-    var magnitude: Int {
+    public var magnitude: Int {
         return abs( x ) + abs( y )
     }
 
-    func move( direction: Direction2D ) -> Point2D {
+    public func move( direction: Direction2D ) -> Point2D {
         return self + direction.vector
     }
 }
@@ -362,7 +362,7 @@ public struct Rect2D: Hashable, CustomStringConvertible {
         return pad( byMinX: by, byMaxX: by, byMinY: by, byMaxY: by )
     }
     
-    func contains( point: Point2D ) -> Bool {
+    public func contains( point: Point2D ) -> Bool {
         guard min.x <= point.x, point.x <= max.x else { return false }
         guard min.y <= point.y, point.y <= max.y else { return false }
 

@@ -42,7 +42,7 @@ extension String {
 
      - Returns: An array of Substring that keeps the delimiters interspersed with the other parts.
     **/
-    func tokenize( delimiters: String ) -> [Substring] {
+    public func tokenize( delimiters: String ) -> [Substring] {
         return self.splitAt( isSplit: { delimiters.contains( $0 ) } )
     }
 }

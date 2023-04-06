@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func findCounts( line: String ) throws -> ( v1Count: Int, v2Count: Int ) {
     enum State { case plain, regionLength, expectX, repeatCount, closeParen, region }
@@ -84,6 +85,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

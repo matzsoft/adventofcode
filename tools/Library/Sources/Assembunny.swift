@@ -7,14 +7,14 @@
 
 import Foundation
 
-class Assembunny {
+public class Assembunny {
     enum Opcode: String, CaseIterable {
         case cpy, inc, dec, jnz, tgl, out
     }
 
-    class Instruction {
+    public class Instruction {
         var mnemonic: Opcode
-        let x: String
+        public let x: String
         let y: String
         
         init( input: String ) {
@@ -41,11 +41,11 @@ class Assembunny {
         var cycleCount: Int
     }
 
-    var registers: [ String : Int ]
+    public var registers: [ String : Int ]
     var ip = 0
     var cycleNumber = 0
     var opcodes: [ Opcode : ( String, String ) -> Void ] = [:]
-    var memory: [Instruction]
+    public var memory: [Instruction]
     var cycleTraceStart = Int.max
     var cycleTraceStop = Int.max
     var ipTraceStart = Int.max
@@ -53,7 +53,7 @@ class Assembunny {
     var breakPoint: Int?
     var action: (( Assembunny ) -> Bool)?
     
-    init( lines: [String] ) {
+    public init( lines: [String] ) {
         registers = [ "a" : 0, "b" : 0, "c" : 0, "d" : 0 ]
         memory = []
         
@@ -187,7 +187,7 @@ class Assembunny {
         ipTraceStop = stop
     }
     
-    func run() -> Void {
+    public func run() -> Void {
         while 0 <= ip && ip < memory.count {
             if let bp = breakPoint {
                 if ip == bp {
