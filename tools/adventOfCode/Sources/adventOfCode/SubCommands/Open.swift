@@ -91,7 +91,7 @@ func performOpen( package: String ) throws -> Void {
 func createMainSwift( swiftFile: String, mainSwift: String ) throws -> Void {
     var code = try String( contentsOfFile: swiftFile )
     
-    if !code.contains( "^import Library *$" ) {
+    if !code.contains( "import Library" ) {
         let target = "import Foundation"
         let replacement = "import Library"
         code = code.replacingOccurrences( of: target, with: "\(target)\n\(replacement)" )

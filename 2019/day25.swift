@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 extension Set {
     var allSubsets: Set<Set<Element>> {
@@ -519,6 +520,7 @@ if CommandLine.arguments.count > 1 {
     }
 
 } else {
+    try print( projectInfo() )
     try runTests( part1: part1 )
     try runTests( part2: part2 )
     try solve( part1: part1 )

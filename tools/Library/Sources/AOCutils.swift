@@ -109,7 +109,7 @@ func formatElapsed( startTime: CFAbsoluteTime ) -> String {
 
 // MARK: - functions for getting puzzle and test input.
 
-func getAOCinput( base: String = #file ) throws -> AOCinput {
+public func getAOCinput( base: String = #file ) throws -> AOCinput {
     let inputDirectory = try findDirectory( name: "input", base: base )
     let project = getProjectName( base: base )
     let filename = "\(inputDirectory)/\(project.prefix( 5 )).txt"

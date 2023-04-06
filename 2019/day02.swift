@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func grind( initialMemory: [Int], noun: Int, verb: Int ) throws -> Int {
     let computer = Intcode( name: "Ship", memory: initialMemory )
@@ -48,6 +49,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

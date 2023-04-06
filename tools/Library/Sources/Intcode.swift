@@ -7,16 +7,16 @@
 
 import Foundation
 
-class Intcode {
-    struct Instruction {
+public class Intcode {
+    public struct Instruction {
         enum Mode: Int { case  position = 0, immediate = 1, relative = 2 }
-        enum Opcode: Int {
+        public enum Opcode: Int {
             case add = 1, multiply = 2, input = 3, output = 4
             case jumpIfTrue = 5, jumpIfFalse = 6, lessThan = 7, equals = 8
             case relativeBaseOffset = 9, halt = 99
         }
         
-        let opcode: Opcode
+        public let opcode: Opcode
         let modes: [Mode]
 
         init( instruction: Int ) {
@@ -34,17 +34,17 @@ class Intcode {
     }
 
     let name: String
-    var ip: Int
+    public var ip: Int
     var relativeBase: Int
-    var memory: [Int]
-    var inputs: [Int]
+    public var memory: [Int]
+    public var inputs: [Int]
     var debug = false
     
-    var nextInstruction: Instruction {
+    public var nextInstruction: Instruction {
         return Instruction( instruction: memory[ip] )
     }
 
-    init( name: String, memory: [Int] ) {
+    public init( name: String, memory: [Int] ) {
         self.name = name
         ip = 0
         relativeBase = 0
@@ -52,7 +52,7 @@ class Intcode {
         self.inputs = []
     }
     
-    init( from other: Intcode ) {
+    public init( from other: Intcode ) {
         name = other.name
         ip = other.ip
         relativeBase = other.relativeBase
@@ -101,7 +101,7 @@ class Intcode {
         memory[location] = value
     }
 
-    func step() throws -> Int? {
+    public func step() throws -> Int? {
         let instruction = Instruction( instruction: memory[ip] )
         
         switch instruction.opcode {
@@ -161,7 +161,7 @@ class Intcode {
         return nil
     }
     
-    func execute() throws -> Int? {
+    public func execute() throws -> Int? {
         while true {
             if let output = try step() { return output }
             if nextInstruction.opcode == .halt { return nil }
@@ -200,7 +200,7 @@ class Intcode {
         return location
     }
 
-    func trace() throws -> String {
+    public func trace() throws -> String {
         let instruction = Instruction( instruction: memory[ip] )
         var line = String( format: "%04d: ", ip )
         

@@ -103,7 +103,7 @@ public enum DirectionUDLR: String, CaseIterable, Direction2D {
         }
     }
     
-    static func fromArrows( char: String ) -> DirectionUDLR? {
+    public static func fromArrows( char: String ) -> DirectionUDLR? {
         switch char {
         case "^":
             return .up
@@ -118,7 +118,7 @@ public enum DirectionUDLR: String, CaseIterable, Direction2D {
         }
     }
     
-    var toArrow: String {
+    public var toArrow: String {
         switch self {
         case .up:
             return "^"
@@ -268,15 +268,15 @@ public struct Point2D: Hashable {
         return absY <= absX ? absX : ( absY - absX ) / 2 + absX
     }
     
-    static public func +( left: Point2D, right: Point2D ) -> Point2D {
+    public static func +( left: Point2D, right: Point2D ) -> Point2D {
         return Point2D( x: left.x + right.x, y: left.y + right.y )
     }
     
-    static public func -( left: Point2D, right: Point2D ) -> Point2D {
+    public static func -( left: Point2D, right: Point2D ) -> Point2D {
         return Point2D( x: left.x - right.x, y: left.y - right.y )
     }
     
-    static func *( left: Int, right: Point2D ) -> Point2D {
+    public static func *( left: Int, right: Point2D ) -> Point2D {
         return Point2D( x: left * right.x, y: left * right.y )
     }
     

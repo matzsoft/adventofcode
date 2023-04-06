@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Line {
     let bounds: Rect2D
@@ -58,7 +59,7 @@ struct Wire {
     init( from: String ) {
         moves = from.split( separator: "," ).map {
             let direction = DirectionUDLR( rawValue: String( $0.first! ) )!
-            let distance = Int( $0.dropFirst() )!
+            let distance = Int( String( $0.dropFirst() ) )!
             
             return distance * direction.vector
         }
@@ -129,6 +130,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )
