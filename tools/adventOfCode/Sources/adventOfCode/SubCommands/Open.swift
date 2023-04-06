@@ -90,16 +90,16 @@ func performOpen( package: String ) throws -> Void {
 
 func createMainSwift( swiftFile: String, mainSwift: String ) throws -> Void {
     var code = try String( contentsOfFile: swiftFile )
+    let importStatement      = "import Library"
+    let projectInfoStatement = "try print( projectInfo() )"
     
-    if !code.contains( "import Library" ) {
+    if !code.contains( importStatement ) {
         let target = "import Foundation"
-        let replacement = "import Library"
-        code = code.replacingOccurrences( of: target, with: "\(target)\n\(replacement)" )
+        code = code.replacingOccurrences( of: target, with: "\(target)\n\(importStatement)" )
     }
-    if !code.contains( "projectInfo()" ) {
+    if !code.contains( projectInfoStatement ) {
         let target = "try runTests( part1:"
-        let replacement = "try print( projectInfo() )"
-        code = code.replacingOccurrences( of: target, with: "\(replacement)\n\(target)" )
+        code = code.replacingOccurrences( of: target, with: "\(projectInfoStatement)\n\(target)" )
     }
     try code.write( toFile: mainSwift, atomically: true, encoding: .utf8 )
 }

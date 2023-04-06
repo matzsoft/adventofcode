@@ -226,10 +226,10 @@ public enum Direction6: String, CaseIterable, Direction2D {
 
 /// Important Notice - this enum implements a coordinate system normally used in mathematics.
 /// Positive Y is north and positive X is east.
-enum Direction6alt: String, CaseIterable, Direction2D {
+public enum Direction6alt: String, CaseIterable, Direction2D {
     case e, se, sw, w, nw, ne
 
-    var vector: Point2D {
+    public var vector: Point2D {
         switch self {
         case .e:
             return Point2D( x: 2, y: 0 )
@@ -353,7 +353,7 @@ public struct Rect2D: Hashable, CustomStringConvertible {
         return Rect2D( min: Point2D( x: minX, y: minY ), max: Point2D( x: maxX, y: maxY ) )
     }
 
-    func pad( byMinX: Int = 0, byMaxX: Int = 0, byMinY: Int = 0, byMaxY: Int = 0 ) -> Rect2D {
+    public func pad( byMinX: Int = 0, byMaxX: Int = 0, byMinY: Int = 0, byMaxY: Int = 0 ) -> Rect2D {
         return Rect2D( min: Point2D( x: min.x - byMinX, y: min.y - byMinY ),
                        max: Point2D( x: max.x + byMaxX, y: max.y + byMaxY ) )
     }
@@ -472,7 +472,7 @@ public struct Rect3D: Hashable {
         }
     }
     
-    init( points: [Point3D] ) {
+    public init( points: [Point3D] ) {
         var bounds = Rect3D( min: points[0], max: points[0] )
         
         points[1...].forEach { bounds = bounds.expand( with: $0 ) }
@@ -517,7 +517,7 @@ public struct Rect3D: Hashable {
                        max: Point3D( x: max.x + byMaxX, y: max.y + byMaxY, z: max.z + byMaxZ ) )
     }
     
-    func pad( by: Int ) -> Rect3D {
+    public func pad( by: Int ) -> Rect3D {
         return pad( byMinX: by, byMaxX: by, byMinY: by, byMaxY: by, byMinZ: by, byMaxZ: by )
     }
     
@@ -697,10 +697,10 @@ struct Matrix3D {
 }
 
 public struct Point4D: Hashable {
-    let x: Int
-    let y: Int
-    let z: Int
-    let t: Int
+    public let x: Int
+    public let y: Int
+    public let z: Int
+    public let t: Int
 
     public init(x: Int, y: Int, z: Int, t: Int) {
         self.x = x
@@ -730,9 +730,9 @@ public struct Point4D: Hashable {
     }
 }
 
-struct Rect4D: Hashable {
-    let min:      Point4D
-    let max:      Point4D
+public struct Rect4D: Hashable {
+    public let min:      Point4D
+    public let max:      Point4D
     let width:    Int
     let length:   Int
     let height:   Int
@@ -793,7 +793,7 @@ struct Rect4D: Hashable {
         }
     }
     
-    init( points: [Point4D] ) {
+    public init( points: [Point4D] ) {
         var bounds = Rect4D( min: points[0], max: points[0] )
         
         points[1...].forEach { bounds = bounds.expand( with: $0 ) }
@@ -840,7 +840,7 @@ struct Rect4D: Hashable {
         )
     }
     
-    func pad( by: Int ) -> Rect4D {
+    public func pad( by: Int ) -> Rect4D {
         return pad(
             byMinX: by, byMaxX: by, byMinY: by, byMaxY: by, byMinZ: by, byMaxZ: by, byMinT: by, byMaxT: by
         )

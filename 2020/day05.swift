@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func seatID<T>( input: T ) -> Int where T: StringProtocol {
     let binary = input
@@ -40,6 +41,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

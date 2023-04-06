@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 // Implemented as a singly linked, circular list with the head pointer stored in element zero of the array.
 struct Circle {
@@ -112,6 +113,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

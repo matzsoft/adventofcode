@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func identify( line: String ) -> Point2D {
     var destination = Point2D( x: 0, y: 0 )
@@ -37,7 +38,7 @@ func countNeighbors( blacks: Set<Point2D>, position: Point2D ) -> Int {
 
 
 func findWhites( blacks: Set<Point2D> ) -> [Point2D] {
-    let bounds = Rect2D(points: Array( blacks ) ).pad( byMinX: 2, byMaxX: 2, byMinY: 1, byMaxY: 1 )
+    let bounds = Rect2D( points: Array( blacks ) ).pad( byMinX: 2, byMaxX: 2, byMinY: 1, byMaxY: 1 )
     
     return ( bounds.min.x ... bounds.max.x ).flatMap { x in
         ( bounds.min.y ... bounds.max.y ).compactMap{ y in
@@ -93,6 +94,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )
