@@ -62,7 +62,7 @@ func gcd( _ m: Int, _ n: Int ) -> Int {
 }
 
 /// Returns the Least Common Multiple of two Int values.
-func lcm( _ m: Int, _ n: Int ) -> Int {
+public func lcm( _ m: Int, _ n: Int ) -> Int {
     return m / gcd (m, n ) * n
 }
 

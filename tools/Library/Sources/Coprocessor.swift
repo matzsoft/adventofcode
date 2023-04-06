@@ -7,14 +7,14 @@
 
 import Foundation
 
-class Coprocessor {
-    enum Opcode: String, CaseIterable { case snd, set, add, sub, mul, mod, rcv, jgz, jnz }
+public class Coprocessor {
+    public enum Opcode: String, CaseIterable { case snd, set, add, sub, mul, mod, rcv, jgz, jnz }
     enum State { case running, waiting, halted }
 
-    class Instruction {
-        var mnemonic: Opcode
+    public class Instruction {
+        public var mnemonic: Opcode
         let x: String
-        let y: String
+        public let y: String
         
         init( input: String ) {
             let instruction = input.split( separator: " " )
@@ -44,7 +44,7 @@ class Coprocessor {
     var ip = 0
     var cycleNumber = 0
     var opcodes: [ Opcode : ( String, String ) -> Void ]
-    var memory: [Instruction]
+    public var memory: [Instruction]
     var queue: [Int]
     var state: State
     var receiver: Coprocessor?
@@ -55,7 +55,7 @@ class Coprocessor {
     var ipTraceStop = Int.max
     var breakPoints = [ Int : ( ( Coprocessor ) -> Bool ) ]()
     
-    init( lines: [String] ) {
+    public init( lines: [String] ) {
         memory = lines.map { Instruction( input: $0 ) }
         
         queue = []
@@ -228,7 +228,7 @@ class Coprocessor {
         return "[" + values.joined( separator: ", " ) + "]"
     }
     
-    func run() -> Void {
+    public func run() -> Void {
         while state == .running && 0 <= ip && ip < memory.count {
             if let action = breakPoints[ip] {
                 if !action(self) { return }
@@ -279,7 +279,7 @@ class Coprocessor {
         ipTraceStop = stop
     }
     
-    func setBreakPoint( address: Int, action: @escaping ( Coprocessor ) -> Bool ) -> Void {
+    public func setBreakPoint( address: Int, action: @escaping ( Coprocessor ) -> Bool ) -> Void {
         breakPoints[address] = action
     }
     

@@ -7,22 +7,22 @@
 
 import Foundation
 
-class KnotHash {
+public class KnotHash {
     static let extraLengths = [ 17, 31, 73, 47, 23 ]
     
-    var list: [Int]
+    public var list: [Int]
     let lengths: [Int]
     var current: Int
     var skip: Int
     
-    init( lengths: [Int] ) {
+    public init( lengths: [Int] ) {
         list = ( 0 ... 255 ).map { $0 }
         self.lengths = lengths
         current = 0
         skip = 0
     }
     
-    init( input: String ) {
+    public init( input: String ) {
         list = ( 0 ... 255 ).map { $0 }
         lengths = input.map { Int( $0.unicodeScalars.first!.value ) } + KnotHash.extraLengths
         current = 0
@@ -30,7 +30,7 @@ class KnotHash {
     }
 
     
-    func oneRound() -> Void {
+    public func oneRound() -> Void {
         for length in lengths {
             if current + length  < list.count {
                 let reversed = Array( list[ current ..< ( current + length) ].reversed() )
@@ -51,7 +51,7 @@ class KnotHash {
         }
     }
     
-    func generate() -> String {
+    public func generate() -> String {
         guard list.count == 256 else { return "Wrong sized list" }
         
         for _ in 0 ..< 64 { oneRound() }

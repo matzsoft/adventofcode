@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 class Grid {
     enum State: String { case clean = ".", weakened = "W", infected = "#", flagged = "F" }
@@ -153,6 +154,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

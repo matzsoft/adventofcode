@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func captcha( input: [Int], offset: Int = 1 ) -> Int {
     return zip( input, input[offset...] + input[..<offset] ).reduce( 0 ) {
@@ -33,6 +34,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

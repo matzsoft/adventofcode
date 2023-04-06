@@ -131,7 +131,7 @@ public enum DirectionUDLR: String, CaseIterable, Direction2D {
         }
     }
     
-    func turn( _ turn: Turn ) -> DirectionUDLR {
+    public func turn( _ turn: Turn ) -> DirectionUDLR {
         switch turn {
         case .straight:
             return self
@@ -202,10 +202,10 @@ public enum Direction8: String, CaseIterable, Direction2D {
 
 /// Important Notice - this enum implements a coordinate system normally used in mathematics.
 /// Positive Y is north and positive X is east.
-enum Direction6: String, CaseIterable, Direction2D {
+public enum Direction6: String, CaseIterable, Direction2D {
     case n, ne, se, s, sw, nw
     
-    var vector: Point2D {
+    public var vector: Point2D {
         switch self {
         case .n:
             return Point2D( x: 0, y: 2 )
@@ -261,7 +261,7 @@ public struct Point2D: Hashable {
         return abs( x - other.x ) + abs( y - other.y )
     }
     
-    func hexDistance( other: Point2D ) -> Int {
+    public func hexDistance( other: Point2D ) -> Int {
         let absX = abs( x - other.x )
         let absY = abs( y - other.y )
 
@@ -335,7 +335,7 @@ public struct Rect2D: Hashable, CustomStringConvertible {
          ( min.y ... max.y ).flatMap { y in ( min.x ... max.x ).map { x in Point2D( x: x, y: y ) } }
     }
 
-    func expand( with point: Point2D ) -> Rect2D {
+    public func expand( with point: Point2D ) -> Rect2D {
         let minX = Swift.min( min.x, point.x )
         let maxX = Swift.max( max.x, point.x )
         let minY = Swift.min( min.y, point.y )
@@ -379,19 +379,25 @@ public struct Rect2D: Hashable, CustomStringConvertible {
     }
 }
 
-struct Point3D: Hashable, CustomStringConvertible {
-    let x: Int
-    let y: Int
-    let z: Int
+public struct Point3D: Hashable, CustomStringConvertible {
+    public let x: Int
+    public let y: Int
+    public let z: Int
 
-    var description: String {
+    public init( x: Int, y: Int, z: Int ) {
+        self.x = x
+        self.y = y
+        self.z = z
+    }
+    
+    public var description: String {
         "(\(x),\(y),\(z))"
     }
     func distance( other: Point3D ) -> Int {
         return abs( x - other.x ) + abs( y - other.y ) + abs( z - other.z )
     }
     
-    static func +( left: Point3D, right: Point3D ) -> Point3D {
+    public static func +( left: Point3D, right: Point3D ) -> Point3D {
         return Point3D( x: left.x + right.x, y: left.y + right.y, z: left.z + right.z )
     }
     
@@ -403,11 +409,11 @@ struct Point3D: Hashable, CustomStringConvertible {
         return Point3D( x: left * right.x, y: left * right.y, z: left * right.z )
     }
     
-    static func ==( left: Point3D, right: Point3D ) -> Bool {
+    public static func ==( left: Point3D, right: Point3D ) -> Bool {
         return left.x == right.x && left.y == right.y && left.z == right.z
     }
     
-    var magnitude: Int {
+    public var magnitude: Int {
         return abs( x ) + abs( y ) + abs( z )
     }
 }
