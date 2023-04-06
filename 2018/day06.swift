@@ -10,6 +10,7 @@
 //
 
 import Foundation
+import Library
 
 func parse( input: AOCinput ) -> [Point2D] {
     let lines = input.lines.map  { $0.split( whereSeparator: { ", ".contains($0) } ).map { Int($0)! } }
@@ -101,6 +102,7 @@ func part4( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part1: part3, label: "Experimental" )
 try runTests( part2: part2 )

@@ -257,7 +257,7 @@ public struct Point2D: Hashable {
         self.y = y
     }
     
-    func distance( other: Point2D ) -> Int {
+    public func distance( other: Point2D ) -> Int {
         return abs( x - other.x ) + abs( y - other.y )
     }
     
@@ -272,7 +272,7 @@ public struct Point2D: Hashable {
         return Point2D( x: left.x + right.x, y: left.y + right.y )
     }
     
-    static func -( left: Point2D, right: Point2D ) -> Point2D {
+    static public func -( left: Point2D, right: Point2D ) -> Point2D {
         return Point2D( x: left.x - right.x, y: left.y - right.y )
     }
     
@@ -296,8 +296,8 @@ public struct Point2D: Hashable {
 public struct Rect2D: Hashable, CustomStringConvertible {
     public let min:    Point2D
     public let max:    Point2D
-    let width:  Int
-    let height: Int
+    public let width:  Int
+    public let height: Int
     let area:   Int
     
     public init( min: Point2D, max: Point2D ) {
@@ -369,7 +369,7 @@ public struct Rect2D: Hashable, CustomStringConvertible {
         return true
     }
     
-    func intersection( with other: Rect2D ) -> Rect2D? {
+    public func intersection( with other: Rect2D ) -> Rect2D? {
         let minX = Swift.max( min.x, other.min.x )
         let minY = Swift.max( min.y, other.min.y )
         let maxX = Swift.min( max.x, other.max.x )
@@ -390,10 +390,9 @@ public struct Point3D: Hashable, CustomStringConvertible {
         self.z = z
     }
     
-    public var description: String {
-        "(\(x),\(y),\(z))"
-    }
-    func distance( other: Point3D ) -> Int {
+    public var description: String { "(\(x),\(y),\(z))" }
+    
+    public func distance( other: Point3D ) -> Int {
         return abs( x - other.x ) + abs( y - other.y ) + abs( z - other.z )
     }
     
@@ -401,7 +400,7 @@ public struct Point3D: Hashable, CustomStringConvertible {
         return Point3D( x: left.x + right.x, y: left.y + right.y, z: left.z + right.z )
     }
     
-    static func -( left: Point3D, right: Point3D ) -> Point3D {
+    public static func -( left: Point3D, right: Point3D ) -> Point3D {
         return Point3D( x: left.x - right.x, y: left.y - right.y, z: left.z - right.z )
     }
     
@@ -418,15 +417,15 @@ public struct Point3D: Hashable, CustomStringConvertible {
     }
 }
 
-struct Rect3D: Hashable {
-    let min:    Point3D
-    let max:    Point3D
-    let width:  Int
-    let length: Int
-    let height: Int
-    let volume: Int
+public struct Rect3D: Hashable {
+    public let min:    Point3D
+    public let max:    Point3D
+    public let width:  Int
+    public let length: Int
+    public let height: Int
+    public let volume: Int
     
-    init( min: Point3D, max: Point3D ) {
+    public init( min: Point3D, max: Point3D ) {
         self.min = Point3D(
             x: Swift.min( min.x, max.x ), y: Swift.min( min.y, max.y ), z: Swift.min( min.z, max.z ) )
         self.max = Point3D(
@@ -455,7 +454,7 @@ struct Rect3D: Hashable {
         }
     }
 
-    init?( min: Point3D, width: Int, length: Int, height: Int ) {
+    public init?( min: Point3D, width: Int, length: Int, height: Int ) {
         guard width > 0 && length > 0 && height > 0 else { return nil }
         
         self.min    = min
@@ -481,7 +480,7 @@ struct Rect3D: Hashable {
         self.init( min: bounds.min, max: bounds.max )
     }
     
-    init( rects: [Rect3D] ) {
+    public init( rects: [Rect3D] ) {
         var bounds = Rect3D( min: rects[0].min, max: rects[0].max )
         
         rects[1...].forEach {
@@ -697,13 +696,20 @@ struct Matrix3D {
     }
 }
 
-struct Point4D: Hashable {
+public struct Point4D: Hashable {
     let x: Int
     let y: Int
     let z: Int
     let t: Int
 
-    func distance( other: Point4D ) -> Int {
+    public init(x: Int, y: Int, z: Int, t: Int) {
+        self.x = x
+        self.y = y
+        self.z = z
+        self.t = t
+    }
+    
+    public func distance( other: Point4D ) -> Int {
         return abs( x - other.x ) + abs( y - other.y ) + abs( z - other.z ) + abs( t - other.t )
     }
     
@@ -715,7 +721,7 @@ struct Point4D: Hashable {
         return Point4D( x: left.x - right.x, y: left.y - right.y, z: left.z - right.z, t: left.t - right.t )
     }
     
-    static func ==( left: Point4D, right: Point4D ) -> Bool {
+    public static func ==( left: Point4D, right: Point4D ) -> Bool {
         return left.x == right.x && left.y == right.y && left.z == right.z && left.t == right.t
     }
     

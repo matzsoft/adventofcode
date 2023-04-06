@@ -7,14 +7,14 @@
 
 import Foundation
 
-class WristDevice {
-    class Instruction {
-        let opcode: Int
-        let a: Int
-        let b: Int
-        let c: Int
+public class WristDevice {
+    public class Instruction {
+        public let opcode: Int
+        public let a: Int
+        public let b: Int
+        public let c: Int
         
-        init( machineCode: String ) {
+        public init( machineCode: String ) {
             let instruction = machineCode.split(separator: " ")
             
             opcode = Int( instruction[0] )!
@@ -38,16 +38,16 @@ class WristDevice {
     }
 
     let initialRegisters: [Int]
-    var registers: [Int]
+    public var registers: [Int]
     var ip = 0
     var ipBound: Int?
     var cycleNumber = 0
-    var memory = [Instruction]()
+    public var memory = [Instruction]()
     
-    var mnemonicActions = [ String : ( Int, Int, Int ) -> Void ]()
-    var opcodeActions   = [ Int : ( Int, Int, Int ) -> Void ]()
+    public var mnemonicActions = [ String : ( Int, Int, Int ) -> Void ]()
+    public var opcodeActions   = [ Int : ( Int, Int, Int ) -> Void ]()
     var mnemonicOpcodes = [ String : Int ]()
-    var opcodeMnemonics = [ Int : String ]()
+    public var opcodeMnemonics = [ Int : String ]()
 
     var breakpoint: Int?
     var action:     () -> Bool = { return true }
@@ -57,14 +57,14 @@ class WristDevice {
     var ipTraceStart    = Int.max
     var ipTraceStop     = Int.max
 
-    init( machineCode: [String] ) {
+    public init( machineCode: [String] ) {
         initialRegisters = [ 0, 0, 0, 0 ]
         registers = initialRegisters
         memory = machineCode.map { Instruction( machineCode: $0 ) }
         setupOpcodes()
     }
     
-    init( assembly: [String] ) {
+    public init( assembly: [String] ) {
         initialRegisters = [ 0, 0, 0, 0, 0, 0 ]
         registers = initialRegisters
         ipBound = Int( assembly[0].split( separator: " " )[1] )!
@@ -99,12 +99,12 @@ class WristDevice {
             uniqueKeysWithValues: mnemonicActions.keys.enumerated().map { ( $0.offset, $0.element ) } )
     }
     
-    func reset() -> Void {
+    public func reset() -> Void {
         registers = initialRegisters
         ip = 0
     }
     
-    func setBreakpoint( address: Int, action: @escaping () -> Bool ) -> Void {
+    public func setBreakpoint( address: Int, action: @escaping () -> Bool ) -> Void {
         breakpoint = address
         self.action = action
     }
@@ -136,7 +136,7 @@ class WristDevice {
         }
     }
     
-    func run() -> Void {
+    public func run() -> Void {
         while 0 <= ip && ip < memory.count {
             if let breakpoint = breakpoint {
                 if ip == breakpoint && !action() { return }

@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func printScoreboard( scoreboard: [Int], elf1: Int, elf2: Int ) -> Void {
     var unpacked = Array( scoreboard.map { String(format: "%3d", $0) }.joined() + " " )
@@ -87,6 +88,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

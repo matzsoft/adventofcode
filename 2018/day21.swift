@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 class Emulator {
     let initial: Int
@@ -90,6 +91,7 @@ func part2e( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2e, label: "Emulator" )
 try solve( part1: part1 )
