@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 extension Array {
     var adjacentPairs: [ [ Element ] ] { ( 0 ..< count - 1 ).map { [ self[$0], self[$0+1] ] } }

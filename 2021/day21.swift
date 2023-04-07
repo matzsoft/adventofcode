@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Player: Hashable {
     var location: Int

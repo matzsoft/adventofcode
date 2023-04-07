@@ -27,8 +27,8 @@ public struct AOCinput {
     public let lines:  [String]
     let filename: String
 
-    var part1:  String?  { header[0] != "" ? header[0] : nil }
-    var part2:  String?  { header[1] != "" ? header[1] : nil }
+    public var part1:  String?  { header[0] != "" ? header[0] : nil }
+    public var part2:  String?  { header[1] != "" ? header[1] : nil }
     public var extras: [String] { Array( header[2...] ) }
     public var line:   String   { lines[0] }
     public var paragraphs: [[String]] {

@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Pair {
     let open: Character

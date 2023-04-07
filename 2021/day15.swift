@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 protocol RiskMap {
     var bounds: Rect2D { get }

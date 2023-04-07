@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 let correct = [
     Set( "abcefg" ), Set( "cf" ), Set( "acdeg" ), Set( "acdfg" ), Set( "bcdf" ),

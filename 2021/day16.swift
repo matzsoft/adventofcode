@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct HexTable {
     static private let mapping = [

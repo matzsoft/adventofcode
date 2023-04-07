@@ -298,7 +298,7 @@ public struct Rect2D: Hashable, CustomStringConvertible {
     public let max:    Point2D
     public let width:  Int
     public let height: Int
-    let area:   Int
+    public let area:   Int
     
     public init( min: Point2D, max: Point2D ) {
         self.min    = Point2D( x: Swift.min( min.x, max.x ), y: Swift.min( min.y, max.y ) )
@@ -331,7 +331,7 @@ public struct Rect2D: Hashable, CustomStringConvertible {
     public var description: String {
         "(\(min.x),\(min.y) \(width)x\(height))"
     }
-    var points: [Point2D] {
+    public var points: [Point2D] {
          ( min.y ... max.y ).flatMap { y in ( min.x ... max.x ).map { x in Point2D( x: x, y: y ) } }
     }
 
@@ -358,7 +358,7 @@ public struct Rect2D: Hashable, CustomStringConvertible {
                        max: Point2D( x: max.x + byMaxX, y: max.y + byMaxY ) )
     }
     
-    func pad( by: Int ) -> Rect2D {
+    public func pad( by: Int ) -> Rect2D {
         return pad( byMinX: by, byMaxX: by, byMinY: by, byMaxY: by )
     }
     
@@ -491,7 +491,7 @@ public struct Rect3D: Hashable {
         self.init( min: bounds.min, max: bounds.max )
     }
     
-    var points: [Point3D] {
+    public var points: [Point3D] {
          ( min.z ... max.z ).flatMap { z in
              ( min.y ... max.y ).flatMap { y in
                  ( min.x ... max.x ).map { x in Point3D( x: x, y: y, z: z ) } } }
@@ -521,7 +521,7 @@ public struct Rect3D: Hashable {
         return pad( byMinX: by, byMaxX: by, byMinY: by, byMaxY: by, byMinZ: by, byMaxZ: by )
     }
     
-    func contains( point: Point3D ) -> Bool {
+    public func contains( point: Point3D ) -> Bool {
         guard min.x <= point.x, point.x <= max.x else { return false }
         guard min.y <= point.y, point.y <= max.y else { return false }
         guard min.z <= point.z, point.z <= max.z else { return false }
@@ -529,7 +529,7 @@ public struct Rect3D: Hashable {
         return true
     }
     
-    func intersection( with other: Rect3D ) -> Rect3D? {
+    public func intersection( with other: Rect3D ) -> Rect3D? {
         let minX = Swift.max( min.x, other.min.x )
         let minY = Swift.max( min.y, other.min.y )
         let minZ = Swift.max( min.z, other.min.z )
@@ -544,8 +544,8 @@ public struct Rect3D: Hashable {
     }
 }
 
-struct Matrix3D {
-    static var identity: Matrix3D {
+public struct Matrix3D {
+    public static var identity: Matrix3D {
         let matrix = [
             [ 1, 0, 0, 0 ],
             [ 0, 1, 0, 0 ],
@@ -563,7 +563,7 @@ struct Matrix3D {
         return Matrix3D( matrix: matrix )
     }
     
-    static func rotate( aroundX by: Turn ) -> Matrix3D {
+    public static func rotate( aroundX by: Turn ) -> Matrix3D {
         var matrix = identity.matrix
         switch by {
         case .left:
@@ -635,7 +635,7 @@ struct Matrix3D {
         return Matrix3D( matrix: matrix )
     }
     
-    static func rotate( aroundX byX: Turn, aroundY byY: Turn, aroundZ byZ: Turn ) -> Matrix3D {
+    public static func rotate( aroundX byX: Turn, aroundY byY: Turn, aroundZ byZ: Turn ) -> Matrix3D {
         rotate( aroundX: byX ).multiply( by: rotate( aroundY: byY ) ).multiply( by: rotate(aroundZ: byZ ) )
     }
     
@@ -645,7 +645,7 @@ struct Matrix3D {
         self.matrix = matrix
     }
     
-    func multiply( by other: Matrix3D ) -> Matrix3D {
+    public func multiply( by other: Matrix3D ) -> Matrix3D {
         let matrix = ( 0 ..< self.matrix.count ).map { row in
             ( 0 ..< other.matrix[0].count ).map { col in
                 ( 0 ..< self.matrix[0].count ).reduce( 0 ) { $0 + self.matrix[row][$1] * other.matrix[$1][col] }
@@ -680,14 +680,14 @@ struct Matrix3D {
         return Matrix3D( matrix: matrix )
     }
     
-    func transform( point: Point3D ) -> Point3D {
+    public func transform( point: Point3D ) -> Point3D {
         let newX = point.x * matrix[0][0] + point.y * matrix[1][0] + point.z * matrix[2][0] + matrix[3][0]
         let newY = point.x * matrix[0][1] + point.y * matrix[1][1] + point.z * matrix[2][1] + matrix[3][1]
         let newZ = point.x * matrix[0][2] + point.y * matrix[1][2] + point.z * matrix[2][2] + matrix[3][2]
         return Point3D( x: newX, y: newY, z: newZ )
     }
     
-    func add( translation: Point3D ) -> Matrix3D {
+    public func add( translation: Point3D ) -> Matrix3D {
         var matrix = self.matrix
         matrix[3][0] += translation.x
         matrix[3][1] += translation.y

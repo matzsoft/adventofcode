@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 extension Array {
     var pairs: [ ( Element, Element ) ] {

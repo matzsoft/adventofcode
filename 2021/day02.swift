@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Command {
     let action: String

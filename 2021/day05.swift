@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Line {
     let start: Point2D

@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Herd {
     let direction: DirectionUDLR

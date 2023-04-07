@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func mostCommon( report: [String], index: String.Index ) -> Character {
     let count = report.filter { $0[index] == "1" }.count

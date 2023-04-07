@@ -11,6 +11,7 @@
 //
 
 import Foundation
+import Library
 
 func spawn( fish: [Int], days: Int ) -> Int {
     var fish = fish.reduce( into: Array( repeating: 0, count: 9 ) ) { $0[$1] += 1 }

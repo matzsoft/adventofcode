@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Map {
     let map: [[Int]]

@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 enum RunType: String { case parse, explode, reduce, add, magnitude, homework }
 

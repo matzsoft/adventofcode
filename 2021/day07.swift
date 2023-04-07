@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func parse( input: AOCinput ) -> [Int] {
     return input.line.split( separator: "," ).map { Int( $0 )! }

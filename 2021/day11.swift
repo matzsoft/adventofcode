@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Map: CustomStringConvertible {
     var map: [[Int]]

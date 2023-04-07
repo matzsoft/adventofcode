@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 let validZone = Rect3D(
     points: [ Point3D( x: -50, y: -50, z: -50 ), Point3D( x: 50, y: 50, z: 50 ) ] )

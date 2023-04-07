@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 let modelNumberLength = 14
 let inputIndices = 0 ..< modelNumberLength

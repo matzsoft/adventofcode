@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Paper {
     let dots: Set<Point2D>

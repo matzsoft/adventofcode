@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Cave {
     enum Size { case big, small }

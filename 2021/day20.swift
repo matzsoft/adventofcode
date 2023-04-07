@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 struct Image: CustomStringConvertible {
     let lit: Set<Point2D>
