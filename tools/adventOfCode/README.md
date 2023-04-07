@@ -1,6 +1,6 @@
 # adventOfCode
 
-**adventOfCode** is a tool for helping with the developtment of solutions to [Advent of Code](https://adventofcode.com) problems using the [Swift Package Manager](https://swift.org/package-manager).  It facilitates the creation of new problem solutions, working with them in Xcode, and maintaining code that is common to many solutions in a "library".
+**adventOfCode** is a tool for helping with the developtment of solutions to [Advent of Code](https://adventofcode.com) problems using the [Swift Package Manager](https://swift.org/package-manager).  It facilitates the creation of new problem solutions, working with them in Xcode, and maintaining code that is common to many solutions in a `Library`.
 
 ## Overall Directory Structure
 
@@ -8,11 +8,13 @@ I have a directory for my Advent of Code solutions called adventofcode.  It cont
 
 ### Tools Directory
 
-The tools directory which currently has one tool **adventOfCode** and a support directory **figlet**.  **adventOfCode** contains a Swift package for a command line tool to work with puzzle solutions.  **figlet** contains "font" files that aid with problems that generate ASCII art block letters as their output.
+The tools directory which currently has one tool **adventOfCode**, a **Library** directory, and a support directory **figlet**.  **adventOfCode** contains a Swift package for a command line tool to work with puzzle solutions. **Library** contains a Swift package defining a library of code refenrenced elsewhere. **figlet** contains "font" files that aid with problems that generate ASCII art block letters as their output.
 
 ### Year Subdirectories
 
 The year subdirectories should ultimately contain one file for each problem (`day01.swift` through `day25.swift`), a directory named **input**, a directory named **testfiles**, and an optional file for each problem that needs a patch to Package.swift (e.g. `day22.patch`).  The **input** directory contains the problem data for each problem.  For example the problem data for day07.swift is in `input/day07.txt`.  The **testfiles** directory contains any test data for each problem.  For example any test data for day07.swift would be in `testfiles/day07*.txt`.
+
+On occasion after solving a prolbem I want to explore alternate solutions. In order to not interfere with the working solution a file can be created, e.g. `day07-experimental.swift`, to work with. The "-" and the following label are required for the **adventOfCode** tool to work with it.
 
 #### Problem and Test Data
 
@@ -61,8 +63,8 @@ The open subcommand takes a problem solution name and creates a Swift Package Ma
 1. Creates a subdirectory called day12.
 1. Creates a Swift Package Manager structure within the day12 directory.
 1. Copies day12.swift into the correct part of the Sources directory as main.swift.
-1. Copies all the library files into place beside main.swift.
-1. Copies the stock Package.swift to stock-Package.swift.
+1. Modifies Package.swift to include dependencies for the local `Library`.
+1. Copies the resulting Package.swift to stock-Package.swift.
 1. If day12.patch exists, use `patch` to update the live Package.swift.
 1. Opens the package in Xcode.
 
@@ -71,12 +73,5 @@ The open subcommand takes a problem solution name and creates a Swift Package Ma
 I use the close subcommand when I have finished working on a solution, or perhaps want to make a preliminary commit.  It pulls the changed files from the Swift Package Manager setup and then deletes it.  For example, the command `adventOfCode close day12` performs the following actions:
 
 1. If the main.swift file is different than day12.swift in the year directory, then main.swift is copied over day12.swift.
-1. For all other files in the Sources of the package do the following:
-    - If the corresponding file does not exist in the library, copy it to the library.
-    - If the corresponding file in the library is different, copy the package file to the library.
 1. Use `diff` to create day12.patch if there are any required changes to Package.swift.
 1. Delete the day12 directory.
-
-## The Library
-
-The source code for the **adventOfCode** tool contains a Library folder.  This folder contains all the code that is used by multiple problem solutions.  An `adventOfCode open` command copies all files from this Library folder into the newly created package.  An `adventOfCode close` command copies any changes to those files back into the Library folder.

@@ -1,1 +1,0 @@
-1. Examine the Direction* types in Coordinates.swift to see if they can be standardized and/or improved.
