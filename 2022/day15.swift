@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 extension Range where Bound: Comparable {
     func union( other: Range<Bound> ) -> Range<Bound>? {

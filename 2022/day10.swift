@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 enum Opcode: String {
     case addx, noop

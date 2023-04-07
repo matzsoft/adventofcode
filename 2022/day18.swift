@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 enum Direction3D: CaseIterable {
     case north, south, east, west, up, down

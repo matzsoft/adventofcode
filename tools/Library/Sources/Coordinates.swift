@@ -326,11 +326,9 @@ public struct Rect2D: Hashable, CustomStringConvertible {
         self.init( min: bounds.min, max: bounds.max )
     }
     
-    var xRange: ClosedRange<Int> { min.x ... max.x }
-    var yRange: ClosedRange<Int> { min.y ... max.y }
-    public var description: String {
-        "(\(min.x),\(min.y) \(width)x\(height))"
-    }
+    public var xRange: ClosedRange<Int> { min.x ... max.x }
+    public var yRange: ClosedRange<Int> { min.y ... max.y }
+    public var description: String { "(\(min.x),\(min.y) \(width)x\(height))" }
     public var points: [Point2D] {
          ( min.y ... max.y ).flatMap { y in ( min.x ... max.x ).map { x in Point2D( x: x, y: y ) } }
     }
@@ -344,7 +342,7 @@ public struct Rect2D: Hashable, CustomStringConvertible {
         return Rect2D( min: Point2D( x: minX, y: minY ), max: Point2D( x: maxX, y: maxY ) )
     }
 
-    func expand( with other: Rect2D ) -> Rect2D {
+    public func expand( with other: Rect2D ) -> Rect2D {
         let minX = Swift.min( min.x, other.min.x )
         let maxX = Swift.max( max.x, other.max.x )
         let minY = Swift.min( min.y, other.min.y )
@@ -404,7 +402,7 @@ public struct Point3D: Hashable, CustomStringConvertible {
         return Point3D( x: left.x - right.x, y: left.y - right.y, z: left.z - right.z )
     }
     
-    static func *( left: Int, right: Point3D ) -> Point3D {
+    public static func *( left: Int, right: Point3D ) -> Point3D {
         return Point3D( x: left * right.x, y: left * right.y, z: left * right.z )
     }
     

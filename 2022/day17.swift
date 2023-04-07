@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 extension Rect2D {
     func contains( other: Rect2D ) -> Bool {

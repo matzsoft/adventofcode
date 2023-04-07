@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 infix operator <=> : ComparisonPrecedence
 func <=><T: Comparable> (left: T, right: T) -> Int {

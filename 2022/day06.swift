@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func solution( input: AOCinput, length: Int ) -> String {
     let characters = Array( input.line )

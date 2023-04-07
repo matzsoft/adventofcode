@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 class Monkey {
     var items: [Int]
@@ -138,7 +139,7 @@ func extractor( input: AOCinput ) -> Int {
 
 func part1( input: AOCinput ) -> String {
     let bigN = extractor( input: input )
-    let monkeys = input.paragraphs.map { Simian( lines: $0, bigN: bigN ) }
+    let monkeys = input.paragraphs.map { Monkey( lines: $0/*, bigN: bigN*/ ) }
 
     for _ in 1 ... 20 {
         monkeys.forEach { $0.turn( monkeys: monkeys ) }

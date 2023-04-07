@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 extension Double {
     func signum() -> Double {

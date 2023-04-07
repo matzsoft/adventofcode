@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 extension [String] {
     func find( first character: Character ) -> Point2D? {

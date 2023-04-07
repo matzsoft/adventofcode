@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 let quintToInt: [ Character : Int ] = [ "=" : -2, "-" : -1, "0" : 0, "1" : 1, "2" : 2 ]
 let intToQuint                      = [ -2 : "=", -1 : "-", 0 : "0", 1 : "1", 2 : "2" ]
@@ -45,7 +46,7 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    return ""
+    return "None"
 }
 
 

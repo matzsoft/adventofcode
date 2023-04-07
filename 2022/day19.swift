@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 enum ResourceType: String { case ore, clay, obsidian, geode }
 

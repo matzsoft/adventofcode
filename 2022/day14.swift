@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 // Note - in order to use existing Direction8, treat gravity as pulling the sand North.
 let directions: [Direction8] = [ .N, .NW, .NE ]

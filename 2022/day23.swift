@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 func spread( elf: Point2D, direction: Direction8 ) -> [Point2D] {
     let vector = direction.vector

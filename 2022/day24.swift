@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Library
 
 extension Int {
     func mod( _ by: Int ) -> Int {
