@@ -10,6 +10,10 @@
 
 import Foundation
 
+/// A friendly interface to the system glob function.
+/// - Parameter pattern: A glob pattern as would be presented to the shell.
+///  Fot example "*.txt" or "abc?.log".
+/// - Returns: An array of pathnames matching the pattern parameter.
 public func glob( pattern: String ) -> [String] {
     let globFlags = GLOB_TILDE | GLOB_BRACE | GLOB_MARK
     var globObj = glob_t()
