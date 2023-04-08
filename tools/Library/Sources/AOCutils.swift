@@ -9,6 +9,9 @@ import Foundation
 
 public enum AOCPart { case part1, part2 }
 
+/// Used for throwing generalized exceptions.
+///
+/// The init takes one parameter, message: any string describing the error condition.
 public struct RuntimeError: Error {
     let message: String
 
@@ -22,10 +25,23 @@ public struct RuntimeError: Error {
 }
 
 
+/// Parses an AOC input or test file for easy access.
+///
+/// Available properties are:
+///
+/// - part1 - the expected answer for part1. A value of nil means unknown for input files or
+///  irrelevant for test files.
+/// - part2 - the expected answer for part2, like part1.
+/// - line  - the first line of the input data. Useful when a problem only has one line of data.
+/// - lines - an array of all the lines of the input.
+/// - paragraphs - the input for some problems is organized in paragraphs.  This property is an
+///  array of paragraphs, each paragraph an array of lines.
+/// - extras - some problems require different info for the tests and the real data.  This info is
+///  provided as extra lines in the header.
 public struct AOCinput {
     let header: [String]
-    public let lines:  [String]
     let filename: String
+    public let lines:  [String]
 
     public var part1:  String?  { header[0] != "" ? header[0] : nil }
     public var part2:  String?  { header[1] != "" ? header[1] : nil }
@@ -35,7 +51,9 @@ public struct AOCinput {
         lines.split( separator: "", omittingEmptySubsequences: false ).map { $0.map { String( $0 ) } }
     }
     
-    init( filename: String ) throws {
+    /// Initializes an AOCinput structure from the given filename.
+    /// - Parameter filename: The pathname of the file containing the input or test data.
+    public init( filename: String ) throws {
         let contents = try String( contentsOfFile: filename )
         
         // The following is to accomodate Visual Studio Code.  It treats the LF character as a line
@@ -55,11 +73,19 @@ public struct AOCinput {
 }
 
 
+/// Finds the name of the project by navigating up the directory tree from main.swift.
+/// - Parameter base: The pathname of where to start looking.  Defaults to source file of the caller.
+/// - Returns: The name of the current project, e.g. day07.
 func getProjectName( base: String = #file ) -> String {
     URL( fileURLWithPath: base ).deletingLastPathComponent().deletingLastPathComponent().lastPathComponent
 }
 
 
+/// Gets the project info for the current project.
+/// - Parameter sourceFile: The pathname of main.swift.  Defaults to the source file of the caller.
+/// - Throws: Only when a URL can't be created from sourceFile.
+/// - Returns: A string with "Advent of Code", the year, the day name, and whether we have a debug
+///  or release build.
 public func projectInfo( sourceFile: String = #file ) throws -> String {
     let input = try URL( fileURLWithPath: findDirectory( name: "input", base: sourceFile ) )
     let year = input.deletingLastPathComponent().lastPathComponent
@@ -73,6 +99,15 @@ public func projectInfo( sourceFile: String = #file ) throws -> String {
 }
 
 
+/// Finds the path to a named directory by searching the directory tree.
+///
+/// Starts the search at given path and proceeds up the directory tree until the named directory is found.
+///
+/// - Parameters:
+///   - name: The name of the desired directory.
+///   - base: The path of the place to start the search.
+/// - Throws: A RuntimeError if the named directory cannot be found.
+/// - Returns: The full path to the desired directory.
 public func findDirectory( name: String, base: String = #file ) throws -> String {
     let fileManager = FileManager.default
     var directory = URL( fileURLWithPath: base ).deletingLastPathComponent().path
@@ -93,6 +128,9 @@ public func findDirectory( name: String, base: String = #file ) throws -> String
 }
 
 
+/// Nicely formats the time elapsed from a given start time.
+/// - Parameter startTime: The start time of the interval to format.
+/// - Returns: A string giving seconds and milliseconds, e.g. 12s348ms.
 func formatElapsed( startTime: CFAbsoluteTime ) -> String {
     let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
     
@@ -109,6 +147,10 @@ func formatElapsed( startTime: CFAbsoluteTime ) -> String {
 
 // MARK: - functions for getting puzzle and test input.
 
+/// Gets the AOCinput structure of the input file for the current project.
+/// - Parameter base: The path to the source file for main.swift.  Defaults to the source file of the caller.
+/// - Throws: A RuntimeError if the input directory can't be found.
+/// - Returns: An AOCinput structure containing the input data.
 public func getAOCinput( base: String = #file ) throws -> AOCinput {
     let inputDirectory = try findDirectory( name: "input", base: base )
     let project = getProjectName( base: base )
@@ -118,6 +160,10 @@ public func getAOCinput( base: String = #file ) throws -> AOCinput {
 }
 
 
+/// Gets an array of AOCinput structures for all the test files for the current project.
+/// - Parameter base: The path to the source file for main.swift.  Defaults to the source file of the caller.
+/// - Throws: A RuntimeError if the testfiles directory can't be found.
+/// - Returns: An array of AOCinput structures containing the data for all the test files.
 func getTests( base: String = #file ) throws -> [AOCinput] {
     let inputDirectory = try findDirectory( name: "testfiles", base: base )
     let project = getProjectName( base: base )
@@ -128,6 +174,12 @@ func getTests( base: String = #file ) throws -> [AOCinput] {
 
 // MARK: - functions for running solutions and tests.
 
+/// Runs a part 1 solution for the current problem and prints a summary of the result.
+/// - Parameters:
+///   - part1: A function that actually runs part 1.
+///   - label: An optional label to be added to the summary output.
+///   - base: The path to the source file for main.swift.  Defaults to the source file of the caller.
+/// - Throws: A RuntimeError if the input directory can't be found.
 public func solve( part1: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
     let input = try getAOCinput( base: base )
     let label = label == "" ? "Part1" : "Part1 \(label)"
@@ -136,6 +188,12 @@ public func solve( part1: ( ( AOCinput ) -> String ), label: String = "", base: 
 }
 
 
+/// Runs a part 2 solution for the current problem and prints a summary of the result.
+/// - Parameters:
+///   - part2: A function that actually runs part 2.
+///   - label: An optional label to be added to the summary output.
+///   - base: The path to the source file for main.swift.  Defaults to the source file of the caller.
+/// - Throws: A RuntimeError if the input directory can't be found.
 public func solve( part2: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
     let input = try getAOCinput( base: base )
     let label = label == "" ? "Part2" : "Part2 \(label)"
@@ -144,6 +202,19 @@ public func solve( part2: ( ( AOCinput ) -> String ), label: String = "", base: 
 }
 
 
+/// Runs a solution for one part of the current problem and prints a summary of the result.
+///
+/// The summary contains a label, the actual result produced, a success indicator, and the elapsed time.
+///
+/// If the expected result is not yet known, the success indicator will not be shown.
+///
+/// Otherwise the success indicator will either be "Correct!" or the expected result.
+///
+/// - Parameters:
+///   - label: A string indicating the part being run and any additional information.
+///   - function: A function that actually runs the desired part.
+///   - input: The AOCinput structure containing the data for the run.
+///   - expected: The expected result or nil if not yet known.
 func runSolution( label: String, function: ( AOCinput ) -> String, input: AOCinput, expected: String? ) {
     let startTime = CFAbsoluteTimeGetCurrent()
     let result = function( input )
@@ -162,6 +233,12 @@ func runSolution( label: String, function: ( AOCinput ) -> String, input: AOCinp
 }
 
 
+/// Runs all the tests for the part 1 solution to the current problem and prints a summary of the results.
+/// - Parameters:
+///   - part1: A function that actually runs part 1.
+///   - label: An optional label to be added to the summary output.
+///   - base: The path to the source file for main.swift.  Defaults to the source file of the caller.
+/// - Throws: A RuntimeError if the input directory can't be found.
 public func runTests( part1: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
     let tests = try getTests( base: base ).filter { $0.part1 != nil }.map { ( $0, $0.part1! ) }
     let label = label == "" ? "Part1" : "Part1 \(label)"
@@ -170,6 +247,12 @@ public func runTests( part1: ( ( AOCinput ) -> String ), label: String = "", bas
 }
 
 
+/// Runs all the tests for the part 2 solution to the current problem and prints a summary of the results.
+/// - Parameters:
+///   - part2: A function that actually runs part 2.
+///   - label: An optional label to be added to the summary output.
+///   - base: The path to the source file for main.swift.  Defaults to the source file of the caller.
+/// - Throws: A RuntimeError if the input directory can't be found.
 public func runTests( part2: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
     let tests = try getTests( base: base ).filter { $0.part2 != nil }.map { ( $0, $0.part2! ) }
     let label = label == "" ? "Part2" : "Part2 \(label)"
@@ -177,6 +260,22 @@ public func runTests( part2: ( ( AOCinput ) -> String ), label: String = "", bas
     runTests( part: part2, tests: tests, label: label )
 }
 
+/// Runs all the tests for one part of the current problem and prints a summary of the results.
+///
+/// The summary consists of one line for every test that fails and one line showing the overall
+///  status of the tests.
+///
+/// When a test fails its summary line shows the test name, the given label, the actual result,
+///  and the expected result.
+///
+/// After all tests are run the final line shows how many tests passed, how many were run, the label,
+///  and the elapsed time to run all tests.
+///
+/// - Parameters:
+///   - part: A function that actually runs the desired part.
+///   - tests: An array of tuples.  Each tuple has an AOCinput structure with the test data and
+///    a String with the expected result for that data.
+///   - label: A string indicating the part being run and any additional information.
 func runTests( part: ( ( AOCinput ) -> String ), tests: [ ( AOCinput, String ) ], label: String ) -> Void {
     var successes = 0
     let startTime = CFAbsoluteTimeGetCurrent()
