@@ -8,40 +8,36 @@
 import Foundation
 
 extension Collection {
+    /// Behaves like split(where:) except the delimiting elements are retained in the output array.
+    /// - Parameter isSplit: A function that returns true when an element should cause a split.
+    /// - Returns: An array of SubSequence that reflects the original collection split according to
+    ///  the predicate isSplit.
     func splitAt( isSplit: ( Iterator.Element ) throws -> Bool ) rethrows -> [SubSequence] {
-        let indexes = try indices.filter( { try isSplit( self[$0] ) } )
-        var p = self.startIndex
-        var result = [SubSequence]()
-        
-        for index in indexes {
-            if index > p {
-                result.append( self[p..<index] )
+        let delimiterIndicees = try indices.filter( { try isSplit( self[$0] ) } )
+        var lastStartIndex = self.startIndex
+        let result = delimiterIndicees.reduce( into: [SubSequence]() ) { result, index in
+            if index > lastStartIndex {
+                result.append( self[lastStartIndex..<index] )
             }
             result.append( self[index...index] )
-            p = self.index( after: index )
+            lastStartIndex = self.index( after: index )
         }
-        if p != self.endIndex {
-            result.append( suffix( from: p ) )
-        }
-        return result
+        
+        guard lastStartIndex < endIndex else { return result }
+        return result + [ self[lastStartIndex..<endIndex] ]
     }
 }
 
 extension String {
-    /**
-     Splits a string with multiple delimiters, but keeps the delimiters in the result.
-     
-     For example these 2 lines produce similar results.
-     
-     ~~~
-    let withoutDelimiters = string.split( whereSeparator: { delimiters.contains( $0 ) } )
-    let withDelimiters = string.tokenize( delimiters: delimiters )
-     ~~~
-
-     - Parameter delimiters: A string of characters, any one of which splits the input string.
-
-     - Returns: An array of Substring that keeps the delimiters interspersed with the other parts.
-    **/
+    /// Splits a string with multiple delimiters, but keeps the delimiters in the result.
+    ///
+    /// For example these 2 lines produce similar results.
+    ///
+    ///     let withoutDelimiters = string.split( whereSeparator: { delimiters.contains( $0 ) } )
+    ///     let withDelimiters = string.tokenize( delimiters: delimiters )
+    ///
+    /// - Parameter delimiters: A string of characters, any one of which splits the input string.
+    /// - Returns: An array of Substring that keeps the delimiters interspersed with the other parts.
     public func tokenize( delimiters: String ) -> [Substring] {
         return self.splitAt( isSplit: { delimiters.contains( $0 ) } )
     }
@@ -65,4 +61,3 @@ public func gcd( _ m: Int, _ n: Int ) -> Int {
 public func lcm( _ m: Int, _ n: Int ) -> Int {
     return m / gcd (m, n ) * n
 }
-
