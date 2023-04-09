@@ -7,11 +7,18 @@
 
 import Foundation
 
+/// The definition of a single block letter.
+///
+/// The code contains a bit mask of the blocks in the letter, 1 for foreground and 0 for background.
+/// The width and height provide the shape of the letter.
 struct BlockLetter {
     let code: Int
     let width: Int
     let height: Int
     
+    /// Initialize a BlockLetter from an entry in a BlockLetter font (figlet) file.
+    /// - Parameter visual: Lines of consistent width. Spaces represent background.
+    ///  Anything else is foreground.
     init( visual: String ) throws {
         let visual = visual.split( separator: "\n" )
         guard visual.allSatisfy( { $0.count == visual[0].count } ) else {
@@ -24,12 +31,17 @@ struct BlockLetter {
     }
 }
 
+/// Defines a Block Letter (figlet) font.
+///
+/// Provides a mapping from the bit mask code to the character it represents.
 public struct BlockLetterDictionary {
     let width: Int
     let height: Int
     let hSpacing: Int
     let dictionary: [ Int: Character ]
-
+    
+    /// Create a BlockLetterDictionary from a Block Letter (figlet) font file.
+    /// - Parameter file: Name of the font to load.
     public init( from file: String ) throws {
         let inputDirectory = try findDirectory( name: "tools" )
         let path           = "\(inputDirectory)/figlet/\(file)"
@@ -59,6 +71,9 @@ public struct BlockLetterDictionary {
         dictionary = Dictionary( uniqueKeysWithValues: zip( letters.map { $0.code }, keys ) )
     }
     
+    /// Generate the string described by a 2D array of pixel on/off values.
+    /// - Parameter screen: A two dimensional array of Bool.  False for background, true for foreground.
+    /// - Returns: The string that is represented by screen.
     public func makeString( screen: [[Bool]] ) -> String {
         guard screen.count == height else { return "Bad Height" }
         guard screen.allSatisfy( { $0.count == screen[0].count } ) else { return "Inconsistent Widths" }
