@@ -100,7 +100,7 @@ public class Coprocessor {
     /// - Parameters:
     ///   - x: The register to set to the value.
     ///   - y: The value to set into the register.
-    ///   Either a literal integer or the designation of the register containing value.
+    ///   Either a literal integer or the designation of the register containing the value.
     func set( x: String, y: String ) -> Void {
         registers[x] = Int( y ) ?? ( registers[y] ?? 0 )
     }
