@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// Implements the KnotHash algorithm used by 2017 days 10 and 14.
 public class KnotHash {
     static let extraLengths = [ 17, 31, 73, 47, 23 ]
     
@@ -15,6 +16,10 @@ public class KnotHash {
     var current: Int
     var skip: Int
     
+    /// Initialize a KnotHash with an array of Int.
+    ///
+    /// Only used in 2017 day 10.
+    /// - Parameter lengths: An array of integers ranging from 0 to 255.
     public init( lengths: [Int] ) {
         list = ( 0 ... 255 ).map { $0 }
         self.lengths = lengths
@@ -22,6 +27,9 @@ public class KnotHash {
         skip = 0
     }
     
+    /// Normal KnotHash init.
+    /// - Parameter input: A character string to hash.  The lengths are taken from the
+    /// ASCII value of each character.
     public init( input: String ) {
         list = ( 0 ... 255 ).map { $0 }
         lengths = input.map { Int( $0.unicodeScalars.first!.value ) } + KnotHash.extraLengths
@@ -30,6 +38,9 @@ public class KnotHash {
     }
 
     
+    /// Performs a single round of the KnotHash algorithm.
+    ///
+    /// Only used directly in 2017 day 10.
     public func oneRound() -> Void {
         for length in lengths {
             if current + length  < list.count {
@@ -51,6 +62,8 @@ public class KnotHash {
         }
     }
     
+    /// Performs the full hashing on the input string.
+    /// - Returns: A 32 digit hexadecimal number that is the hash.
     public func generate() -> String {
         guard list.count == 256 else { return "Wrong sized list" }
         
