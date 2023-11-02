@@ -118,7 +118,7 @@ func fixPackageSwift( package: String ) throws -> Void {
     // Read generated file
     let original = try String( contentsOfFile: "Package.swift" )
     // fix dependencies
-    let nameArgument = "name: \"\(package)\","
+    let nameArgument = "name: \"\(package)\""
     let ranges = original.ranges( of: nameArgument )
     
     guard ranges.count == 2 else {
@@ -127,12 +127,12 @@ func fixPackageSwift( package: String ) throws -> Void {
         throw ExitCode.failure
     }
     
-    let productDependency = "    dependencies: [ .package( path: \"\(libraryPath)\" ) ],"
-    let targetDependency = "        dependencies: [ \"Library\" ],"
+    let productDependency = "    dependencies: [ .package( path: \"\(libraryPath)\" ) ]"
+    let targetDependency = "        dependencies: [ \"Library\" ]"
     var stock = original
 
-    stock.replaceSubrange( ranges[1], with: "\(nameArgument)\n\(targetDependency)" )
-    stock.replaceSubrange( ranges[0], with: "\(nameArgument)\n\(productDependency)" )
+    stock.replaceSubrange( ranges[1], with: "\(nameArgument),\n\(targetDependency)" )
+    stock.replaceSubrange( ranges[0], with: "\(nameArgument),\n\(productDependency)" )
 
     // write to stock
     try stock.write( toFile: "stock-Package.swift", atomically: true, encoding: .utf8 )
