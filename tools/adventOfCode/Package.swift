@@ -29,6 +29,7 @@ let package = Package(
             ],
             resources: [
                 .process( "Resources/mainswift.mustache" ),
+                .process( "Resources/PackageSwift.mustache" ),
             ]
         ),
         .testTarget(

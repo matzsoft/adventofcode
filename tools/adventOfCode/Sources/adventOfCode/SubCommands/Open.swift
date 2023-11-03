@@ -9,6 +9,7 @@
 import Foundation
 import Library
 import ArgumentParser
+import Mustache
 
 extension AdventOfCode {
     struct Open: ParsableCommand {
@@ -115,24 +116,18 @@ func fixPackageSwift( package: String ) throws -> Void {
         throw ExitCode.failure
     }
 
-    // Read generated file
-    let original = try String( contentsOfFile: "Package.swift" )
-    // fix dependencies
-    let nameArgument = "name: \"\(package)\""
-    let ranges = original.ranges( of: nameArgument )
-    
-    guard ranges.count == 2 else {
+    let bundleURL = Bundle.module.url( forResource: "PackageSwift", withExtension: "mustache" )
+    guard let templateURL = bundleURL else {
         var stderr = FileHandlerOutputStream( FileHandle.standardError )
-        print( "Unrecognized format in Package.swift.", to: &stderr )
+        print( "Can't find template for Package.swift", to: &stderr )
         throw ExitCode.failure
     }
-    
-    let productDependency = "    dependencies: [ .package( path: \"\(libraryPath)\" ) ]"
-    let targetDependency = "        dependencies: [ \"Library\" ]"
-    var stock = original
-
-    stock.replaceSubrange( ranges[1], with: "\(nameArgument),\n\(targetDependency)" )
-    stock.replaceSubrange( ranges[0], with: "\(nameArgument),\n\(productDependency)" )
+    let template = try Template( URL: templateURL )
+    let templateData: [String: Any] = [
+        "package": package,
+        "libraryPath": libraryPath
+    ]
+    let stock = try template.render( templateData )
 
     // write to stock
     try stock.write( toFile: "stock-Package.swift", atomically: true, encoding: .utf8 )
