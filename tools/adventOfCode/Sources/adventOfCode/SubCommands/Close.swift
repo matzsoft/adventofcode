@@ -35,6 +35,9 @@ extension AdventOfCode {
             let swiftFile = "\(package).swift"
             let sourcesFolder = "\(package)/Sources"
             let mainSwift = "\(sourcesFolder)/main.swift"
+            let packageSwift = "\(package)/Package.swift"
+            let customFolder = "packages"
+            let customPackage = "\(customFolder)/\(swiftFile)"
             var isDir: ObjCBool = false
 
             guard fileManager.fileExists( atPath: package, isDirectory: &isDir ) else {
@@ -57,32 +60,38 @@ extension AdventOfCode {
 
             if !fileManager.fileExists( atPath: swiftFile ) {
                 try copyFile( atPath: mainSwift, toPath: swiftFile )
-            } else if !fileManager.contentsEqual( atPath: mainSwift, andPath: swiftFile ){
+            } else if !fileManager.contentsEqual( atPath: mainSwift, andPath: swiftFile ) {
                 try fileManager.removeItem( atPath: swiftFile )
                 try copyFile( atPath: mainSwift, toPath: swiftFile )
             }
             
-            fileManager.createFile( atPath: "\(package).patch", contents: nil )
-            guard let diffOutput = FileHandle( forWritingAtPath: "\(package).patch" ) else {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Can't write to the patch file.", to: &stderr )
-                throw ExitCode.failure
-            }
-            switch shell(
-                stdout: diffOutput, "diff", "-Naur",
-                "--label=\(package)/stock-Package.swift", "--label=\(package)/Package.swift",
-                "\(package)/stock-Package.swift", "\(package)/Package.swift"
-            ) {
-            case 0:
-                try fileManager.removeItem( atPath: "\(package).patch" )
-            case 1:
-                break
-            default:
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Can't diff the Package.swift files.", to: &stderr )
-                throw ExitCode.failure
-            }
+            let stock = try createPackageSwift( directory: "./\(package)", package: package )
+            let actual = try String( contentsOfFile: packageSwift )
             
+            if stock != actual {
+                var isDir: ObjCBool = false
+                
+                if !fileManager.fileExists( atPath: customFolder, isDirectory: &isDir ) {
+                    try fileManager.createDirectory(
+                        atPath: customFolder, withIntermediateDirectories: false, attributes: nil
+                    )
+                    try copyFile( atPath: packageSwift, toPath: customPackage )
+                } else {
+                    guard isDir.boolValue else {
+                        var stderr = FileHandlerOutputStream( FileHandle.standardError )
+                        print( "File \(customFolder) is not a directory", to: &stderr )
+                        throw ExitCode.failure
+                    }
+                    
+                    if !fileManager.fileExists( atPath: customPackage ) {
+                        try copyFile( atPath: packageSwift, toPath: customPackage )
+                    } else if !fileManager.contentsEqual( atPath: packageSwift, andPath: customPackage ) {
+                        try fileManager.removeItem( atPath: customPackage )
+                        try copyFile( atPath: packageSwift, toPath: customPackage )
+                    }
+                }
+            }
+
             try fileManager.removeItem( atPath: package )
         }
     }

@@ -12,9 +12,13 @@ The tools directory which currently has one tool **adventOfCode**, a **Library**
 
 ### Year Subdirectories
 
-The year subdirectories should ultimately contain one file for each problem (`day01.swift` through `day25.swift`), a directory named **input**, a directory named **testfiles**, and an optional file for each problem that needs a patch to Package.swift (e.g. `day22.patch`).  The **input** directory contains the problem data for each problem.  For example the problem data for day07.swift is in `input/day07.txt`.  The **testfiles** directory contains any test data for each problem.  For example any test data for day07.swift would be in `testfiles/day07*.txt`.
+The year subdirectories should ultimately contain one file for each problem (`day01.swift` through `day25.swift`), a directory named **input**, a directory named **testfiles**, and an optional directory named **packages**.
 
 On occasion after solving a prolbem I want to explore alternate solutions. In order to not interfere with the working solution a file can be created, e.g. `day07-experimental.swift`, to work with. The "-" and the following label are required for the **adventOfCode** tool to work with it.
+
+The **input** directory contains the problem data for each problem.  For example the problem data for day07.swift is in `input/day07.txt`.  The **testfiles** directory contains any test data for each problem.  For example any test data for day07.swift would be in `testfiles/day07*.txt`.
+
+file for each problem that needs a patch to Package.swift (e.g. `day22.patch`).
 
 #### Problem and Test Data
 
@@ -26,9 +30,9 @@ The remaining lines of the header are optional.  They are used for extra paramet
 
 The separator line is just a line containing only one or more minus signs.  It serves to mark the end of the optional part of the header.
 
-#### Patching the Package.swift File ####
+#### Solutions Requiring an External Library ####
 
-A very few of the problems require an external library in order to run.  In that case, the Package.swift file must be modified with the information about the external library.  A patch file (e.g. `day22.patch`) is created to record those changes so that they don't have to be reapplied manually each time. For more detail see the descriptions of the subcommands below.
+A very few of the problems require an external library in order to run.  In that case, the Package.swift file must be modified with the information about the external library. This is where the optional **packages** directory is used. The modified Package.swift file is stored in the **packages** directory, named for the solution that it refers to (e.g. `day22.swift`). For more detail see the descriptions of the subcommands below.
 
 ## Operation of the Tool
 
@@ -63,9 +67,9 @@ The open subcommand takes a problem solution name and creates a Swift Package Ma
 1. Creates a subdirectory called day12.
 1. Creates a Swift Package Manager structure within the day12 directory.
 1. Copies day12.swift into the correct part of the Sources directory as main.swift.
-1. Modifies Package.swift to include dependencies for the local `Library`.
-1. Copies the resulting Package.swift to stock-Package.swift.
-1. If day12.patch exists, use `patch` to update the live Package.swift.
+1. Creates a Package.swift that includes the needed dependencies.
+    - If there is a day12.swift in **packages** just copy it to Package.swift.
+    - Otherwise create Package.swift from a template.
 1. Opens the package in Xcode.
 
 ### Close subcommand
@@ -73,5 +77,5 @@ The open subcommand takes a problem solution name and creates a Swift Package Ma
 I use the close subcommand when I have finished working on a solution, or perhaps want to make a preliminary commit.  It pulls the changed files from the Swift Package Manager setup and then deletes it.  For example, the command `adventOfCode close day12` performs the following actions:
 
 1. If the main.swift file is different than day12.swift in the year directory, then main.swift is copied over day12.swift.
-1. Use `diff` to create day12.patch if there are any required changes to Package.swift.
+1. If Package.swift is different from the template version copy it to the **packages** directory as day12.swift.
 1. Delete the day12 directory.

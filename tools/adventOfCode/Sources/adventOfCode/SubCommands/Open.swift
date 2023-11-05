@@ -108,9 +108,22 @@ func createMainSwift( swiftFile: String, mainSwift: String ) throws -> Void {
 
 func fixPackageSwift( package: String ) throws -> Void {
     let fileManager = FileManager.default
+    let customPackage = "../packages/\(package).swift"
+    
+    if fileManager.fileExists( atPath: customPackage ) {
+        try fileManager.removeItem( atPath: "Package.swift" )
+        try copyFile( atPath: customPackage, toPath: "Package.swift" )
+        return
+    }
+    
+    let stock = try createPackageSwift( directory: ".", package: package )
+    try stock.write( toFile: "Package.swift", atomically: true, encoding: .utf8 )
+}
+
+
+func createPackageSwift( directory: String, package: String ) throws -> String {
     let libraryURL = URL( filePath: try findDirectory( name: "Library" ) )
-    let cwdURL = URL( filePath: fileManager.currentDirectoryPath )
-    guard let libraryPath = libraryURL.relativePath( from: cwdURL ) else {
+    guard let libraryPath = libraryURL.relativePath( from: URL( filePath: directory ) ) else {
         var stderr = FileHandlerOutputStream( FileHandle.standardError )
         print( "Unable to find relative path to Library.", to: &stderr )
         throw ExitCode.failure
@@ -127,28 +140,6 @@ func fixPackageSwift( package: String ) throws -> Void {
         "package": package,
         "libraryPath": libraryPath
     ]
-    let stock = try template.render( templateData )
-
-    // write to stock
-    try stock.write( toFile: "stock-Package.swift", atomically: true, encoding: .utf8 )
-
-    // do the patch
-    if fileManager.fileExists( atPath: "../\(package).patch" ) {
-        var stderr = FileHandlerOutputStream( FileHandle.standardError )
-        print( "patch file for Package.swift not implemented yet.", to: &stderr )
-        throw ExitCode.failure
-
-        // read the patched file
-        // fix dependencies
-        // write to real
-//        guard shell( "patch", "-d", "..", "-p0", "-i", "\(package).patch" ) == 0 else {
-//            var stderr = FileHandlerOutputStream( FileHandle.standardError )
-//            print( "Can't create Xcode project.", to: &stderr )
-//            throw ExitCode.failure
-//        }
-//        usleep( 5000 )      // 5 millisecond wait for Pacakage.swift to close.
-    }
-
-    // write to real
-    try stock.write( toFile: "Package.swift", atomically: true, encoding: .utf8 )
+    
+    return try template.render( templateData )
 }
