@@ -18,8 +18,6 @@ On occasion after solving a prolbem I want to explore alternate solutions. In or
 
 The **input** directory contains the problem data for each problem.  For example the problem data for day07.swift is in `input/day07.txt`.  The **testfiles** directory contains any test data for each problem.  For example any test data for day07.swift would be in `testfiles/day07*.txt`.
 
-file for each problem that needs a patch to Package.swift (e.g. `day22.patch`).
-
 #### Problem and Test Data
 
 The format of the problem and test data is the same.  They consist of a header, a separator, and the problem data from the Advent of Code website.
