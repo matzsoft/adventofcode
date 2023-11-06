@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import ArgumentParser
 
 func determinePackage( package: String ) -> String? {
     guard let url = URL( string: package ) else { return nil }
@@ -42,6 +43,13 @@ struct FileHandlerOutputStream: TextOutputStream {
             fileHandle.write( data )
         }
     }
+}
+
+
+func reportFailure( _ message: String, exitCode: ExitCode = .failure ) -> ExitCode {
+    var stderr = FileHandlerOutputStream( FileHandle.standardError )
+    print( message, to: &stderr )
+    return exitCode
 }
 
 

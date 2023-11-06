@@ -25,9 +25,7 @@ extension AdventOfCode {
                 return
             }
 
-            var stderr = FileHandlerOutputStream( FileHandle.standardError )
-            print( "Cannot determine package from \(package)", to: &stderr )
-            throw ExitCode.failure
+            throw reportFailure( "Cannot determine package from \(package)" )
         }
 
         func run() throws -> Void {
@@ -41,21 +39,15 @@ extension AdventOfCode {
             var isDir: ObjCBool = false
 
             guard fileManager.fileExists( atPath: package, isDirectory: &isDir ) else {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "File \(package) doesn't exist", to: &stderr )
-                throw ExitCode.failure
+                throw reportFailure( "File \(package) doesn't exist" )
             }
             
             guard isDir.boolValue else {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "File \(package) is not a directory", to: &stderr )
-                throw ExitCode.failure
+                throw reportFailure( "File \(package) is not a directory" )
             }
             
             guard fileManager.fileExists( atPath: mainSwift ) else {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Can't find main.swift in the \(package) directory", to: &stderr )
-                throw ExitCode.failure
+                throw reportFailure( "Can't find main.swift in the \(package) directory" )
             }
 
             if !fileManager.fileExists( atPath: swiftFile ) {
@@ -78,9 +70,7 @@ extension AdventOfCode {
                     try copyFile( atPath: packageSwift, toPath: customPackage )
                 } else {
                     guard isDir.boolValue else {
-                        var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                        print( "File \(customFolder) is not a directory", to: &stderr )
-                        throw ExitCode.failure
+                        throw reportFailure( "File \(customFolder) is not a directory" )
                     }
                     
                     if !fileManager.fileExists( atPath: customPackage ) {

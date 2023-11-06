@@ -26,9 +26,7 @@ extension AdventOfCode {
                 return
             }
 
-            var stderr = FileHandlerOutputStream( FileHandle.standardError )
-            print( "Cannot determine package from \(package)", to: &stderr )
-            throw ExitCode.failure
+            throw reportFailure( "Cannot determine package from \(package)" )
         }
 
         func run() throws -> Void {
@@ -45,28 +43,20 @@ func performOpen( package: String ) throws -> Void {
     let mainSwift = "\(sourcesFolder)/main.swift"
 
     guard fileManager.fileExists( atPath: swiftFile ) else {
-        var stderr = FileHandlerOutputStream( FileHandle.standardError )
-        print( "\(swiftFile) does not exist", to: &stderr )
-        throw ExitCode.failure
+        throw reportFailure( "\(swiftFile) does not exist" )
     }
     
     if fileManager.fileExists( atPath: package ) {
-        var stderr = FileHandlerOutputStream( FileHandle.standardError )
-        print( "\(package) already exists", to: &stderr )
-        throw ExitCode.failure
+        throw reportFailure( "\(package) already exists" )
     }
     
     try fileManager.createDirectory( atPath: package, withIntermediateDirectories: false, attributes: nil )
     guard fileManager.changeCurrentDirectoryPath( package ) else {
-        var stderr = FileHandlerOutputStream( FileHandle.standardError )
-        print( "Can't change directory to \(package).", to: &stderr )
-        throw ExitCode.failure
+        throw reportFailure( "Can't change directory to \(package)." )
     }
     
     guard shell( "swift", "package", "init", "--type", "executable" ) == 0 else {
-        var stderr = FileHandlerOutputStream( FileHandle.standardError )
-        print( "Can't create swift package.", to: &stderr )
-        throw ExitCode.failure
+        throw reportFailure( "Can't create swift package." )
     }
 
 //    try fileManager.removeItem( atPath: mainSwift )
@@ -75,17 +65,13 @@ func performOpen( package: String ) throws -> Void {
     try fixPackageSwift( package: package )
         
     guard shell( "open", "Package.swift" ) == 0 else {
-        var stderr = FileHandlerOutputStream( FileHandle.standardError )
-        print( "Can't open Package.swift.", to: &stderr )
-        throw ExitCode.failure
+        throw reportFailure( "Can't open Package.swift." )
     }
     print( "Waiting for 5 seconds..." )
     sleep( 5 )
     
     guard shell( "open", mainSwift ) == 0 else {
-        var stderr = FileHandlerOutputStream( FileHandle.standardError )
-        print( "Can't open \(mainSwift).", to: &stderr )
-        throw ExitCode.failure
+        throw reportFailure( "Can't open \(mainSwift)." )
     }
 }
 
@@ -124,16 +110,12 @@ func fixPackageSwift( package: String ) throws -> Void {
 func createPackageSwift( directory: String, package: String ) throws -> String {
     let libraryURL = URL( filePath: try findDirectory( name: "Library" ) )
     guard let libraryPath = libraryURL.relativePath( from: URL( filePath: directory ) ) else {
-        var stderr = FileHandlerOutputStream( FileHandle.standardError )
-        print( "Unable to find relative path to Library.", to: &stderr )
-        throw ExitCode.failure
+        throw reportFailure( "Unable to find relative path to Library." )
     }
 
     let bundleURL = Bundle.module.url( forResource: "PackageSwift", withExtension: "mustache" )
     guard let templateURL = bundleURL else {
-        var stderr = FileHandlerOutputStream( FileHandle.standardError )
-        print( "Can't find template for Package.swift", to: &stderr )
-        throw ExitCode.failure
+        throw reportFailure( "Can't find template for Package.swift" )
     }
     let template = try Template( URL: templateURL )
     let templateData: [String: Any] = [

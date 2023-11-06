@@ -25,9 +25,7 @@ extension AdventOfCode {
                 return
             }
 
-            var stderr = FileHandlerOutputStream( FileHandle.standardError )
-            print( "Cannot determine package from \(package)", to: &stderr )
-            throw ExitCode.failure
+            throw reportFailure( "Cannot determine package from \(package)" )
         }
         
         func run() throws -> Void {
@@ -49,9 +47,7 @@ extension AdventOfCode {
             try performOpen( package: package )
             
             guard fileManager.changeCurrentDirectoryPath( currentDirectory ) else {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Can't change back to initial directory.", to: &stderr )
-                throw ExitCode.failure
+                throw reportFailure( "Can't change back to initial directory." )
             }
             
             if fileManager.fileExists( atPath: oldFile ) {
@@ -83,9 +79,7 @@ extension AdventOfCode {
             let title = try getTitleCurl()
             let bundleURL = Bundle.module.url( forResource: "mainswift", withExtension: "mustache" )
             guard let templateURL = bundleURL else {
-                var stderr = FileHandlerOutputStream( FileHandle.standardError )
-                print( "Can't find template for \(swiftFile)", to: &stderr )
-                throw ExitCode.failure
+                throw reportFailure( "Can't find template for \(swiftFile)" )
             }
             let template = try Template( URL: templateURL )
             let dateFormatterFull = DateFormatter()
