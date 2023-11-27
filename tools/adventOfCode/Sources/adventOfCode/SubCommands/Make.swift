@@ -19,6 +19,9 @@ extension AdventOfCode {
         @Argument( help: "Name of the solution package to create." )
         var package: String
         
+        @Flag( name: .shortAndLong, help: "When specified, prompts for input file header values." )
+        var answers = false
+        
         mutating func validate() throws {
             if let determined = determinePackage( package: package ) {
                 package = determined
@@ -165,14 +168,16 @@ extension AdventOfCode {
                 try fileManager.moveItem( atPath: inputFile, toPath: oldFile )
             }
             
-            let part1 = getString( prompt: "Enter part1 solution", preferred: "" )
-            let part2 = getString( prompt: "Enter part2 solution", preferred: "" )
+            let part1 = !answers ? "" : getString( prompt: "Enter part1 solution", preferred: "" )
+            let part2 = !answers ? "" : getString( prompt: "Enter part2 solution", preferred: "" )
             var extras = [String]()
             
-            print( "Enter extra header lines -" )
-            while let line = readLine( strippingNewline: true ) {
-                if line == "" { break }
-                extras.append( line )
+            if answers {
+                print( "Enter extra header lines -" )
+                while let line = readLine( strippingNewline: true ) {
+                    if line == "" { break }
+                    extras.append( line )
+                }
             }
             
             var inputLines = [ part1, part2 ] + extras + [ "--------------------" ]
