@@ -9,6 +9,7 @@
 import Foundation
 import ArgumentParser
 import Mustache
+import Library
 
 extension AdventOfCode {
     struct Make: ParsableCommand {
@@ -168,32 +169,20 @@ extension AdventOfCode {
                 try fileManager.moveItem( atPath: inputFile, toPath: oldFile )
             }
             
-            let part1 = !answers ? "" : getString( prompt: "Enter part1 solution", preferred: "" )
-            let part2 = !answers ? "" : getString( prompt: "Enter part2 solution", preferred: "" )
-            var extras = [String]()
-            
-            if answers {
-                print( "Enter extra header lines -" )
-                while let line = readLine( strippingNewline: true ) {
-                    if line == "" { break }
-                    extras.append( line )
+            let part1 = !answers  ? "" : getString( prompt: "Enter part1 solution", preferred: "" )
+            let part2 = !answers  ? "" : getString( prompt: "Enter part2 solution", preferred: "" )
+            let extras = !answers ? [] : getLines( prompt: "Enter extra header lines", blanksOK: true )
+            let dataLines = try {
+                if try getDataCurl( inputFile: inputFile ) {
+                    return try String( contentsOfFile: inputFile ).components( separatedBy: "\n" )
+                } else {
+                    return getLines( prompt: "Enter the input data" )
                 }
-            }
+            }()
+            let input = AOCinput(
+                part1: part1, part2: part2, extras: extras, lines: dataLines, filename: inputFile )
             
-            var inputLines = [ part1, part2 ] + extras + [ "--------------------" ]
-            
-            if try getDataCurl( inputFile: inputFile ) {
-                inputLines.append(
-                    contentsOf: try String( contentsOfFile: inputFile ).components( separatedBy: "\n" ) )
-            } else {
-                print( "Enter the input data -" )
-                while let line = readLine( strippingNewline: true ) {
-                    inputLines.append( line )
-                }
-            }
-            
-            let inputText = inputLines.joined( separator: "\n" )
-            try inputText.write( toFile: inputFile, atomically: true, encoding: .utf8 )
+            try input.write()
         }
 
         func getDataCurl( inputFile: String ) throws -> Bool {

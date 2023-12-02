@@ -66,6 +66,18 @@ func getString( prompt: String, preferred: String? ) -> String {
     }
 }
 
+func getLines( prompt: String, blanksOK: Bool = false ) -> [String] {
+    var inputLines = [String]()
+    
+    print( "\(prompt) -" )
+    while let line = readLine( strippingNewline: true ) {
+        if line == "" && blanksOK { break }
+        inputLines.append( line )
+    }
+    
+    return inputLines
+}
+
 
 func shell( stdout: FileHandle? = nil, _ args: String... ) -> Int32 {
     let task = Process()

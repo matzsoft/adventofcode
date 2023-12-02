@@ -70,6 +70,26 @@ public struct AOCinput {
         lines = Array( parts[1] )
         self.filename = URL( fileURLWithPath: filename ).deletingPathExtension().lastPathComponent
     }
+    
+    /// Initializes an AOCinput structure from the specified parameters.
+    /// - Parameters
+    ///   - part1: The correct answer for part 1 or the empty string for unknown or irrelevant.
+    ///   - part2: The correct answer for part 2 or the empty string for unknown or irrelevant.
+    ///   - extras: An array of lines of additional info needed for this data.
+    ///   - lines: An array of lines containing the actual data.
+    ///   - filename: The name of the file that will contain the data.
+    public init( part1: String, part2: String, extras: [String], lines: [String], filename: String = "" ) {
+        header = [ part1, part2 ] + extras
+        self.filename = filename
+        self.lines = lines
+    }
+    
+    /// Writes the AOCinput data to its specified filename.
+    /// - Throws: Any thrown by writing the file.
+    public func write() throws -> Void {
+        let contents = ( header + [ "--------------------" ] + self.lines ).joined( separator: "\n" )
+        try contents.write( toFile: filename, atomically: true, encoding: .utf8 )
+    }
 }
 
 
