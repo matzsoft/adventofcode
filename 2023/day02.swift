@@ -17,6 +17,7 @@ let target = [ 12, 13, 14 ]
 struct Game {
     let id: Int
     let reveals: [Int]
+
     init( line: String ) {
         let sections = line.split { ":;".contains( $0 ) }
         
