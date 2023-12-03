@@ -11,6 +11,28 @@
 import Foundation
 import Library
 
+extension Array {
+    func findIndices( where predicate: (Element) -> Bool ) -> [Int] {
+        indices.filter { predicate( self[$0] ) }
+    }
+    
+    func ranges( where predicate: (Element) -> Bool ) -> [Range<Int>] {
+        let indices = findIndices( where: predicate )
+        if indices.isEmpty { return [] }
+        
+        var firstIndex = indices[0]
+        var lastIndex = indices[0]
+        let ranges = indices[1...].reduce( into: [Range<Int>]() ) { ranges, index in
+            if index > lastIndex + 1 {
+                ranges.append( firstIndex ..< lastIndex + 1 )
+                firstIndex = index
+            }
+            lastIndex = index
+        }
+        return ranges + [ firstIndex ..< lastIndex + 1 ]
+    }
+}
+
 struct Number {
     let value: Int
     let rect: Rect2D
@@ -22,14 +44,22 @@ struct Number {
         self.value = Int( String( characters ) )!
         self.rect = Rect2D( min: first, max: last ).pad( by: 1 )
     }
+    
+    init( characters: [Character], range: Range<Int>, y: Int ) {
+        let first = Point2D( x: range.lowerBound, y: y )
+        let last = Point2D( x: range.upperBound - 1, y: y )
+        
+        self.value = Int( String( characters[range] ) )!
+        self.rect = Rect2D( min: first, max: last ).pad( by: 1 )
+    }
 }
 
 struct Symbol {
     let value: Character
     let rect: Rect2D
     
-    init( value: Character, x: Int, y: Int ) {
-        self.value = value
+    init( characters: [Character], x: Int, y: Int ) {
+        self.value = characters[x]
         self.rect = Rect2D( min: Point2D( x: x, y: y ), max: Point2D( x: x, y: y ) )
     }
 }
@@ -47,47 +77,16 @@ struct Gear {
 
 
 func parse( input: AOCinput ) -> ( [Number], [Symbol] ) {
-    enum States { case initial, accumulating }
-
-    let characters = input.lines.map { Array( $0 ) }
-    var numbers = [Number]()
-    var symbols = [Symbol]()
-    
-    characters.indices.forEach { y in
-        var state = States.initial
-        var number = [Character]()
-        
-        characters[y].indices.forEach { x in
-            let character = characters[y][x]
-            switch state {
-            case .initial:
-                switch true {
-                case character.isNumber:
-                    number.append( character )
-                    state = .accumulating
-                case character == ".":
-                    break
-                default:
-                    symbols.append( Symbol( value: character, x: x, y: y ) )
-                }
-            case .accumulating:
-                switch true {
-                case character.isNumber:
-                    number.append( character )
-                case character == ".":
-                    numbers.append( Number( characters: number, x: x, y: y ) )
-                    number = []
-                    state = .initial
-                default:
-                    numbers.append( Number( characters: number, x: x, y: y ) )
-                    symbols.append( Symbol( value: character, x: x, y: y ) )
-                    number = []
-                    state = .initial
-                }
-            }
+    let symbols = input.lines.indices.reduce( into: [Symbol]() ) { symbols, y in
+        let characters = Array( input.lines[y] )
+        characters.findIndices ( where: { !$0.isNumber && $0 != "." } ).forEach { x in
+            symbols.append( Symbol( characters: characters, x: x, y: y ) )
         }
-        if state == .accumulating {
-            numbers.append( Number(characters: number, x: characters[y].count, y: y ) )
+    }
+    let numbers = input.lines.indices.reduce( into: [Number]() ) { numbers, y in
+        let characters = Array( input.lines[y] )
+        characters.ranges( where: { $0.isNumber } ).forEach { range in
+            numbers.append( Number( characters: characters, range: range, y: y ) )
         }
     }
     
