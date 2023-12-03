@@ -37,14 +37,6 @@ struct Number {
     let value: Int
     let rect: Rect2D
     
-    init( characters: [Character], x: Int, y: Int ) {
-        let first = Point2D( x: x - characters.count, y: y )
-        let last = Point2D( x: x - 1, y: y )
-        
-        self.value = Int( String( characters ) )!
-        self.rect = Rect2D( min: first, max: last ).pad( by: 1 )
-    }
-    
     init( characters: [Character], range: Range<Int>, y: Int ) {
         let first = Point2D( x: range.lowerBound, y: y )
         let last = Point2D( x: range.upperBound - 1, y: y )
