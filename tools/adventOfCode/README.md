@@ -43,12 +43,14 @@ A very few of the problems require an external library in order to run.  In that
 # adventOfCode make day01
 ```
 
-The **adventOfCode** tool has a subcommand for each of its 3 primary tasks.  They are make, open, and close.  These 3 subcommands takes a single argument, the package identifier.  A package identifier may be:
+The **adventOfCode** tool has a subcommand for each of its 4 primary tasks.  They are make, open, close, and test.  These subcommands take as their first argument, the package identifier.  A package identifier may be:
 
 1. A number between 1 and 25.  Leading zeroes are permitted.
 1. A package identifier of type (1) preceeded by the string "day".
 1. A package identifier of type (1) or (2) followed by a "-" and a label.  The label indicates an alternate solution for that day.
 1. A package identifier of any other type followed by a file extension.  The file extension is stripped away and ignored.
+
+For all the subcommands except test, that is the only argument.
 
 ### Make subcommand
 
@@ -77,3 +79,11 @@ I use the close subcommand when I have finished working on a solution, or perhap
 1. If the main.swift file is different than day12.swift in the year directory, then main.swift is copied over day12.swift.
 1. If Package.swift is different from the template version copy it to the **packages** directory as day12.swift.
 1. Delete the day12 directory.
+
+### Test subcommand
+
+The test subcommand is a rudimentary tool for creating test files. It takes an adiitional, optional argument called suffix. The suffix argument can be any string, but is normally a number or a short descriptive word. The values for the test file are read from stdin, with prompts to stdout. The filename for the test file is derived from the command line arguments.
+
+For example, the command `adventOfCode test 12` will generate a file named testfiles/day12.txt.
+
+Alternatively the command `adventOfCode test 12 7` will generate a file named testfiles/day12-7.txt.
