@@ -48,14 +48,12 @@ func parse( input: AOCinput ) -> [Game] {
 
 
 func part1( input: AOCinput ) -> String {
-    let games = parse( input: input ).filter { $0.isPossible( target: target ) }
-    return "\( games.reduce( 0, { $0 + $1.id } ) )"
+    String( parse( input: input ).filter { $0.isPossible( target: target ) }.reduce( 0, { $0 + $1.id } ) )
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let powers = parse( input: input ).map { $0.power }
-    return "\( powers.reduce( 0, + ) )"
+    String( parse( input: input ).map { $0.power }.reduce( 0, + ) )
 }
 
 

@@ -48,15 +48,9 @@ struct DigitWords {
 }
 
 let names = [
-    "one"   : "1",
-    "two"   : "2",
-    "three" : "3",
-    "four"  : "4",
-    "five"  : "5",
-    "six"   : "6",
-    "seven" : "7",
-    "eight" : "8",
-    "nine"  : "9"
+    "one"   : "1", "two"   : "2", "three" : "3",
+    "four"  : "4", "five"  : "5", "six"   : "6",
+    "seven" : "7", "eight" : "8", "nine"  : "9"
 ]
 
 func extractValue( line: String ) -> Int {
@@ -67,8 +61,7 @@ func extractValue( line: String ) -> Int {
 
 
 func part1( input: AOCinput ) -> String {
-    let values = input.lines.map { extractValue( line: $0 ) }
-    return "\( values.reduce( 0, + ) )"
+    String( input.lines.map { extractValue( line: $0 ) }.reduce( 0, + ) )
 }
 
 
@@ -96,9 +89,12 @@ func replaceDigitWords( line: String ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let replaced = input.lines.map { replaceDigitWords( line: $0 ) }
-    let values = replaced.map { extractValue( line: $0 ) }
-    return "\( values.reduce( 0, + ) )"
+    String(
+        input.lines
+            .map { replaceDigitWords( line: $0 ) }
+            .map { extractValue( line: $0 ) }
+            .reduce( 0, + )
+    )
 }
 
 

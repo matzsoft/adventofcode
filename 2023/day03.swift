@@ -56,15 +56,11 @@ struct Symbol {
     }
 }
 
-struct Gear {
-    let ratio: Int
-    
-    init?( symbol: Symbol, numbers: [Number] ) {
-        guard symbol.value == "*" else { return nil }
-        let adjacent = numbers.filter { $0.rect.intersection( with: symbol.rect ) != nil }
-        guard adjacent.count == 2 else { return nil }
-        ratio = adjacent[0].value * adjacent[1].value
-    }
+func gearRatio( symbol: Symbol, numbers: [Number] ) -> Int? {
+    guard symbol.value == "*" else { return nil }
+    let adjacent = numbers.filter { $0.rect.intersection( with: symbol.rect ) != nil }
+    guard adjacent.count == 2 else { return nil }
+    return adjacent[0].value * adjacent[1].value
 }
 
 
@@ -98,9 +94,8 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let ( numbers, symbols ) = parse( input: input )
-    let gears = symbols.compactMap { Gear( symbol: $0, numbers: numbers ) }
     
-    return "\( gears.reduce( 0, { $0 + $1.ratio } ) )"
+    return "\( symbols.compactMap { gearRatio( symbol: $0, numbers: numbers ) }.reduce( 0, + ) )"
 }
 
 
