@@ -11,6 +11,25 @@
 import Foundation
 import Library
 
+extension String {
+    // This is a crude replacement for a function natively available
+    // in macOS 13+.
+    func ranges( of pattern: String ) -> [Range<String.Index>] {
+        let guess1 = String( repeating: " ", count: pattern.count )
+        let guess2 = String( repeating: "_", count: pattern.count )
+        let notPattern = pattern == guess1 ? guess2 : guess1
+        var copy = self
+        var ranges = [Range<String.Index>]()
+        
+        while let range = copy.range( of: pattern ) {
+            ranges.append( range )
+            copy.replaceSubrange( range, with: notPattern )
+        }
+        
+        return ranges
+    }
+}
+
 struct DigitWords {
     let range: Range<String.Index>
     let value: String
@@ -63,7 +82,6 @@ func combineRanges( ranges: [DigitWords] ) -> [DigitWords] {
 }
 
 
-@available(macOS 13.0, *)
 func replaceDigitWords( line: String ) -> String {
     let allRanges = names.reduce( into: [DigitWords]() ) { list, name in
         let ranges = line.ranges( of: name.key ).map { DigitWords( range: $0, value: name.value ) }
@@ -78,13 +96,9 @@ func replaceDigitWords( line: String ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    if #unavailable( macOS 13.0 ) {
-        return "Must run under macOS v13 or greater!"
-    } else {
-        let replaced = input.lines.map { replaceDigitWords( line: $0 ) }
-        let values = replaced.map { extractValue( line: $0 ) }
-        return "\( values.reduce( 0, + ) )"
-    }
+    let replaced = input.lines.map { replaceDigitWords( line: $0 ) }
+    let values = replaced.map { extractValue( line: $0 ) }
+    return "\( values.reduce( 0, + ) )"
 }
 
 
