@@ -16,7 +16,11 @@ struct Race {
     let record: Int
     
     var wins: Int {
-        ( 0 ... time ).filter { $0 * ( time - $0 ) > record }.count
+        let t = Double( time )
+        let r = Double( record )
+        let x = ( t - sqrt( t * t - 4 * r ) ) / 2
+
+        return time - 2 * Int( x ) - 1
     }
 }
 
