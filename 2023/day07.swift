@@ -11,27 +11,20 @@
 import Foundation
 import Library
 
-enum Card: Character, CaseIterable {
-    case two = "2", three = "3", four = "4", five = "5", six = "6", seven = "7", eight = "8"
-    case nine = "9", ten = "T", jack = "J", queen = "Q", king = "K", ace = "A"
-    
-    func strength( wildcards: Bool = false ) -> Int {
-        if !wildcards { return Self.allCases.firstIndex { $0 == self }! }
-        
-        return self == .jack ? 0 : Self.allCases.firstIndex { $0 == self }! + 1
-    }
-    
-    var strength: Int {
-        Self.allCases.firstIndex { $0 == self }!
-    }
-}
-
-enum HandType: Int, CaseIterable {
-    case highCard, onePair, twoPair, threeOfOneKind, fullHouse, fourOfOneKind, fiveOfOneKind
-}
-
-
 struct Hand {
+    enum Card: Character, CaseIterable {
+        case two = "2", three = "3", four = "4", five = "5", six = "6", seven = "7", eight = "8"
+        case nine = "9", ten = "T", jack = "J", queen = "Q", king = "K", ace = "A"
+        
+        func strength( wildcards: Bool ) -> Int {
+            return wildcards && self == .jack ? -1 : Self.allCases.firstIndex { $0 == self }!
+        }
+    }
+
+    enum HandType: Int, CaseIterable {
+        case highCard, onePair, twoPair, threeOfOneKind, fullHouse, fourOfOneKind, fiveOfOneKind
+    }
+
     let cards: [Card]
     let bid: Int
     
@@ -42,38 +35,35 @@ struct Hand {
         bid = Int( words[1] )!
     }
     
-    static func areIncreasing( lhs: Hand, rhs: Hand, wildcards: Bool = false ) -> Bool {
-        let different = lhs.cards.indices.first { lhs.cards[$0].strength != rhs.cards[$0].strength }!
+    static func areIncreasing( lhs: Hand, rhs: Hand, wildcards: Bool ) -> Bool {
+        let different = lhs.cards.indices.first {
+            lhs.cards[$0].strength( wildcards: wildcards ) != rhs.cards[$0].strength( wildcards: wildcards )
+        }!
         let leftStrength = lhs.cards[different].strength( wildcards: wildcards )
         let rightStrength = rhs.cards[different].strength( wildcards: wildcards )
         return leftStrength < rightStrength
     }
     
-    func type( wildcards: Bool = false ) -> HandType {
+    func type( wildcards: Bool ) -> HandType {
         let histogram = cards.reduce(into: [ Card : Int ]() ) { $0[ $1, default: 0 ] += 1 }
 
         switch histogram.count {
         case 1:
             return .fiveOfOneKind
         case 2:
-            let values = Array( histogram.values )
-            guard wildcards else {
-                return values.contains( where: { $0 == 4 } ) ? .fourOfOneKind : .fullHouse
+            if histogram.values.contains( where: { $0 == 4 } ) {
+                return !wildcards || histogram[.jack] == nil ? .fourOfOneKind : .fiveOfOneKind
+            } else {
+                return !wildcards || histogram[.jack] == nil ? .fullHouse : .fiveOfOneKind
             }
-            if values.contains( where: { $0 == 4 } ) {
-                return histogram[.jack] == nil ? .fourOfOneKind : .fiveOfOneKind
-            }
-            return histogram[.jack] == nil ? .fullHouse : .fiveOfOneKind
         case 3:
-            let values = Array( histogram.values )
-            guard wildcards else {
-                return values.contains( where: { $0 == 3 } ) ? .threeOfOneKind : .twoPair
+            if histogram.values.contains( where: { $0 == 3 } ) {
+                return !wildcards || histogram[.jack] == nil ? .threeOfOneKind : .fourOfOneKind
+            } else {
+                return !wildcards || histogram[.jack] == nil
+                    ? .twoPair
+                    : histogram[.jack] == 1 ? .fullHouse : .fourOfOneKind
             }
-            if values.contains( where: { $0 == 3 } ) {
-                return histogram[.jack] == nil ? .threeOfOneKind : .fourOfOneKind
-            }
-            if histogram[.jack] == nil { return .twoPair }
-            return histogram[.jack] == 1 ? .fullHouse : .fourOfOneKind
         case 4:
             return !wildcards || histogram[.jack] == nil ? .onePair : .threeOfOneKind
         case 5:
@@ -85,34 +75,25 @@ struct Hand {
 }
 
 
-func parse( input: AOCinput ) -> [Hand] {
-    return input.lines.map { Hand( line: $0 ) }
-}
-
-
-func part1( input: AOCinput ) -> String {
-    let hands = parse( input: input )
-    let initial = Array( repeating: [Hand](), count: HandType.allCases.count )
-    let types = hands
-        .reduce( into: initial ) { $0[ $1.type().rawValue ].append( $1 ) }
+func totalWinnings( input: AOCinput, wildcards: Bool ) -> Int {
+    let initial = Array( repeating: [Hand](), count: Hand.HandType.allCases.count )
+    let ranked = input.lines
+        .map { Hand( line: $0 ) }
+        .reduce( into: initial ) { $0[ $1.type( wildcards: wildcards ).rawValue ].append( $1 ) }
         .filter { !$0.isEmpty }
-        .map { $0.sorted( by: { Hand.areIncreasing( lhs: $0, rhs: $1 ) } ) }
+        .map { $0.sorted( by: { Hand.areIncreasing( lhs: $0, rhs: $1, wildcards: wildcards ) } ) }
         .flatMap { $0 }
     
-    return "\( types.indices.reduce( 0 ) { $0 + ( $1 + 1 ) * types[$1].bid } )"
+    return ranked.indices.reduce( 0 ) { $0 + ( $1 + 1 ) * ranked[$1].bid }
+}
+
+func part1( input: AOCinput ) -> String {
+    return String( totalWinnings( input: input, wildcards: false ) )
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let hands = parse( input: input )
-    let initial = Array( repeating: [Hand](), count: HandType.allCases.count )
-    let types = hands
-        .reduce( into: initial ) { $0[ $1.type( wildcards: true ).rawValue ].append( $1 ) }
-        .filter { !$0.isEmpty }
-        .map { $0.sorted( by: { Hand.areIncreasing( lhs: $0, rhs: $1, wildcards: true ) } ) }
-        .flatMap { $0 }
-    
-    return "\( types.indices.reduce( 0 ) { $0 + ( $1 + 1 ) * types[$1].bid } )"
+    return String( totalWinnings( input: input, wildcards: true ) )
 }
 
 
