@@ -115,49 +115,42 @@ struct Map {
 }
 
 
-func parse( input: AOCinput ) -> ( [Int], [ String : Map ] ) {
+func parse( input: AOCinput ) -> ( [Int], Map ) {
     let seeds = input.line.split( separator: " " )[1...].map { Int( $0 )! }
     let maps = input.paragraphs[1...].reduce( into: [ String : Map ]() ) { maps, lines in
         let map = Map( lines: lines )
         maps[ map.source ] = map
     }
-    return ( seeds, maps )
-}
-
-
-func locationFor( seed: Int, maps: [ String: Map ] ) -> Int {
-    var current = "seed"
-    var value = seed
-    
-    while let map = maps[current] {
-        if let range = map.ranges.first( where: { $0.range.contains( value ) } ) {
-            value += range.addend
-        }
-        current = map.destination
-    }
-    
-    return value
-}
-
-
-func part1( input: AOCinput ) -> String {
-    let ( seeds, maps ) = parse( input: input )
-    
-    return "\( seeds.map { locationFor( seed: $0, maps: maps ) }.min()! )"
-}
-
-
-func part2( input: AOCinput ) -> String {
-    let ( seeds, maps ) = parse( input: input )
     var baseMap = maps["seed"]!
     
     while baseMap.destination != "location" {
         baseMap = baseMap.merge( other: maps[ baseMap.destination]! )
     }
+
+    return ( seeds, baseMap )
+}
+
+
+func locationFor( seed: Int, map: Map ) -> Int {
+    guard let range = map.ranges.first( where: { $0.range.contains( seed ) } ) else {
+        fatalError( "Can't find location for \(seed)." )
+    }
+    return seed + range.addend
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let ( seeds, map ) = parse( input: input )
     
+    return "\( seeds.map { locationFor( seed: $0, map: map ) }.min()! )"
+}
+
+
+func part2( input: AOCinput ) -> String {
+    let ( seeds, map ) = parse( input: input )
     let seedRanges = stride( from: 0, to: seeds.count, by: 2 )
         .map { SourceRange( seeds[$0] ..< ( seeds[$0] + seeds[$0+1] ), addend: 0 ) }
-        .map { seedRange in baseMap.ranges
+        .map { seedRange in map.ranges
                 .map { $0.clamped( to: seedRange.range ) }
                 .filter { !$0.range.isEmpty}
         }
