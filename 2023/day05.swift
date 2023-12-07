@@ -15,11 +15,6 @@ extension Range<Int> {
     func offset( by offset: Int ) -> Range<Int> {
         ( lowerBound + offset ) ..< ( upperBound + offset )
     }
-    
-    func subtracting( other: Range<Int> ) -> Range<Int> {
-        let clamped = clamped( to: other )
-        return clamped.upperBound ..< upperBound
-    }
 }
 
 struct SourceRange {
@@ -159,17 +154,17 @@ func part2( input: AOCinput ) -> String {
     while baseMap.destination != "location" {
         baseMap = baseMap.merge( other: maps[ baseMap.destination]! )
     }
-    let mergedMaps = [ "seed" : baseMap ]
-    var minLocation = Int.max
     
-    for index in stride( from: 0, to: seeds.count, by: 2 ) {
-        for seed in seeds[index] ..< ( seeds[index] + seeds[index+1] ) {
-            minLocation = min( minLocation, locationFor( seed: seed, maps: mergedMaps ) )
+    let seedRanges = stride( from: 0, to: seeds.count, by: 2 )
+        .map { SourceRange( seeds[$0] ..< ( seeds[$0] + seeds[$0+1] ), addend: 0 ) }
+        .map { seedRange in baseMap.ranges
+                .map { $0.clamped( to: seedRange.range ) }
+                .filter { !$0.range.isEmpty}
         }
-    }
+        .map { $0.map { $0.range.lowerBound + $0.addend } }
+        .map { $0.min()! }
     
-//    let total = stride( from: 1, to: seeds.count, by: 2 ).reduce( 0, { $0 + seeds[$1] } )
-    return "\(minLocation)"
+    return "\( seedRanges.min()! )"
 }
 
 
