@@ -12,18 +12,14 @@ import Foundation
 import Library
 
 extension String {
-    // This is a crude replacement for a function natively available
-    // in macOS 13+.
+    // This is a replacement for a function natively available in macOS 13 and later.
     func ranges( of pattern: String ) -> [Range<String.Index>] {
-        let guess1 = String( repeating: " ", count: pattern.count )
-        let guess2 = String( repeating: "_", count: pattern.count )
-        let notPattern = pattern == guess1 ? guess2 : guess1
-        var copy = self
+        var nextIndex = startIndex
         var ranges = [Range<String.Index>]()
         
-        while let range = copy.range( of: pattern ) {
+        while let range = self[ nextIndex... ].range( of: pattern ) {
             ranges.append( range )
-            copy.replaceSubrange( range, with: notPattern )
+            nextIndex = range.upperBound
         }
         
         return ranges
@@ -68,10 +64,11 @@ func part1( input: AOCinput ) -> String {
 func combineRanges( ranges: [DigitWords] ) -> [DigitWords] {
     if ranges.isEmpty { return ranges }
     guard let index = ( 0 ..< ranges.count - 1 ).first( where: {
-        ranges[$0].range.overlaps( ranges[$0+1].range )
+        ranges[$0].range.overlaps( ranges[ $0 + 1 ].range )
     } ) else { return ranges }
     
-    return ranges[0..<index] + [ ranges[index].union( with: ranges[index+1] ) ] + ranges[(index+2)...]
+    return ranges[ 0..<index ] + [ ranges[index]
+        .union( with: ranges[ index + 1 ] ) ] + ranges[ ( index + 2 )... ]
 }
 
 
