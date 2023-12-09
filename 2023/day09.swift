@@ -15,17 +15,13 @@ func find( input: AOCinput, update: ( Int, [Int] ) -> Int ) -> Int {
     input.lines
         .map {
             var pyramid = [ $0.split( separator: " " ).map { Int( $0 )! } ]
-            var value = 0
 
             while pyramid.last!.contains( where: { $0 != 0 } ) {
                 let row = pyramid.last!
-                pyramid.append( ( 0 ..< row.count - 1 ).map { row[$0+1] - row[$0] } )
+                pyramid.append( ( 0 ..< row.count - 1 ).map { row[ $0 + 1 ] - row[$0] } )
             }
 
-            for index in ( 1 ..< pyramid.count ).reversed() {
-                value = update( value, pyramid[index-1] )
-            }
-            return value
+            return ( 1 ..< pyramid.count ).reversed().reduce( 0 ) { update( $0, pyramid[ $1 - 1 ] ) }
         }
         .reduce( 0, + )
 }
