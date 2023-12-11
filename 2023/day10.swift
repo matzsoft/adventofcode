@@ -16,27 +16,27 @@ enum Tile: Character, CaseIterable {
     case northWest = "J",  southWest = "7", southEast = "F"
     case ground = ".",     start = "S"
     
-    init?( directions: Set<DirectionUDLR> ) {
+    init?( directions: Set<Direction4> ) {
         for tile in Tile.allCases {
             if tile.directions == directions { self = tile; return }
         }
         return nil
     }
     
-    var directions: Set<DirectionUDLR> {
+    var directions: Set<Direction4> {
         switch self {
         case .northSouth:
-            return [ .up, .down ]
+            return [ .north, .south ]
         case .eastWest:
-            return [ .right, .left ]
+            return [ .east, .west ]
         case .northEast:
-            return [ .up, .right ]
+            return [ .north, .east ]
         case .northWest:
-            return [ .up, .left ]
+            return [ .north, .west ]
         case .southWest:
-            return [ .down, .left ]
+            return [ .south, .west ]
         case .southEast:
-            return [ .down, .right ]
+            return [ .south, .east ]
         default:
             return []
         }
@@ -49,7 +49,7 @@ struct Map: CustomStringConvertible {
     let map: [[Tile]]
     
     var description: String {
-        map.map { row in
+        map.reversed().map { row in
             row.map { String( $0.rawValue ) }.joined()
         }.joined( separator: "\n" )
     }
@@ -61,6 +61,7 @@ struct Map: CustomStringConvertible {
     
     init( lines: [String] ) {
         var start: Point2D?
+        let lines = Array( lines.reversed() )
         let map = lines.indices.reduce( into: [[Tile]]() ) { map, y in
             let characters = Array( lines[y] )
             let row = characters.map { Tile( rawValue: $0 )! }
@@ -85,12 +86,12 @@ struct Map: CustomStringConvertible {
     var startConverted: Map {
         let x = self.start.x
         let y = self.start.y
-        var startDirections = Set<DirectionUDLR>()
+        var startDirections = Set<Direction4>()
         
-        if let tile = self[x,y-1], tile.directions.contains( .down )  { startDirections.insert( .up ) }
-        if let tile = self[x,y+1], tile.directions.contains( .up )    { startDirections.insert( .down ) }
-        if let tile = self[x-1,y], tile.directions.contains( .right ) { startDirections.insert( .left ) }
-        if let tile = self[x+1,y], tile.directions.contains( .left )  { startDirections.insert( .right ) }
+        if let tile = self[x,y-1], tile.directions.contains( .north )  { startDirections.insert( .south ) }
+        if let tile = self[x,y+1], tile.directions.contains( .south )    { startDirections.insert( .north ) }
+        if let tile = self[x-1,y], tile.directions.contains( .east ) { startDirections.insert( .west ) }
+        if let tile = self[x+1,y], tile.directions.contains( .west )  { startDirections.insert( .east ) }
         
         var map = self.map
         map[y][x] = Tile( directions: startDirections )!
@@ -144,15 +145,8 @@ func part2( input: AOCinput ) -> String {
     let map = parse( input: input )
     let loop = map.loop/*.filter { map[$0] != .northEast && map[$0] != .southWest }*/
     let bounds = Rect2D( points: Array( loop ) )
-    let vectors = Array<Direction8>( [ .NE, .SE, .NW, .SW ] ).map { $0.vector }
-    let candidates = Set( bounds.points ).subtracting( loop )
-    let insiders = candidates.filter { candidate in
-        let rays = vectors.map { ray( start: candidate, bounds: bounds, vector: $0 ) }
-        let maxCrossings = rays.map { $0.intersection( loop ).count }.max()!
 
-        return !maxCrossings.isMultiple( of: 2 )
-    }
-    return "\( insiders.count )"
+    return ""
 }
 
 
