@@ -78,39 +78,22 @@ struct Row {
     }
 }
 
-struct Record {
-    let rows: [Row]
-    
-    init( rows: [Row] ) {
-        self.rows = rows
-    }
-    
-    init( lines: [String] ) {
-        rows = lines.map { Row( line: $0 ) }
-    }
-    
-    var unfolded: Record {
-        Record( rows: self.rows.map { $0.unfolded } )
-    }
-}
-
-
-func parse( input: AOCinput ) -> Record {
-    return Record( lines: input.lines )
+func parse( input: AOCinput ) -> [Row] {
+    return input.lines.map { Row(line: $0 ) }
 }
 
 
 func part1( input: AOCinput ) -> String {
-    let record = parse( input: input )
+    let rows = parse( input: input )
 
-    return "\( record.rows.map { $0.countArrangements() }.reduce( 0, + ) )"
+    return "\( rows.map { $0.countArrangements() }.reduce( 0, + ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let record = parse( input: input ).unfolded
+    let rows = parse( input: input ).map { $0.unfolded }
 
-    return "\( record.rows.map { $0.countArrangements() }.reduce( 0, + ) )"
+    return "\( rows.map { $0.countArrangements() }.reduce( 0, + ) )"
 }
 
 
