@@ -10,7 +10,6 @@
 
 import Foundation
 import Library
-import CoreGraphics
 
 enum Tile: Character, CaseIterable {
     case northSouth = "|", eastWest = "-",  northEast = "L"
@@ -100,16 +99,14 @@ struct Map: CustomStringConvertible {
         return Map( start: start, map: map )
     }
     
-    var loop: [Point2D] {
+    var loop: Set<Point2D> {
         var current = start + self[ start ]!.directions.first!.vector
-        var loop = [ start ]
-        var seen = Set<Point2D>( [ start ] )
+        var loop = Set<Point2D>( [ start ] )
         
         while true {
-            loop.append( current )
-            seen.insert( current )
+            loop.insert( current )
             
-            let direction = self[ current ]!.directions.first { !seen.contains( current + $0.vector ) }
+            let direction = self[ current ]!.directions.first { !loop.contains( current + $0.vector ) }
             
             if direction == nil  { break }
             current = current + direction!.vector
@@ -135,10 +132,10 @@ func ray( start: Point2D, bounds: Rect2D, vector: Point2D ) -> Set<Point2D> {
     var ray = Set<Point2D>()
     var current = start
     
-    repeat {
+    while bounds.contains( point: current ) {
         ray.insert( current )
         current = current + vector
-    } while bounds.contains( point: current )
+    }
     
     return ray
 }
@@ -146,27 +143,15 @@ func ray( start: Point2D, bounds: Rect2D, vector: Point2D ) -> Set<Point2D> {
 
 func part2( input: AOCinput ) -> String {
     let map = parse( input: input )
-    let loop = map.loop/*.filter { map[$0] != .northEast && map[$0] != .southWest }*/
-    let polygon = loop
-        .filter { map[$0] != .northSouth && map[$0] != .eastWest }
-        .map { CGPoint( x: $0.x, y: $0.y ) }
-    
-    let context = CGContext(
-        data: nil, width: map.map[0].count, height: map.map.count,
-        bitsPerComponent: 8, bytesPerRow: 4 * map.map[0].count,
-        space: CGColorSpace( name: CGColorSpace.genericRGBLinear )!,
-        bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
-    )!
-    context.beginPath()
-    context.addLines( between: polygon )
-    context.addLine( to: polygon[0] )
-    context.closePath()
-    
+    let loop = map.loop
+    let validEdges = loop.filter { map[$0] != .northEast && map[$0] != .southWest }
     let bounds = Rect2D( points: Array( loop ) )
     let candidates = Set( bounds.points )
-        .subtracting( Set( loop ) )
-        .map { CGPoint( x: $0.x, y: $0.y ) }
-        .filter { context.path!.contains( $0 ) }
+        .subtracting( loop )
+        .filter {
+            let ray = ray( start: $0, bounds: bounds, vector: Point2D( x: 1, y: -1 ) )
+            return !ray.intersection( validEdges ).count.isMultiple( of: 2 )
+        }
 
     return "\(candidates.count)"
 }
