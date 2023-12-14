@@ -38,6 +38,11 @@ struct Row {
         return Row( statuses: statuses, groups: groups )
     }
     
+    var arrangementsCount: Int {
+        let count = countArrangements( statuses: statuses, groups: groups )
+        return count
+    }
+    
     func countArrangements( statuses: [SpringStatus], groups: [Int] ) -> Int {
         guard let group = groups.first else {
             return statuses.contains( where: { $0 == .damaged } ) ? 0 : 1
@@ -46,35 +51,28 @@ struct Row {
         let statuses = Array( statuses.drop( while: { $0 == .operational } ) )
         if statuses.isEmpty { return 0 }
         
-        if statuses[0] == .unknown {
-            let tail = Array( statuses.dropFirst() )
-            let damaged = countArrangements( statuses: [ SpringStatus.damaged ] + tail, groups: groups )
-            let operational = countArrangements( statuses: tail, groups: groups )
-            return operational + damaged
-        }
-        
-        // Now statuses[next] == .damaged
-        let damaged = statuses.prefix( while: { $0 == .damaged } )
-        if damaged.count > group { return 0 }
-        if damaged.count < group {
-            if damaged.count == statuses.count { return 0 }
-            if statuses[damaged.count] == .operational { return 0 }
-            var newStatuses = statuses
-            newStatuses[damaged.count] = .damaged
-            return countArrangements( statuses: newStatuses, groups: groups )
-        }
+        if statuses.count < group { return 0 }
 
-        // damaged.count == group
-        if damaged.count == statuses.count { return groups.count == 1 ? 1 : 0 }
+        if statuses[0] == .damaged {
+            if statuses[..<group].contains( where: { $0 == .operational } ) { return 0 }
+            if statuses.count == group { return groups.count == 1 ? 1 : 0 }
+            if statuses[group] == .damaged { return 0 }
+
+            let tail = Array( statuses.dropFirst( group + 1 ) )
+            return countArrangements( statuses: tail, groups: Array( groups.dropFirst() ) )
+        }
         
-        let newStatuses = Array( statuses.dropFirst( damaged.count + 1 ) )
-        return countArrangements( statuses: newStatuses, groups: Array( groups.dropFirst() ) )
+        let damaged = {
+            if statuses[..<group].contains( where: { $0 == .operational } ) { return 0 }
+            if statuses.count == group { return groups.count == 1 ? 1 : 0 }
+            if statuses[group] == .damaged { return 0 }
+
+            let tail = Array( statuses.dropFirst( group + 1 ) )
+            return countArrangements( statuses: tail, groups: Array( groups.dropFirst() ) )
+        }()
+        let operational = countArrangements(statuses: Array( statuses.dropFirst() ), groups: groups )
         
-    }
-    
-    func countArrangements() -> Int {
-        let count = countArrangements( statuses: statuses, groups: groups )
-        return count
+        return damaged + operational
     }
 }
 
@@ -86,14 +84,14 @@ func parse( input: AOCinput ) -> [Row] {
 func part1( input: AOCinput ) -> String {
     let rows = parse( input: input )
 
-    return "\( rows.map { $0.countArrangements() }.reduce( 0, + ) )"
+    return "\( rows.map { $0.arrangementsCount }.reduce( 0, + ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let rows = parse( input: input ).map { $0.unfolded }
 
-    return "\( rows.map { $0.countArrangements() }.reduce( 0, + ) )"
+    return "\( rows.map { $0.arrangementsCount }.reduce( 0, + ) )"
 }
 
 
