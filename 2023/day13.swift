@@ -11,90 +11,22 @@
 import Foundation
 import Library
 
-enum Content: Character { case ash = ".", rock = "#" }
-
-struct Pattern: CustomStringConvertible {
-    let original: [[Content]]
-    let rotated: [[Content]]
-
-    var score: Int {
-        100 * score( field: original ) + score( field: rotated )
-    }
-    
-    var description: String {
-        (
-            [
-                "Original:",
-                original.map { String( $0.map { $0.rawValue } ) }.joined( separator: "\n" ),
-                "Rotated:",
-                rotated.map { String( $0.map { $0.rawValue } ) }.joined( separator: "\n" ),
-            ]
-        ).joined( separator: "\n" )
-    }
-    
-    init( lines: [String] ) {
-        let original = lines.map { $0.map { Content( rawValue: $0 )! } }
-        let initial = Array(
-            repeating: Array( repeating: Content.ash, count: original.count ),
-            count: original[0].count
-        )
-        rotated = original.indices.reduce( into: initial ) { rotated, y in
-            original[y].indices.forEach { x in
-                rotated[x][ original.count - 1 - y ] = original[y][x]
-            }
-        }
-        self.original = original
-    }
-    
-    func score( field: [[Content]] ) -> Int {
-        func score( line: Int ) -> Int {
-            let range = min( line, field.count - line )
+func mirrors( lines: [String] ) -> [Int] {
+    return ( 1 ..< lines.count )
+        .map { line in
+            let range = min( line, lines.count - line )
             for index in 0 ..< range {
-                if field[ line - 1 - index ] != field[ line + index ] { return 0 }
+                if lines[ line - 1 - index ] != lines[ line + index ] { return 0 }
             }
             return line
         }
-        
-        guard let line = ( 1 ..< field.count ).first( where: { score( line: $0 ) != 0 } ) else {
-            return 0
-        }
-                
-        return line
-    }
-}
-
-
-func parse( input: AOCinput ) -> [Pattern] {
-    return input.paragraphs.map { Pattern( lines: $0 ) }
-}
-
-//func part2( input: AOCinput ) -> String {
-//    let something = parse( input: input )
-//    return ""
-//}
-
-
-func score( lines: [String] ) -> [Int] {
-    func score( line: Int ) -> Int {
-        let range = min( line, lines.count - line )
-        for index in 0 ..< range {
-            if lines[ line - 1 - index ] != lines[ line + index ] { return 0 }
-        }
-        return line
-    }
-    
-    let blarg = ( 1 ..< lines.count ).map { score( line: $0 ) }.filter { $0 != 0 }
-//    guard let line = ( 1 ..< lines.count ).first( where: { score( line: $0 ) != 0 } ) else {
-//        return []
-//    }
-            
-    return blarg
+        .filter { $0 != 0 }
 }
 
 
 func rotate( lines: [String] ) -> [String] {
-    lines[0].indices.reduce( into: [String]() ) { rotated, colIndex in
-        rotated.append( String( lines.indices.map { rowIndex in lines[rowIndex][colIndex] } ) )
+    lines[0].indices.reduce( into: [String]() ) { rotated, x in
+        rotated.append( String( lines.indices.map { y in lines[y][x] } ) )
     }
 }
 
@@ -107,11 +39,11 @@ func toggle( lines: [String], x: String.Index, y: Int ) -> [String] {
 
 
 func lookForSmudge( lines: [String] ) -> Int {
-    let original = score( lines: lines ).first ?? 0
+    let original = mirrors( lines: lines ).first ?? 0
     for y in lines.indices {
         for x in lines[y].indices {
             let toggled = toggle( lines: lines, x: x, y: y )
-            let score = score( lines: toggled )
+            let score = mirrors( lines: toggled )
             
             let different = score.filter { $0 != original }
             if !different.isEmpty { return different[0] }
@@ -130,19 +62,15 @@ func findSmudge( lines: [String] ) -> Int {
 
 func part1( input: AOCinput ) -> String {
     let scores = input.paragraphs.map {
-        100 * ( score( lines: $0 ).first ?? 0 ) + ( score( lines: rotate( lines: $0 ) ).first ?? 0 )
+        100 * ( mirrors( lines: $0 ).first ?? 0 ) + ( mirrors( lines: rotate( lines: $0 ) ).first ?? 0 )
     }
     
     return "\( scores.reduce( 0, + ) )"
 }
 
-// > 18275
 func part2( input: AOCinput ) -> String {
     let scores = input.paragraphs.map { findSmudge( lines: $0 ) }
     
-//    for ( index, score ) in scores.enumerated() {
-//        if score == 0 { print( input.paragraphs[index].joined( separator: "\n" ) ); break }
-//    }
     return "\( scores.reduce( 0, + ) )"
 }
 
