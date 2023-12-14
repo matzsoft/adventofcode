@@ -34,17 +34,16 @@ struct Platform: Hashable {
             .reduce( 0, + )
     }
     
-    func tiltNorth() -> Platform {
+    var tiltNorth: Platform {
         var tilted = self.spaces
         
-        for ( y, row ) in tilted.enumerated() {
-            if y > 0 {
-                for x in row.indices.filter( { row[$0] == .rounded } ) {
-                    for yPrime in ( 0 ..< y ).reversed() {
-                        guard tilted[yPrime][x] == .empty else { break }
-                        tilted[yPrime][x] = .rounded
-                        tilted[yPrime+1][x] = .empty
-                    }
+        for y in 1 ..< tilted.count {
+            let row = tilted[y]
+            for x in row.indices.filter( { row[$0] == .rounded } ) {
+                for yPrime in ( 0 ..< y ).reversed() {
+                    guard tilted[yPrime][x] == .empty else { break }
+                    tilted[yPrime][x] = .rounded
+                    tilted[yPrime+1][x] = .empty
                 }
             }
         }
@@ -52,17 +51,15 @@ struct Platform: Hashable {
         return Platform( spaces: tilted )
     }
     
-    func tiltWest() -> Platform {
+    var tiltWest: Platform {
         var tilted = self.spaces
         
-        for x in tilted[0].indices {
-            if x > 0 {
-                for y in tilted.indices.filter( { tilted[$0][x] == .rounded } ) {
-                    for xPrime in ( 0 ..< x ).reversed() {
-                        guard tilted[y][xPrime] == .empty else { break }
-                        tilted[y][xPrime] = .rounded
-                        tilted[y][xPrime+1] = .empty
-                    }
+        for x in 1 ..< tilted[0].count {
+            for y in tilted.indices.filter( { tilted[$0][x] == .rounded } ) {
+                for xPrime in ( 0 ..< x ).reversed() {
+                    guard tilted[y][xPrime] == .empty else { break }
+                    tilted[y][xPrime] = .rounded
+                    tilted[y][xPrime+1] = .empty
                 }
             }
         }
@@ -70,17 +67,16 @@ struct Platform: Hashable {
         return Platform( spaces: tilted )
     }
     
-    func tiltSouth() -> Platform {
+    var tiltSouth: Platform {
         var tilted = self.spaces
         
-        for ( y, row ) in tilted.enumerated().reversed() {
-            if y < tilted.count - 1 {
-                for x in row.indices.filter( { row[$0] == .rounded } ) {
-                    for yPrime in ( y + 1 ..< tilted.count ) {
-                        guard tilted[yPrime][x] == .empty else { break }
-                        tilted[yPrime][x] = .rounded
-                        tilted[yPrime-1][x] = .empty
-                    }
+        for y in ( 0 ..< tilted.count - 1 ).reversed() {
+            let row = tilted[y]
+            for x in row.indices.filter( { row[$0] == .rounded } ) {
+                for yPrime in ( y + 1 ..< tilted.count ) {
+                    guard tilted[yPrime][x] == .empty else { break }
+                    tilted[yPrime][x] = .rounded
+                    tilted[yPrime-1][x] = .empty
                 }
             }
         }
@@ -88,17 +84,15 @@ struct Platform: Hashable {
         return Platform( spaces: tilted )
     }
     
-    func tiltEast() -> Platform {
+    var tiltEast: Platform {
         var tilted = self.spaces
         
-        for x in tilted[0].indices.reversed() {
-            if x < tilted[0].count - 1 {
-                for y in tilted.indices.filter( { tilted[$0][x] == .rounded } ) {
-                    for xPrime in ( x + 1 ..< tilted.count ) {
-                        guard tilted[y][xPrime] == .empty else { break }
-                        tilted[y][xPrime] = .rounded
-                        tilted[y][xPrime-1] = .empty
-                    }
+        for x in ( 0 ..< tilted[0].count - 1 ).reversed() {
+            for y in tilted.indices.filter( { tilted[$0][x] == .rounded } ) {
+                for xPrime in ( x + 1 ..< tilted.count ) {
+                    guard tilted[y][xPrime] == .empty else { break }
+                    tilted[y][xPrime] = .rounded
+                    tilted[y][xPrime-1] = .empty
                 }
             }
         }
@@ -106,8 +100,8 @@ struct Platform: Hashable {
         return Platform( spaces: tilted )
     }
     
-    func cycle() -> Platform {
-        tiltNorth().tiltWest().tiltSouth().tiltEast()
+    var cycle: Platform {
+        tiltNorth.tiltWest.tiltSouth.tiltEast
     }
 }
 
@@ -116,14 +110,10 @@ func parse( input: AOCinput ) -> Platform {
     return Platform( lines: input.lines )
 }
 
+
 func part1( input: AOCinput ) -> String {
-    let platform = parse( input: input ).tiltNorth()
+    let platform = parse( input: input ).tiltNorth
     
-    let weights = platform.spaces.enumerated().map {
-        let ( index, row ) = $0
-        let rounded = row.filter { $0 == .rounded }.count
-        return ( platform.spaces.count - index ) * rounded
-    }
     return "\( platform.weight )"
 }
 
@@ -135,7 +125,7 @@ func part2( input: AOCinput ) -> String {
     var sequence = [ platform ]
     
     for step in 1 ... Int.max {
-        let next = sequence.last!.cycle()
+        let next = sequence.last!.cycle
         if let cycleStart = seen[next] {
             let cycleLength = sequence.count - cycleStart
             let offset = cycleStart + ( target - cycleStart ) % cycleLength
