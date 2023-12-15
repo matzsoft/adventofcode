@@ -87,7 +87,7 @@ public struct AOCinput {
     /// Writes the AOCinput data to its specified filename.
     /// - Throws: Any thrown by writing the file.
     public func write() throws -> Void {
-        let contents = ( header + [ "--------------------" ] + self.lines ).joined( separator: "\n" ) + "\n"
+        let contents = ( header + [ "--------------------" ] + self.lines ).joined( separator: "\n" )
         try contents.write( toFile: filename, atomically: true, encoding: .utf8 )
     }
 }
