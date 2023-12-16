@@ -30,14 +30,14 @@ enum Tile: Character {
             return [ beam.move ]
         case .fmirror:
             if beam.direction == .right || beam.direction == .left {
-                return [ beam.turn( direction: .left ).move ]
+                return [ beam.turn( direction: .left ) ]
             }
-            return [ beam.turn( direction: .right ).move ]
+            return [ beam.turn( direction: .right ) ]
         case .bmirror:
             if beam.direction == .right || beam.direction == .left {
-                return [ beam.turn( direction: .right ).move ]
+                return [ beam.turn( direction: .right ) ]
             }
-            return [ beam.turn( direction: .left ).move ]
+            return [ beam.turn( direction: .left ) ]
         }
     }
     
@@ -65,7 +65,7 @@ struct Beam: Hashable {
     var move: Beam { Beam( position: position + direction.vector, direction: direction ) }
     
     func turn( direction: Turn ) -> Beam {
-        Beam( position: position, direction: self.direction.turn( direction ) )
+        Beam( position: position, direction: self.direction.turn( direction ) ).move
     }
 }
 
@@ -84,6 +84,24 @@ struct Grid {
         layout[point.y][point.x]
     }
     
+    func energized( start: Beam ) -> Int {
+        var queue = [ start ]
+        var seen = Set<Beam>()
+        
+        while !queue.isEmpty {
+            let beam = queue.removeFirst()
+
+            if bounds.contains( point: beam.position ) {
+                if seen.insert( beam ).inserted {
+                    queue.append( contentsOf: self[ beam.position ].action( beam: beam ) )
+                }
+            }
+        }
+        
+    //    print( description( seen: seen ) )
+        return Set( seen.map { $0.position } ).count
+    }
+
     func description( seen: Set<Beam> ) -> String {
         layout.indices.map { y in
             String(
@@ -96,40 +114,16 @@ struct Grid {
     }
 }
 
-func parse( input: AOCinput ) -> Grid {
-    return Grid( lines: input.lines )
-}
-
-
-func energized( grid: Grid, start: Beam) -> Int {
-    var queue = [ start ]
-    var seen = Set<Beam>()
-    
-    while !queue.isEmpty {
-        let beam = queue.removeFirst()
-
-        if grid.bounds.contains( point: beam.position ) {
-            if seen.insert( beam ).inserted {
-                queue.append( contentsOf: grid[ beam.position ].action( beam: beam ) )
-            }
-        }
-    }
-    
-//    print( grid.description( seen: seen ) )
-    return Set( seen.map { $0.position } ).count
-}
-
 
 func part1( input: AOCinput ) -> String {
-    let grid = parse( input: input )
     let start = Beam( position: Point2D( x: 0, y: 0 ), direction: .right )
     
-    return "\( energized( grid: grid, start: start ) )"
+    return "\( Grid( lines: input.lines ).energized( start: start ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let grid = parse( input: input )
+    let grid = Grid( lines: input.lines )
     let beams =
         ( grid.bounds.min.x ... grid.bounds.max.x ).flatMap {
             [
@@ -144,7 +138,7 @@ func part2( input: AOCinput ) -> String {
                 Beam( position: Point2D( x: grid.bounds.max.x, y: $0 ), direction: .left )
             ]
         }
-    let values = beams.map { energized( grid: grid, start: $0 ) }
+    let values = beams.map { grid.energized( start: $0 ) }
     return "\( values.max()! )"
 }
 
