@@ -51,9 +51,9 @@ func trenchVolume( input: AOCinput, expanded: Bool ) -> Int {
     let borderPoints = instructions.reduce( 0 ) { $0 + $1.distance }
     let internalArea = vertexPoints[1...].indices.reduce( 0 ) {
         $0 + vertexPoints[$1-1].x * vertexPoints[$1].y - vertexPoints[$1].x * vertexPoints[$1-1].y
-    } / 2
+    }
     
-    return internalArea + ( borderPoints ) / 2 + 1
+    return ( abs( internalArea ) + borderPoints ) / 2 + 1
 }
 
 
