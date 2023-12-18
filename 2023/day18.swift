@@ -10,8 +10,6 @@
 
 import Foundation
 import Library
-import CoreGraphics
-
 
 struct Instruction {
     let direction: DirectionUDLR
@@ -42,60 +40,30 @@ struct Instruction {
 }
 
 
-struct Trench {
-    var points: Array<Point2D> = []
-    
-    init( start: Point2D ) {
-        points = [ start ]
+func trenchVolume( input: AOCinput, expanded: Bool ) -> Int {
+    let instructions = input.lines.map { Instruction( line: $0, expanded: expanded ) }
+    let start = Point2D( x: 0, y: 0 )
+    let vertexPoints = instructions.reduce( into: [ start ] ) { vertexPoints, instruction in
+        if let last = vertexPoints.last {
+            vertexPoints.append( last + instruction.distance * instruction.direction.vector )
+        }
     }
+    let borderPoints = instructions.reduce( 0 ) { $0 + $1.distance }
+    let internalArea = vertexPoints[1...].indices.reduce( 0 ) {
+        $0 + vertexPoints[$1-1].x * vertexPoints[$1].y - vertexPoints[$1].x * vertexPoints[$1-1].y
+    } / 2
     
-    mutating func dig( instruction: Instruction ) -> Void {
-        guard let last = points.last else { return }
-        points.append( last + instruction.distance * instruction.direction.vector )
-//        if points.isEmpty { return }
-//        for _ in 1 ... instruction.distance {
-//            let next = points.last! + instruction.direction.vector
-//            points.append( next )
-//        }
-    }
-}
-
-
-func parse( input: AOCinput ) -> Any? {
-    return nil
+    return internalArea + ( borderPoints ) / 2 + 1
 }
 
 
 func part1( input: AOCinput ) -> String {
-    let instructions = input.lines.map { Instruction( line: $0 ) }
-    var trench = Trench(start: Point2D( x: 0, y: 0 ) )
-    
-    instructions.forEach { trench.dig( instruction: $0 ) }
-    
-    let bounds = Rect2D( points: trench.points )
-    let polygon = trench.points.map { CGPoint( x: $0.x, y: $0.y ) }
-    
-    let context = CGContext(
-        data: nil, width: bounds.width, height: bounds.height,
-        bitsPerComponent: 8, bytesPerRow: 4 * bounds.width,
-        space: CGColorSpace( name: CGColorSpace.genericRGBLinear )!,
-        bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
-    )!
-    context.beginPath()
-    context.addLines( between: polygon )
-//    context.addLine( to: polygon[0] )
-    context.closePath()
-    
-    let points = bounds.points
-        .map { CGPoint( x: $0.x, y: $0.y ) }
-        .filter { context.path!.contains( $0 ) }
-    return "\( points.count )"
+    return "\( trenchVolume( input: input, expanded: false ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    return ""
+    return "\( trenchVolume( input: input, expanded: true ) )"
 }
 
 
