@@ -34,6 +34,11 @@ struct Rule {
     let condition: Condition?
     let destination: String
     
+    init( condition: Condition?, destination: String ) {
+        self.condition = condition
+        self.destination = destination
+    }
+    
     init( string: any StringProtocol ) {
         let words = string.split( separator: ":" )
         
@@ -58,14 +63,26 @@ struct Rule {
         
         return nil
     }
+    
+    func replacing( _ old: String, with new: String ) -> Rule {
+        guard destination == old else { return self }
+        return Rule( condition: condition, destination: new )
+    }
 }
 
 
 struct Workflow {
     let name: String
     let rules: [Rule]
-    let from: [String]
-    let to: [String]
+    let from: Set<String>
+    let to: Set<String>
+    
+    init( name: String, rules: [Rule], from: Set<String>, to: Set<String> ) {
+        self.name = name
+        self.rules = rules
+        self.from = from
+        self.to = to
+    }
     
     init( line: String ) {
         let words = line.split( whereSeparator: { "{,}".contains( $0 ) } )
@@ -73,7 +90,7 @@ struct Workflow {
         name = String( words[0] )
         rules = words[1...].map { Rule( string: $0 ) }
         from = []
-        to = rules.map { $0.destination }
+        to = Set( rules.map { $0.destination } )
     }
     
     func process( part: Part ) -> String {
@@ -81,6 +98,17 @@ struct Workflow {
             if let destination = rule.process( part: part ) { return destination }
         }
         fatalError( "No destination for workflow." )
+    }
+    
+    func replacing( _ old: String, with new: String ) -> Workflow {
+        let newRules = rules.map { $0.replacing( old, with: new ) }
+        let newTo = to.subtracting( [ old ] ).union( [ new ] )
+        return Workflow( name: name, rules: newRules, from: from, to: newTo )
+    }
+    
+    func insert( from: String ) -> Workflow {
+        let newFrom = self.from.union( [ from ] )
+        return Workflow( name: name, rules: rules, from: newFrom, to: to )
     }
 }
 
@@ -118,18 +146,42 @@ struct Node {
 
 func parse( input: AOCinput ) -> ( [ String : Workflow ], [Part] ) {
     let parts = input.paragraphs[1].map { Part( line: $0 ) }
-    let workflows = input.paragraphs[0].map { Workflow( line: $0 ) }
-    let wfDictionary = Dictionary( uniqueKeysWithValues: workflows.map { ( $0.name, $0 ) } )
+    let workflows = input.paragraphs[0].map { Workflow( line: $0 ) } + [
+        Workflow( name: "A", rules: [], from: [], to: [] ),
+        Workflow( name: "R", rules: [], from: [], to: [] ),
+    ]
+    var wfDictionary = Dictionary( uniqueKeysWithValues: workflows.map { ( $0.name, $0 ) } )
 
+    for ( name, node ) in wfDictionary {
+        for to in node.to {
+            wfDictionary[to] = wfDictionary[to]!.insert( from: name )
+        }
+    }
+
+    while let workflow = wfDictionary.first( where: { $0.value.to.count == 1 } ) {
+        for from in workflow.value.from {
+            wfDictionary[from] = wfDictionary[from]!.replacing(
+                workflow.key, with: workflow.value.to.first! )
+        }
+        wfDictionary.removeValue( forKey: workflow.key )
+    }
+    
     return ( wfDictionary, parts )
 }
 
 
 func part1( input: AOCinput ) -> String {
     let ( workflows, parts ) = parse( input: input )
+    
+    for ( name, node ) in workflows.sorted( by: { $0.key < $1.key } ) {
+        print( name )
+        print( "   to: \( node.to.sorted().joined(separator: ", " ) )" )
+        print( "   from: \( node.from.sorted().joined(separator: ", " ) )" )
+    }
+    
     let accepted = parts.filter { $0.isAccepted( workflows: workflows ) }
     let ratings = accepted.map { $0.rating }
-    
+
     return "\( ratings.reduce( 0, + ) )"
 }
 
@@ -159,7 +211,7 @@ func part2( input: AOCinput ) -> String {
         network.removeValue( forKey: workflow.key )
     }
     
-    for ( name, node ) in network.sorted(by: { $0.key < $1.key } ) {
+    for ( name, node ) in network.sorted( by: { $0.key < $1.key } ) {
         print( name )
         print( "   to: \( node.to.sorted().joined(separator: ", " ) )" )
         print( "   from: \( node.from.sorted().joined(separator: ", " ) )" )
