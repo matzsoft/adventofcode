@@ -11,21 +11,45 @@
 import Foundation
 import Library
 
+let ratingRange = 1 ..< 4001
+
+enum Operation: Character {
+    case lt = "<", gt = ">", le = "≤", ge = "≥"
+    
+    var opposite: Operation {
+        switch self {
+        case .lt:
+            return .ge
+        case .gt:
+            return .le
+        case .le:
+            return .gt
+        case .ge:
+            return .lt
+        }
+    }
+}
+
+
 struct Condition {
     let category: Character
-    let operation: Character
-    let value: Int
+    let range: Range<Int>
     
     init( string: any StringProtocol ) {
         let characters = Array( string )
         
         category = characters[0]
-        operation = characters[1]
-        
         guard let value = Int( String( characters[2...] ) ) else {
             fatalError( "Condition '\(string)' failed to recognize." )
         }
-        self.value = value
+
+        if characters[1] == "<" {
+            range = 1 ..< value + 1
+        } else if characters[1] == ">" {
+            range = ( value + 1 ..< Int.max ).clamped(to: ratingRange )
+        } else {
+            fatalError( "Invalid operation '\(characters[1]) in rule.")
+        }
     }
 }
 
@@ -53,13 +77,14 @@ struct Rule {
     
     func process( part: Part ) -> String? {
         guard let condition = condition else { return destination }
-        if condition.operation == "<" {
-            if part.ratings[condition.category]! < condition.value { return destination }
-        } else if condition.operation == ">" {
-            if part.ratings[condition.category]! > condition.value { return destination }
-        } else {
-            fatalError( "Bad operation \(condition.operation) in condition")
-        }
+        if condition.range.contains( part.ratings[condition.category]! ) { return destination }
+//        if condition.operation == .lt {
+//            if part.ratings[condition.category]! < condition.value { return destination }
+//        } else if condition.operation == .gt {
+//            if part.ratings[condition.category]! > condition.value { return destination }
+//        } else {
+//            fatalError( "Bad operation \(condition.operation) in condition")
+//        }
         
         return nil
     }
@@ -138,10 +163,29 @@ struct Part {
 }
 
 
-struct Node {
-    var from: Set<String>
-    var to: Set<String>
+struct Precondition {
+    let operation: Operation
+    let value: Int
 }
+
+
+//struct Preconditions {
+//    let preconditions: [ String : Precondition ]
+//    
+//    func merge( leave: Rule ) -> Preconditions {
+//        guard let condition = leave.condition else { return self }
+//        
+//        let precondition = Precondition( operation: condition.operation, value: condition.value )
+//    }
+//    
+//    func merge( stay: Rule ) -> Preconditions {
+//        guard let condition = stay.condition else { return self }
+//    }
+//    
+//    func merge( others: Preconditions ) -> Preconditions {
+//        <#function body#>
+//    }
+//}
 
 
 func parse( input: AOCinput ) -> ( [ String : Workflow ], [Part] ) {
@@ -173,11 +217,11 @@ func parse( input: AOCinput ) -> ( [ String : Workflow ], [Part] ) {
 func part1( input: AOCinput ) -> String {
     let ( workflows, parts ) = parse( input: input )
     
-    for ( name, node ) in workflows.sorted( by: { $0.key < $1.key } ) {
-        print( name )
-        print( "   to: \( node.to.sorted().joined(separator: ", " ) )" )
-        print( "   from: \( node.from.sorted().joined(separator: ", " ) )" )
-    }
+//    for ( name, node ) in workflows.sorted( by: { $0.key < $1.key } ) {
+//        print( name )
+//        print( "   to: \( node.to.sorted().joined(separator: ", " ) )" )
+//        print( "   from: \( node.from.sorted().joined(separator: ", " ) )" )
+//    }
     
     let accepted = parts.filter { $0.isAccepted( workflows: workflows ) }
     let ratings = accepted.map { $0.rating }
@@ -186,46 +230,70 @@ func part1( input: AOCinput ) -> String {
 }
 
 
+//func part2( input: AOCinput ) -> String {
+//    let ( workflows, _ ) = parse( input: input )
+//    let ratingRange = 1 ... 4000
+//    let possibles = Int( pow( Double( ratingRange.upperBound ), 4 ) )
+//    
+////    for ( name, node ) in workflows.sorted( by: { $0.key < $1.key } ) {
+////        print( name )
+////        print( "   to: \( node.to.sorted().joined(separator: ", " ) )" )
+////        print( "   from: \( node.from.sorted().joined(separator: ", " ) )" )
+////    }
+//    
+//    var queue = Set( [ "in" ] )
+//    var seen = Set<String>()
+//    var preconditions = [ "in" : Preconditions( preconditions: [:] ) ]
+//
+//    while !queue.isEmpty {
+//        let workflow = workflows[ queue.removeFirst() ]!
+//        let thesePreconditions = preconditions[workflow.name]!
+//        var rollingPreconditions = thesePreconditions
+//        
+//        for rule in workflow.rules {
+//            let leave = rollingPreconditions.merge( leave: rule )
+//            
+//            rollingPreconditions = rollingPreconditions.merge( stay: rule )
+//            preconditions[ rule.destination ] = preconditions[ rule.destination ]!.merge( others: leave )
+//            queue.insert( rule.destination )
+//        }
+//    }
+//    
+//    return "\( acceptables["A"]! )"
+//}
+
+
 func part2( input: AOCinput ) -> String {
     let ( workflows, _ ) = parse( input: input )
-    let ratingRange = 1 ... 4000
+    let possibles = Int( pow( Double( ratingRange.upperBound ), 4 ) )
     
-    // TODO: transfer this network construction and simplification into parse
-    var network = workflows.values.reduce( into: [ String: Node ]() ) { network, workflow in
-        network[ workflow.name ] = Node( from: [], to: Set( workflow.rules.map { $0.destination } ) )
-    }
-    
-    network["A"] = Node( from: [], to: [] )
-    network["R"] = Node( from: [], to: [] )
-    for ( name, node ) in network {
-        for to in node.to {
-            network[to]!.from.insert( name )
-        }
-    }
-    
-    while let workflow = network.first( where: { $0.value.to.count == 1 } ) {
-        for from in workflow.value.from {
-            network[from]!.to.remove( workflow.key )
-            network[from]!.to.insert( workflow.value.to.first! )
-        }
-        network.removeValue( forKey: workflow.key )
-    }
-    
-    for ( name, node ) in network.sorted( by: { $0.key < $1.key } ) {
-        print( name )
-        print( "   to: \( node.to.sorted().joined(separator: ", " ) )" )
-        print( "   from: \( node.from.sorted().joined(separator: ", " ) )" )
-    }
+//    for ( name, node ) in workflows.sorted( by: { $0.key < $1.key } ) {
+//        print( name )
+//        print( "   to: \( node.to.sorted().joined(separator: ", " ) )" )
+//        print( "   from: \( node.from.sorted().joined(separator: ", " ) )" )
+//    }
     
     var queue = [ "in" ]
     var seen = Set<String>()
-    
+    var acceptables = [ "in" : possibles ]
+
     while !queue.isEmpty {
         let workflow = queue.removeFirst()
-        let start = Int( pow( Double( ratingRange.upperBound ), 4 ) )
+        var remaining = acceptables[workflow]!
+        for rule in workflows[workflow]!.rules {
+            if let condition = rule.condition {
+                let diverted = condition.range.count * remaining / ratingRange.upperBound
+
+                remaining -= diverted
+                acceptables[ rule.destination, default: 0 ] += diverted
+            } else {
+                acceptables[ rule.destination, default: 0 ] += remaining
+            }
+        }
+        queue.append( contentsOf: workflows[workflow]!.to )
     }
     
-    return ""
+    return "\( acceptables["A"]! )"
 }
 
 
