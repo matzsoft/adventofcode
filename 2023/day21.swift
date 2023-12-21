@@ -14,9 +14,11 @@ import Library
 enum TileType: Character { case plot = ".", rock = "#" }
 
 struct Map {
-    let start: Point2D
+    var current: Set<Point2D>
     let map: [[TileType]]
     let bounds: Rect2D
+    let location: Point2D
+    var full: Bool
     
     subscript( point: Point2D ) -> TileType? {
         guard bounds.contains( point: point ) else { return nil }
@@ -36,39 +38,50 @@ struct Map {
                 return .plot
             }
         }
-        self.start = start!
+        self.current = [start!]
         bounds = Rect2D(min: Point2D( x: 0, y: 0 ), width: map[0].count, height: map.count )!
+        location = Point2D( x: 0, y: 0 )
+        full = false
+    }
+    
+    mutating func step() -> Void {
+        var next = Set<Point2D>()
+        
+        for plot in current {
+            for neighbor in DirectionUDLR.allCases.map( { plot + $0.vector } ) {
+                if self[neighbor] == .plot { next.insert( neighbor ) }
+            }
+        }
+        current = next
     }
 }
 
 
-func parse( input: AOCinput ) -> Any? {
-    return nil
+struct InfinityMap {
+    let maps: [ Point2D : Map ]
+    
+    init( initial: Map ) {
+        maps = [ initial.location : initial ]
+    }
 }
 
 
 func part1( input: AOCinput ) -> String {
-    let map = Map( lines: input.lines )
+    var map = Map( lines: input.lines )
     let stepLimit = Int( input.extras[0] )!
-    var reached = [ Set( [ map.start ] ) ]
+    var reached = [ Set( map.current ) ]
     
     for step in 1 ... stepLimit {
-        var next = Set<Point2D>()
-        
-        for plot in reached[step-1] {
-            for neighbor in DirectionUDLR.allCases.map( { plot + $0.vector } ) {
-                if map[neighbor] == .plot { next.insert( neighbor ) }
-            }
-        }
-        reached.append( next )
+        map.step()
     }
     
-    return "\( reached[stepLimit].count )"
+    return "\( map.current.count )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
+    let map = Map( lines: input.lines )
+    let stepLimit = Int( input.extras[0] )!
     return ""
 }
 
