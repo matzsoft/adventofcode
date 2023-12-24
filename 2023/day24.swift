@@ -24,32 +24,30 @@ struct Hail {
         m = Double( velocity.y ) / Double( velocity.x )
         b = Double( position.y ) - m * Double( position.x )
     }
-    
+
+    // For some reason
+    //        let y = ( m * other.b - other.m * b ) / denom
+    // gave the wrong sign for y.
     func intersection( _ other: Hail ) -> ( Double, Double ) {
         let denom = other.m - m
         let x = ( b - other.b ) / denom
-//        let y = ( m * other.b - other.m * b ) / denom
         let y = ( other.m * b - m * other.b ) / denom
         return ( x, y )
     }
     
-    func isFuture( _ other: Hail ) -> Bool {
+    func time( for position: ( Double, Double ) ) -> Double {
+        if velocity.x != 0 { return ( position.0 - Double( self.position.x ) ) / Double( velocity.x ) }
+        return ( position.1 - Double( self.position.y ) ) / Double( velocity.y )
+    }
+                                                                    
+    func futureIntersect( _ other: Hail ) -> ( Double, Double )? {
+        guard m != other.m else { return nil }
         let intersect = intersection( other )
         
-        if m == other.m { return false }
-        if velocity.x > 0 && intersect.0 < Double( position.x ) { return false }
-        if velocity.x < 0 && intersect.0 > Double( position.x ) { return false }
-
-        if velocity.y > 0 && intersect.1 < Double( position.y ) { return false }
-        if velocity.y < 0 && intersect.1 > Double( position.y ) { return false }
+        if time( for: intersect ) < 0 { return nil }
+        if other.time( for: intersect ) < 0 { return nil }
         
-        if other.velocity.x > 0 && intersect.0 < Double( other.position.x ) { return false }
-        if other.velocity.x < 0 && intersect.0 > Double( other.position.x ) { return false }
-
-        if other.velocity.y > 0 && intersect.1 < Double( other.position.y ) { return false }
-        if other.velocity.y < 0 && intersect.1 > Double( other.position.y ) { return false }
-        
-        return true
+        return intersect
     }
 }
 
@@ -66,13 +64,7 @@ func part1( input: AOCinput ) -> String {
     
     for index1 in 0 ..< hail.count - 1 {
         for index2 in index1 + 1 ..< hail.count {
-            if !hail[index1].isFuture( hail[index2] ) {
-                //print( "\( hail[index1].position ) and \( hail[index2].position ) not in the future." )
-            } else {
-                let intersect = hail[index1].intersection( hail[index2] )
-                let formated = ( String( format: "%.3f", intersect.0 ), String( format: "%.3f", intersect.1 ) )
-                //print( "\( hail[index1].position ) and \( hail[index2].position ) intersect at \(formated)" )
-
+            if let intersect = hail[index1].futureIntersect( hail[index2] ) {
                 if range.contains( intersect.0 ) && range.contains( intersect.1 ) {
                     count += 1
                 }
