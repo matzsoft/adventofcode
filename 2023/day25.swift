@@ -12,10 +12,11 @@ import Foundation
 import Library
 
 struct Network {
-    var components: [ String : Set<String> ]
+    let components: [ String : Set<String> ]
+    let dist: [ String : [ String : Int ] ]
     
     init( lines: [String] ) {
-        components = [:]
+        var components = [ String : Set<String> ]()
         for line in lines {
             let words = line.split( whereSeparator: { ": ".contains( $0 ) } ).map { String( $0 ) }
             components[ words[0], default: Set<String>() ].formUnion( words[1...] )
@@ -23,67 +24,61 @@ struct Network {
                 components[ word, default: Set<String>() ].insert( words[0] )
             }
         }
+        self.components = components
+        
+        // Floyd–Warshall algorithm
+        var dist = Dictionary(
+            uniqueKeysWithValues: components.keys.map {
+                ( $0, Dictionary( uniqueKeysWithValues: components.keys.map { ( $0, components.count ) } ) )
+            } )
+
+        components.keys.forEach { component in
+            components[component]!.forEach { dist[component]![$0] = 1 }
+        }
+        components.keys.forEach { dist[$0]![$0] = 0 }
+
+        for k in components.keys {
+            for i in components.keys {
+                for j in components.keys {
+                    if dist[i]![j]! > dist[i]![k]! + dist[k]![j]! {
+                        dist[i]![j] = dist[i]![k]! + dist[k]![j]!
+                    }
+                }
+            }
+        }
+        self.dist = dist
     }
 }
 
-func parse( input: AOCinput ) -> Any? {
-    return nil
-}
 
-
-// 600184 < x
-// Floyd–Warshall algorithm
 func part1( input: AOCinput ) -> String {
     let network = Network( lines: input.lines )
     let components = network.components.keys.map { String( $0 ) }.sorted()
 
-    var dist = Dictionary(
-        uniqueKeysWithValues: components.map {
-            ( $0, Dictionary( uniqueKeysWithValues: components.map { ( $0, components.count ) } ) )
-        } )
-
-    network.components.keys.forEach { component in
-        network.components[component]!.forEach { dist[component]![$0] = 1 }
-    }
-    components.forEach { dist[$0]![$0] = 0 }
-    
-    for k in components {
-        for i in components {
-            for j in components {
-                if dist[i]![j]! > dist[i]![k]! + dist[k]![j]! {
-                    dist[i]![j] = dist[i]![k]! + dist[k]![j]!
-                }
-            }
-        }
-    }
-    
 //    network.components.sorted { $0.key < $1.key }.forEach {
 //        print( "\($0.key) connects to \($0.value.sorted())." )
 //    }
     
-    let maxDistance = dist.map { $0.value.values.max()! }.max()!
-    print( "Number of components = \(components.count)")
-    print( "Max distance = \(maxDistance)" )
+    let maxDistance = network.dist.map { $0.value.values.max()! }.max()!
     
-    var doggies = [ ( String, String ) ]()
+    var antipodes = [ ( String, String ) ]()
     for i in components {
         for j in components {
-            if dist[i]![j] == maxDistance {
-                doggies.append( ( i, j ) )
+            if network.dist[i]![j] == maxDistance {
+                antipodes.append( ( i, j ) )
             }
         }
     }
-    print( "There are \(doggies.count) doggies." )
 
     var solutions = [Int]()
-    for ( anchor1, anchor2 ) in doggies {
+    for ( anchor1, anchor2 ) in antipodes {
         var firstGroup = Set<String>()
         var secondGroup = Set<String>()
         var neutralZone = Set<String>()
         
         for i in components {
-            let g1Distance = dist[anchor1]![i]!
-            let g2Distance = dist[anchor2]![i]!
+            let g1Distance = network.dist[anchor1]![i]!
+            let g2Distance = network.dist[anchor2]![i]!
             
             if g1Distance < g2Distance {
                 firstGroup.insert( i )
@@ -95,8 +90,6 @@ func part1( input: AOCinput ) -> String {
         }
         
         if neutralZone.count == 3 {
-            print( "neutralZone: \( neutralZone.sorted().joined( separator: ", " ) )" )
-            
             let zonies = neutralZone.map {
                 let g1Count = network.components[$0]!.reduce( 0 ) {
                     $0 + ( firstGroup.contains( $1 ) ? 1 : 0 ) }
@@ -106,13 +99,9 @@ func part1( input: AOCinput ) -> String {
             }
             if zonies.allSatisfy( { $0.1 == 1 } ) {
                 solutions.append( firstGroup.count * ( secondGroup.count + 3 ) )
-                print( "\( solutions.last! )" )
-//                return "\( firstGroup.count * ( secondGroup.count + 3 ) )"
             }
             if zonies.allSatisfy( { $0.2 == 1 } ) {
                 solutions.append( ( firstGroup.count + 3 ) * secondGroup.count )
-                print( "\( solutions.last! )" )
-//                return "\( ( firstGroup.count + 3 ) * secondGroup.count )"
             }
         }
     }
@@ -122,7 +111,6 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
     return "None"
 }
 
