@@ -46,8 +46,7 @@ func parse( input: AOCinput ) -> Any? {
     return nil
 }
 
-
-func part1( input: AOCinput ) -> String {
+func getBricks( input: AOCinput ) -> [Brick] {
     var bricks  = input.lines.map { Brick( line: $0 ) }.sorted { $0.bounds.min.z < $1.bounds.min.z }
 
     for ( index, brick ) in bricks.enumerated() {
@@ -75,25 +74,21 @@ func part1( input: AOCinput ) -> String {
         )
     }
     
-//    for ( index, brick ) in bricks.enumerated() {
-//        let front = "\(index): \(brick.bounds.min) ~ \(brick.bounds.max), "
-//        let back = "supportedBy \(brick.supportedBy), supports \(brick.supports)"
-//        print( front + back )
-//    }
-    
-    let dork = bricks.filter { $0.supportedBy.count == 1 }
-    let wank = Set( bricks.indices ).subtracting( dork.flatMap { $0.supportedBy } )
-    let disposable = bricks.filter {
-        let above = $0.supports.filter { bricks[$0].supportedBy.count == 1 }
-        return above.isEmpty
-    }
+    return bricks
+}
+
+
+func part1( input: AOCinput ) -> String {
+    var bricks = getBricks( input: input )
+    let susceptible = bricks.filter { $0.supportedBy.count == 1 }
+    let disposable = Set( bricks.indices ).subtracting( susceptible.flatMap { $0.supportedBy } )
     
     return "\( disposable.count )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
+    var bricks = getBricks( input: input )
     return ""
 }
 
