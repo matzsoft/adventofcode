@@ -12,28 +12,19 @@ import Foundation
 import Library
 
 let ratingRange = 1 ..< 4001
+let ratingSet = Set( ratingRange )
+let categories = "xmas"
 
-enum Operation: Character {
-    case lt = "<", gt = ">", le = "≤", ge = "≥"
-    
-    var opposite: Operation {
-        switch self {
-        case .lt:
-            return .ge
-        case .gt:
-            return .le
-        case .le:
-            return .gt
-        case .ge:
-            return .lt
-        }
+extension Set<Int> {
+    // This is a replacement for a function natively available in macOS 13 and later.
+    func contains( _ other: Set<Int> ) -> Bool {
+        intersection( other ) == other
     }
 }
 
-
 struct Condition {
     let category: Character
-    let range: Range<Int>
+    let range: Set<Int>
     
     init( string: any StringProtocol ) {
         let characters = Array( string )
@@ -44,9 +35,9 @@ struct Condition {
         }
 
         if characters[1] == "<" {
-            range = 1 ..< value + 1
+            range = Set( 1 ..< value )
         } else if characters[1] == ">" {
-            range = ( value + 1 ..< Int.max ).clamped(to: ratingRange )
+            range = Set( value + 1 ..< ratingRange.upperBound )
         } else {
             fatalError( "Invalid operation '\(characters[1]) in rule.")
         }
@@ -70,7 +61,7 @@ struct Rule {
             condition = nil
             destination = String( words[0] )
         } else {
-            condition = Condition(string: words[0] )
+            condition = Condition( string: words[0] )
             destination = String( words[1] )
         }
     }
@@ -78,13 +69,6 @@ struct Rule {
     func process( part: Part ) -> String? {
         guard let condition = condition else { return destination }
         if condition.range.contains( part.ratings[condition.category]! ) { return destination }
-//        if condition.operation == .lt {
-//            if part.ratings[condition.category]! < condition.value { return destination }
-//        } else if condition.operation == .gt {
-//            if part.ratings[condition.category]! > condition.value { return destination }
-//        } else {
-//            fatalError( "Bad operation \(condition.operation) in condition")
-//        }
         
         return nil
     }
@@ -164,28 +148,98 @@ struct Part {
 
 
 struct Precondition {
-    let operation: Operation
-    let value: Int
+    let preconditions: [ Character : Set<Int> ]
+    
+    static var empty: Precondition {
+        let dict = Dictionary( uniqueKeysWithValues: Array( categories ).map { ( $0, Set<Int>() ) } )
+        return Precondition( preconditions: dict )
+    }
+    
+    static var full: Precondition {
+        let dict = Dictionary( uniqueKeysWithValues: Array( categories ).map { ( $0, ratingSet ) } )
+        return Precondition( preconditions: dict )
+    }
+    
+    subscript( category: Character ) -> Set<Int>? {
+        preconditions[category]
+    }
+    
+    var isEmpty: Bool {
+        preconditions.values.contains { $0.isEmpty }
+    }
+    
+    func merge( leave: Rule ) -> Precondition {
+        guard let condition = leave.condition else { return self }
+        guard preconditions[condition.category] != nil else { fatalError( "Invalid category in rule." ) }
+        
+        let newSet = preconditions[condition.category]!.intersection( condition.range )
+        let newDict = Dictionary(
+            uniqueKeysWithValues: preconditions.map {
+                $0.key == condition.category ? ( $0.key, newSet ) : $0
+            }
+        )
+        return Precondition( preconditions: newDict )
+    }
+    
+    func merge( stay: Rule ) -> Precondition {
+        guard let condition = stay.condition else { return self }
+        guard preconditions[condition.category] != nil else { fatalError( "Invalid category in rule." ) }
+
+        let reverseSet = ratingSet.subtracting( condition.range )
+        let newSet = preconditions[condition.category]!.intersection( reverseSet )
+        let newDict = Dictionary(
+            uniqueKeysWithValues: preconditions.map {
+                $0.key == condition.category ? ( $0.key, newSet ) : $0
+            }
+        )
+        return Precondition( preconditions: newDict )
+    }
+    
+    func add( _ other: Precondition ) -> Precondition {
+        let pairs = preconditions.keys.map {
+            ( $0, preconditions[$0]!.intersection( other.preconditions[$0]! ) )
+        }
+        return Precondition( preconditions: Dictionary( uniqueKeysWithValues: pairs ) )
+    }
+    
+    func subtracting( _ other: Precondition ) -> Precondition {
+        if categories.contains( where: {
+            preconditions[$0]!.intersection( other.preconditions[$0]!).isEmpty
+        } ) { return self }
+        let newDict = categories.reduce( into: [ Character : Set<Int> ]() ) { dict, category in
+            dict[category] = preconditions[category]!.subtracting( other.preconditions[category]! )
+        }
+        return Precondition( preconditions: newDict )
+    }
 }
 
 
-//struct Preconditions {
-//    let preconditions: [ String : Precondition ]
-//    
-//    func merge( leave: Rule ) -> Preconditions {
-//        guard let condition = leave.condition else { return self }
-//        
-//        let precondition = Precondition( operation: condition.operation, value: condition.value )
-//    }
-//    
-//    func merge( stay: Rule ) -> Preconditions {
-//        guard let condition = stay.condition else { return self }
-//    }
-//    
-//    func merge( others: Preconditions ) -> Preconditions {
-//        <#function body#>
-//    }
-//}
+struct PreconditionList {
+    var preconditions: [Precondition]
+    
+    init() {
+        preconditions = []
+    }
+    
+    init( first: Precondition ) {
+        preconditions = [ first ]
+    }
+    
+    mutating func add( new: Precondition ) -> Void {
+        if preconditions.isEmpty {
+            preconditions.append( new )
+            return
+        }
+        
+        var new = new
+        for old in preconditions {
+            new = new.subtracting( old )
+            if new.isEmpty { return }
+        }
+        
+        preconditions.append( new )
+    }
+}
 
 
 func parse( input: AOCinput ) -> ( [ String : Workflow ], [Part] ) {
@@ -230,42 +284,8 @@ func part1( input: AOCinput ) -> String {
 }
 
 
-//func part2( input: AOCinput ) -> String {
-//    let ( workflows, _ ) = parse( input: input )
-//    let ratingRange = 1 ... 4000
-//    let possibles = Int( pow( Double( ratingRange.upperBound ), 4 ) )
-//    
-////    for ( name, node ) in workflows.sorted( by: { $0.key < $1.key } ) {
-////        print( name )
-////        print( "   to: \( node.to.sorted().joined(separator: ", " ) )" )
-////        print( "   from: \( node.from.sorted().joined(separator: ", " ) )" )
-////    }
-//    
-//    var queue = Set( [ "in" ] )
-//    var seen = Set<String>()
-//    var preconditions = [ "in" : Preconditions( preconditions: [:] ) ]
-//
-//    while !queue.isEmpty {
-//        let workflow = workflows[ queue.removeFirst() ]!
-//        let thesePreconditions = preconditions[workflow.name]!
-//        var rollingPreconditions = thesePreconditions
-//        
-//        for rule in workflow.rules {
-//            let leave = rollingPreconditions.merge( leave: rule )
-//            
-//            rollingPreconditions = rollingPreconditions.merge( stay: rule )
-//            preconditions[ rule.destination ] = preconditions[ rule.destination ]!.merge( others: leave )
-//            queue.insert( rule.destination )
-//        }
-//    }
-//    
-//    return "\( acceptables["A"]! )"
-//}
-
-
 func part2( input: AOCinput ) -> String {
     let ( workflows, _ ) = parse( input: input )
-    let possibles = Int( pow( Double( ratingRange.upperBound ), 4 ) )
     
 //    for ( name, node ) in workflows.sorted( by: { $0.key < $1.key } ) {
 //        print( name )
@@ -274,26 +294,38 @@ func part2( input: AOCinput ) -> String {
 //    }
     
     var queue = [ "in" ]
-    var seen = Set<String>()
-    var acceptables = [ "in" : possibles ]
+    var preconditions = [ "in" : PreconditionList( first: Precondition.full ) ]
 
     while !queue.isEmpty {
-        let workflow = queue.removeFirst()
-        var remaining = acceptables[workflow]!
-        for rule in workflows[workflow]!.rules {
-            if let condition = rule.condition {
-                let diverted = condition.range.count * remaining / ratingRange.upperBound
+        let workflow = workflows[ queue.removeFirst() ]!
+        
+        guard preconditions[workflow.name]?.preconditions.count == 1 else {
+            fatalError( "\(workflow.name) has \(preconditions[workflow.name]!) preconditions" )
+        }
+        
+        var rollingPreconditions = preconditions[workflow.name]!.preconditions[0]
 
-                remaining -= diverted
-                acceptables[ rule.destination, default: 0 ] += diverted
-            } else {
-                acceptables[ rule.destination, default: 0 ] += remaining
+        for rule in workflow.rules {
+            let leave = rollingPreconditions.merge( leave: rule )
+            
+            rollingPreconditions = rollingPreconditions.merge( stay: rule )
+            preconditions[rule.destination, default: PreconditionList()].add( new: leave )
+            if !workflows[rule.destination]!.to.isEmpty {
+                queue.append( rule.destination )
             }
         }
-        queue.append( contentsOf: workflows[workflow]!.to )
     }
     
-    return "\( acceptables["A"]! )"
+//    let final = preconditions["A"]!
+//    for ( index, precondition ) in final.preconditions.enumerated() {
+//        print(
+//            "\(index). \( Array( categories ).map { "\($0): \(precondition[$0]!)" }.joined(separator: ", " ) )"
+//        )
+//    }
+    let sums = preconditions["A"]!.preconditions.map { thisPreconditions in
+        categories.reduce( 1 ) { $0 * thisPreconditions[$1]!.count }
+    }
+    return "\( sums.reduce( 0, + ) )"
 }
 
 
