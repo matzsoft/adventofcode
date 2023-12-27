@@ -11,15 +11,24 @@
 import Foundation
 import Library
 
+extension Set<Int> {
+    // This is a replacement for a function natively available in macOS 13 and later.
+    func contains( _ other: Set<Int> ) -> Bool {
+        intersection( other ) == other
+    }
+}
+
 struct Brick {
     var bounds: Rect3D
     var supportedBy: Set<Int>
     var supports: Set<Int>
+    var tumbleCount: Int?
     
-    init( bounds: Rect3D, supportedBy: Set<Int> = [], supports: Set<Int> = [] ) {
+    init( bounds: Rect3D, supportedBy: Set<Int> = [], supports: Set<Int> = [], tumbleCount: Int? = nil ) {
         self.bounds = bounds
         self.supportedBy = supportedBy
         self.supports = supports
+        self.tumbleCount = tumbleCount
     }
     
     init( line: String ) {
@@ -31,6 +40,7 @@ struct Brick {
         )
         supportedBy = []
         supports = []
+        tumbleCount = nil
     }
     
     var projection: Rect3D {
@@ -79,7 +89,7 @@ func getBricks( input: AOCinput ) -> [Brick] {
 
 
 func part1( input: AOCinput ) -> String {
-    var bricks = getBricks( input: input )
+    let bricks = getBricks( input: input )
     let susceptible = bricks.filter { $0.supportedBy.count == 1 }
     let disposable = Set( bricks.indices ).subtracting( susceptible.flatMap { $0.supportedBy } )
     
@@ -89,7 +99,21 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     var bricks = getBricks( input: input )
-    return ""
+    var removed = Set<Int>()
+    
+    func remove( index: Int ) -> Void {
+        let dogs = bricks[index].supports.filter { removed.contains( bricks[$0].supportedBy ) }
+        removed.formUnion( dogs )
+        dogs.forEach { remove(index: $0 ) }
+        bricks[index].tumbleCount = removed.count - 1
+    }
+    
+    for index in bricks.indices {
+        removed = Set( [ index ] )
+        remove( index: index )
+    }
+    
+    return "\( bricks.map { $0.tumbleCount! }.reduce( 0, + ) )"
 }
 
 
