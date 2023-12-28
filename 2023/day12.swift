@@ -40,15 +40,6 @@ struct Row: Hashable {
         )
     }
     
-    var unfolded: Row {
-        let groups = Array( repeating: self.groups, count: 5 ).flatMap { $0 }
-        let statuses = Array( repeating: self.statuses, count: 5 )
-            .joined( separator: [ SpringStatus.unknown ] )
-            .compactMap { $0 }
-        
-        return Row( statuses: statuses, groups: groups )
-    }
-    
     func dropFirst( statuses: [SpringStatus], needsOperation: Bool = false ) -> Row {
         let tail = Array( statuses.dropFirst( groups[0] + 1 ) )
         return Row( statuses: tail, groups: Array( groups.dropFirst() ), needsOperational: needsOperation )
@@ -141,33 +132,29 @@ func part2( input: AOCinput ) -> String {
     let foldSeperator = [ SpringStatus.unknown ]
     let counts = rows.map { row in
         var tails = [ row : 1 ]
-        for _ in 1 ..< foldCount {
+        var newTails = [ Row : Int ]()
+        for fold in 1 ... foldCount {
             let updatedTails = tails.map { tail in
                 tail.key
-                    .countArrangements( last: false )
+                    .countArrangements( last: fold == foldCount )
                     .mapValues { $0 * tail.value }
             }
-            var newTails = [ Row : Int ]()
+            newTails = [:]
             updatedTails.forEach { newTails.merge( $0, uniquingKeysWith: + ) }
-            tails = updatedTails.reduce( into: [ Row : Int ]() ) { newTails, updatedTails in
-                newTails.merge( updatedTails, uniquingKeysWith: + )
-            }.reduce( into: [ Row : Int ]() ) { tails, tail in
-                let newTail = tail.key.append( other: row, seperator: foldSeperator )
-                if !tail.key.needsOperational {
-                    tails[ newTail ] = tail.value
-                } else if newTail.statuses[0] != .damaged {
-                    tails[ newTail.dropUnknown( statuses: newTail.statuses ) ] = tail.value
+            if fold < foldCount {
+                tails = updatedTails.reduce( into: [ Row : Int ]() ) { newTails, updatedTails in
+                    newTails.merge( updatedTails, uniquingKeysWith: + )
+                }.reduce( into: [ Row : Int ]() ) { tails, tail in
+                    let newTail = tail.key.append( other: row, seperator: foldSeperator )
+                    if !tail.key.needsOperational {
+                        tails[ newTail ] = tail.value
+                    } else if newTail.statuses[0] != .damaged {
+                        tails[ newTail.dropUnknown( statuses: newTail.statuses ) ] = tail.value
+                    }
                 }
             }
         }
         
-        var newTails = [ Row : Int ]()
-        let updatedTails = tails.map { tail in
-            tail.key
-                .countArrangements( last: true )
-                .mapValues { $0 * tail.value }
-        }
-        updatedTails.forEach { newTails.merge( $0, uniquingKeysWith: + ) }
         return newTails
     }
 
