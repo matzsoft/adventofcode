@@ -13,13 +13,15 @@ import Library
 
 enum SpringStatus: Character { case operational = ".", damaged = "#", unknown = "?" }
 
-struct Row {
+struct Row: Hashable {
     let statuses: [SpringStatus]
     let groups: [Int]
+    let needsOperational: Bool
     
-    init( statuses: [SpringStatus], groups: [Int] ) {
+    init( statuses: [SpringStatus], groups: [Int], needsOperational: Bool = false ) {
         self.statuses = statuses
         self.groups = groups
+        self.needsOperational = needsOperational
     }
     
     init( line: String ) {
@@ -27,6 +29,15 @@ struct Row {
         
         statuses = words[0].map { SpringStatus( rawValue: $0 )! }
         groups = words[1...].map { Int( $0 )! }
+        needsOperational = false
+    }
+
+    func append( other: Row, seperator: [ SpringStatus ] ) -> Row {
+        Row(
+            statuses: statuses + seperator + other.statuses,
+            groups: groups + other.groups,
+            needsOperational: needsOperational
+        )
     }
     
     var unfolded: Row {
@@ -38,9 +49,49 @@ struct Row {
         return Row( statuses: statuses, groups: groups )
     }
     
+    func dropFirst( statuses: [SpringStatus], needsOperation: Bool = false ) -> Row {
+        let tail = Array( statuses.dropFirst( groups[0] + 1 ) )
+        return Row( statuses: tail, groups: Array( groups.dropFirst() ), needsOperational: needsOperation )
+    }
+    
+    func dropUnknown( statuses: [SpringStatus] ) -> Row {
+        Row( statuses: Array( statuses.dropFirst() ), groups: groups )
+    }
+    
+    func check( group: Int, statuses: [SpringStatus], last: Bool ) -> [ Row : Int ] {
+        if statuses[..<group].contains( where: { $0 == .operational } ) { return [:] }
+        if group < statuses.count {
+            if statuses[group] == .damaged { return [:] }
+            return dropFirst( statuses: statuses ).countArrangements( last: last )
+        }
+        
+        if !last { return [ dropFirst( statuses: statuses, needsOperation: true ) : 1 ] }
+        return groups.count == 1 ? [ Row( statuses: [], groups: [] ) : 1 ] : [:]
+    }
+    
+    func countArrangements( last: Bool ) -> [ Row : Int ] {
+        guard let group = groups.first else {
+            if !last { return [ self : 1 ] }
+            return statuses.contains( where: { $0 == .damaged } ) ? [:] : [ self : 1 ]
+        }
+        
+        let statuses = Array( statuses.drop( while: { $0 == .operational } ) )
+        if statuses.isEmpty { return last ? [:] : [ Row( statuses: [], groups: groups ) : 1 ] }
+        
+        if statuses.count < group { return last ? [:] : [ Row( statuses: statuses, groups: groups ) : 1 ] }
+
+        if statuses[0] == .damaged {
+            return check( group: group, statuses: statuses, last: last )
+        }
+        
+        let damaged: [ Row : Int ] = check( group: group, statuses: statuses, last: last )
+        let operational = dropUnknown( statuses: statuses ).countArrangements( last: last )
+        
+        return damaged.merging( operational, uniquingKeysWith: + )
+    }
+
     var arrangementsCount: Int {
-        let count = countArrangements( statuses: statuses, groups: groups )
-        return count
+        countArrangements( statuses: statuses, groups: groups )
     }
     
     func countArrangements( statuses: [SpringStatus], groups: [Int] ) -> Int {
@@ -70,28 +121,57 @@ struct Row {
             let tail = Array( statuses.dropFirst( group + 1 ) )
             return countArrangements( statuses: tail, groups: Array( groups.dropFirst() ) )
         }()
-        let operational = countArrangements(statuses: Array( statuses.dropFirst() ), groups: groups )
+        let operational = countArrangements( statuses: Array( statuses.dropFirst() ), groups: groups )
         
         return damaged + operational
     }
 }
 
-func parse( input: AOCinput ) -> [Row] {
-    return input.lines.map { Row(line: $0 ) }
-}
-
 
 func part1( input: AOCinput ) -> String {
-    let rows = parse( input: input )
+    let rows = input.lines.map { Row(line: $0 ) }
 
     return "\( rows.map { $0.arrangementsCount }.reduce( 0, + ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let rows = parse( input: input ).map { $0.unfolded }
+    let rows = input.lines.map { Row(line: $0 ) }
+    let foldCount = 5
+    let foldSeperator = [ SpringStatus.unknown ]
+    let counts = rows.map { row in
+        var tails = [ row : 1 ]
+        for _ in 1 ..< foldCount {
+            let updatedTails = tails.map { tail in
+                tail.key
+                    .countArrangements( last: false )
+                    .mapValues { $0 * tail.value }
+            }
+            var newTails = [ Row : Int ]()
+            updatedTails.forEach { newTails.merge( $0, uniquingKeysWith: + ) }
+            tails = updatedTails.reduce( into: [ Row : Int ]() ) { newTails, updatedTails in
+                newTails.merge( updatedTails, uniquingKeysWith: + )
+            }.reduce( into: [ Row : Int ]() ) { tails, tail in
+                let newTail = tail.key.append( other: row, seperator: foldSeperator )
+                if !tail.key.needsOperational {
+                    tails[ newTail ] = tail.value
+                } else if newTail.statuses[0] != .damaged {
+                    tails[ newTail.dropUnknown( statuses: newTail.statuses ) ] = tail.value
+                }
+            }
+        }
+        
+        var newTails = [ Row : Int ]()
+        let updatedTails = tails.map { tail in
+            tail.key
+                .countArrangements( last: true )
+                .mapValues { $0 * tail.value }
+        }
+        updatedTails.forEach { newTails.merge( $0, uniquingKeysWith: + ) }
+        return newTails
+    }
 
-    return "\( rows.map { $0.arrangementsCount }.reduce( 0, + ) )"
+    return "\( counts.map { $0.values.reduce( 0, + ) }.reduce( 0, + ) )"
 }
 
 
