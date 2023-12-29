@@ -44,15 +44,37 @@ struct Map {
         full = false
     }
     
-    mutating func step() -> Void {
-        var next = Set<Point2D>()
-        
+    mutating func step() -> Set<Point2D> {
+        var inside = Set<Point2D>()
+        var outside = Set<Point2D>()
+
         for plot in current {
             for neighbor in DirectionUDLR.allCases.map( { plot + $0.vector } ) {
-                if self[neighbor] == .plot { next.insert( neighbor ) }
+                if bounds.contains( point: neighbor ) {
+                    if self[neighbor] == .plot { inside.insert( neighbor ) }
+                } else {
+                    if neighbor.x > bounds.max.x {
+                        let revised = clip( point: neighbor )
+                        if self[revised] == .plot { outside.insert( revised ) }
+                    }
+                }
             }
         }
-        current = next
+        current = inside
+        return outside
+    }
+    
+    func clip( point: Point2D ) -> Point2D {
+        if point.x > bounds.max.x {
+            return Point2D( x: point.x - bounds.max.x - 1 + bounds.min.x, y: point.y )
+        } else if point.x < bounds.min.x {
+            return Point2D( x: bounds.max.x + point.x + 1 - bounds.min.x, y: point.y )
+        } else if point.y > bounds.max.y {
+            return Point2D( x: point.x, y: point.y - bounds.max.y - 1 + bounds.min.y )
+        } else if point.y < bounds.min.y {
+            return Point2D( x: point.x, y: bounds.max.y + point.y + 1 - bounds.min.y )
+        }
+        return point
     }
 }
 
@@ -69,10 +91,9 @@ struct InfinityMap {
 func part1( input: AOCinput ) -> String {
     var map = Map( lines: input.lines )
     let stepLimit = Int( input.extras[0] )!
-    var reached = [ Set( map.current ) ]
     
-    for step in 1 ... stepLimit {
-        map.step()
+    for _ in 1 ... stepLimit {
+        _ = map.step()
     }
     
     return "\( map.current.count )"
@@ -82,6 +103,7 @@ func part1( input: AOCinput ) -> String {
 func part2( input: AOCinput ) -> String {
     let map = Map( lines: input.lines )
     let stepLimit = Int( input.extras[0] )!
+    let bigMap = InfinityMap( initial: map )
     return ""
 }
 
