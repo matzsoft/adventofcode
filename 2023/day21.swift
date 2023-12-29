@@ -14,34 +14,66 @@ import Library
 enum TileType: Character { case plot = ".", rock = "#" }
 
 struct Map {
-    var current: Set<Point2D>
-    let map: [[TileType]]
+    let plots: [ Point2D : Set<Point2D> ]
     let bounds: Rect2D
     let location: Point2D
+    var current: Set<Point2D>
     var full: Bool
     
     subscript( point: Point2D ) -> TileType? {
-        guard bounds.contains( point: point ) else { return nil }
-        return map[point.y][point.x]
+        return plots[point] == nil ? nil : .plot
     }
     
     init( lines: [String] ) {
         var start: Point2D?
-        map = lines.indices.map { y in
+        let bounds = Rect2D( min: Point2D( x: 0, y: 0 ), width: lines[0].count, height: lines.count )!
+        var plots = lines.indices.reduce(into: [ Point2D : Set<Point2D> ]() ) { neighbors, y in
             let characters = Array( lines[y] )
-            return characters.indices.map { x in
-                if let tile = TileType( rawValue: characters[x] ) { return tile }
-                guard characters[x] == "S" else {
-                    fatalError( "Invalid character '\(characters[x]) in map." )
+            characters.indices.forEach { x in
+                if let tile = TileType( rawValue: characters[x] ) {
+                    if tile == .plot { neighbors[ Point2D( x: x, y: y ) ] = Set() }
+                } else {
+                    guard characters[x] == "S" else {
+                        fatalError( "Invalid character '\(characters[x])' in map." )
+                    }
+                    start = Point2D( x: x, y: y )
+                    neighbors[ start! ] = Set()
                 }
-                start = Point2D( x: x, y: y )
-                return .plot
             }
         }
+        
+        func clip( point: Point2D ) -> Point2D {
+            if point.x > bounds.max.x {
+                return Point2D( x: point.x - bounds.max.x - 1 + bounds.min.x, y: point.y )
+            } else if point.x < bounds.min.x {
+                return Point2D( x: bounds.max.x + point.x + 1 - bounds.min.x, y: point.y )
+            } else if point.y > bounds.max.y {
+                return Point2D( x: point.x, y: point.y - bounds.max.y - 1 + bounds.min.y )
+            } else if point.y < bounds.min.y {
+                return Point2D( x: point.x, y: bounds.max.y + point.y + 1 - bounds.min.y )
+            }
+            return point
+        }
+
+        for plot in plots.keys {
+            let neighbors = DirectionUDLR.allCases
+                .map { plot + $0.vector }
+                .filter {
+                    if plots[$0] != nil { return true }
+                    if bounds.contains( point: $0 ) { return false }
+                    
+                    let revised = clip( point: $0 )
+                    return plots[revised] != nil
+                }
+            
+            plots[plot] = Set( neighbors )
+        }
+        
+        self.plots = plots
+        self.bounds = bounds
+        self.location = Point2D( x: 0, y: 0 )
         self.current = [start!]
-        bounds = Rect2D(min: Point2D( x: 0, y: 0 ), width: map[0].count, height: map.count )!
-        location = Point2D( x: 0, y: 0 )
-        full = false
+        self.full = false
     }
     
     mutating func step() -> Set<Point2D> {
@@ -49,32 +81,17 @@ struct Map {
         var outside = Set<Point2D>()
 
         for plot in current {
-            for neighbor in DirectionUDLR.allCases.map( { plot + $0.vector } ) {
+            for neighbor in plots[plot]! {
                 if bounds.contains( point: neighbor ) {
-                    if self[neighbor] == .plot { inside.insert( neighbor ) }
+                    inside.insert( neighbor )
                 } else {
-                    if neighbor.x > bounds.max.x {
-                        let revised = clip( point: neighbor )
-                        if self[revised] == .plot { outside.insert( revised ) }
-                    }
+                    outside.insert( neighbor )
                 }
             }
         }
+        
         current = inside
         return outside
-    }
-    
-    func clip( point: Point2D ) -> Point2D {
-        if point.x > bounds.max.x {
-            return Point2D( x: point.x - bounds.max.x - 1 + bounds.min.x, y: point.y )
-        } else if point.x < bounds.min.x {
-            return Point2D( x: bounds.max.x + point.x + 1 - bounds.min.x, y: point.y )
-        } else if point.y > bounds.max.y {
-            return Point2D( x: point.x, y: point.y - bounds.max.y - 1 + bounds.min.y )
-        } else if point.y < bounds.min.y {
-            return Point2D( x: point.x, y: bounds.max.y + point.y + 1 - bounds.min.y )
-        }
-        return point
     }
 }
 
