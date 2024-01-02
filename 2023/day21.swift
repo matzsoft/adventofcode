@@ -11,6 +11,23 @@
 import Foundation
 import Library
 
+extension String {
+    func center( within length: Int ) -> String {
+        guard count < length else { return self }
+        let prefix = String( repeating: " ", count: ( length - count ) / 2 )
+        let suffix = String( repeating: " ", count: ( length - count + 1 ) / 2 )
+        return prefix + self + suffix
+    }
+}
+
+
+extension Point2D: CustomStringConvertible {
+    public var description: String {
+        "(\(x),\(y))"
+    }
+}
+
+
 struct Cycle {
     let location: Point2D
     let startStep: Int
@@ -27,6 +44,7 @@ struct Map: CustomStringConvertible {
     let bounds: Rect2D
     let location: Point2D
     let startStep: Int
+    let parentAge: Int
     var current: Set<Point2D>
     var history: [ Set<Point2D> : Int ]
     var cycle: Cycle?
@@ -44,22 +62,30 @@ struct Map: CustomStringConvertible {
         }.joined( separator: "\n" )
     }
     
+    var statusDescription: String {
+        [
+            "\(location)",
+            "\(startStep)(\(parentAge))",
+            cycle == nil
+                ? "No cycle"
+                : "\(cycle!.startStep)(\(cycle!.relative))-\(cycle!.length)"
+        ].joined( separator: "\n" )
+    }
+    
     subscript( point: Point2D ) -> TileType? {
         return plots[point] == nil ? nil : .plot
     }
     
-    init(
-        plots: [Point2D : Set<Point2D>], bounds: Rect2D, location: Point2D,
-        current: Set<Point2D>, stepNumber: Int
-    ) {
-        self.plots = plots
-        self.bounds = bounds
+    init( parent: Map, location: Point2D, current: Set<Point2D>, stepNumber: Int ) {
+        self.plots = parent.plots
+        self.bounds = parent.bounds
         self.location = location
         self.startStep = stepNumber
+        self.parentAge = stepNumber - parent.startStep
         self.current = current
         self.history = [ current : stepNumber ]
 
-        print( "\(location) created at step \(stepNumber)" )
+//        print( "\(location) created at step \(stepNumber)" )
     }
     
     init( lines: [String] ) {
@@ -111,10 +137,11 @@ struct Map: CustomStringConvertible {
         self.bounds = bounds
         self.location = Point2D( x: 0, y: 0 )
         self.startStep = 0
+        self.parentAge = 0
         self.current = [start!]
         self.history = [ current : 0 ]
 
-        print( "\(location) created at step 0" )
+//        print( "\(location) created at step 0" )
     }
     
     mutating func step( stepNumber: Int ) -> Set<Point2D> {
@@ -147,7 +174,7 @@ struct Map: CustomStringConvertible {
                     location: location, startStep: start, relative: start - startStep,
                     length: stepNumber - start, states: states
                 )
-                print( "\(location) detected cycle at \(start), \(stepNumber) (\(cycle!.relative))" )
+//                print( "\(location) detected cycle at \(start), \(stepNumber) (\(cycle!.relative))" )
             }
         }
 
@@ -161,7 +188,8 @@ struct Map: CustomStringConvertible {
 
 
 struct QueueNode {
-    let smallMap: Point2D
+    let location: Point2D
+    let parent: Point2D
     let overflow: Set<Point2D>
 }
 
@@ -203,6 +231,29 @@ struct InfinityMap: CustomStringConvertible {
         return level2
     }
     
+    var statusDescription: String {
+        let layout = bigBounds.yRange.map { y in
+            bigBounds.xRange.map { x in
+                let location = Point2D( x: x, y: y )
+                if maps[location] == nil {
+                    return Array( repeating: " ", count: 3 )
+                }
+                return maps[location]!.statusDescription.split( separator: "\n" ).map { String( $0 ) }
+            }
+        }
+        let maxWidth = layout.flatMap { $0.flatMap { $0.map { $0.count } } }.max()!
+        let level2 = layout
+            .map { bigrow in
+                bigrow[0].indices.map { index in
+                    bigrow.map {
+                        $0[index].center( within: maxWidth )
+                    }.joined(separator: " " )
+                }.joined( separator: "\n" )
+            }.joined( separator: "\n\n" )
+        
+        return level2
+    }
+    
     var reachedCount: Int {
         maps.values.reduce( 0 ) { $0 + $1.current.count }
     }
@@ -233,25 +284,28 @@ struct InfinityMap: CustomStringConvertible {
                     .map { clip( point: $0 ) }
                 
                 if !overflows.isEmpty {
-                    queue.append( QueueNode( smallMap: neighbor, overflow: Set( overflows ) ) )
+                    queue.append(
+                        QueueNode( location: neighbor, parent: location, overflow: Set( overflows ) )
+                    )
                 }
             }
         }
         
         for node in queue {
-            if maps[node.smallMap] == nil {
-                add( location: node.smallMap, starting: node.overflow, stepNumber: stepNumber )
+            if maps[node.location] == nil {
+                add( node: node, stepNumber: stepNumber )
             } else {
-                maps[node.smallMap]!.overflow( node.overflow )
+                maps[node.location]!.overflow( node.overflow )
             }
         }
     }
 
-    mutating func add( location: Point2D, starting: Set<Point2D>, stepNumber: Int ) -> Void {
-        maps[location] = Map(
-            plots: plots, bounds: bounds, location: location, current: starting, stepNumber: stepNumber
+    mutating func add( node: QueueNode, stepNumber: Int ) -> Void {
+        maps[node.location] = Map(
+            parent: maps[node.parent]!, location: node.location,
+            current: node.overflow, stepNumber: stepNumber
         )
-        bigBounds = bigBounds.expand( with: location )
+        bigBounds = bigBounds.expand( with: node.location )
     }
 }
 
@@ -269,16 +323,32 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let map = Map( lines: input.lines )
-    let stepLimit = 1000
-//    let stepLimit = Int( input.extras[1] )!
-    var bigMap = InfinityMap( initial: map )
+//    let map = Map( lines: input.lines )
+//    let stepLimit = 1000
+    let stepLimit = Int( input.extras[1] )!
+//    var bigMap = InfinityMap( initial: map )
+    let maxExtent = ( stepLimit + 65 ) / 131
+    let extraSteps = ( stepLimit + 65 ) % 131
+    let inCycle = 2 * ( maxExtent - 1 ) * ( maxExtent - 1 ) + 2 * ( maxExtent - 1 ) + 1
+    let outerLayer = maxExtent * ( 959 + 976 + 973 + 970 )
+    let innerLayer = ( maxExtent - 1 ) * ( 6610 + 6618 + 6638 + 6623 )
+    let corners = 5692 + 5672 + 5705 + 5685
+    let likeOrigin
+        = maxExtent.isMultiple( of: 2 ) ? ( maxExtent - 1 ) * ( maxExtent - 1 ) : maxExtent * maxExtent
+    let unlikeOrigin
+        = maxExtent.isMultiple( of: 2 ) ? maxExtent * maxExtent : ( maxExtent - 1 ) * ( maxExtent - 1 )
+    let cycle = [ 7556, 7602 ]
+    let gargon = ( stepLimit - 129 ) % 2
+    let pizza = ( stepLimit - 130 ) % 2
+    let total = likeOrigin * cycle[gargon] + unlikeOrigin * cycle[pizza] + innerLayer + outerLayer + corners
+    
+    return "\(total)"
     
 //    print( "At step 0" )
 //    print( "\(bigMap)" )
     
-    for stepCount in 1 ... stepLimit {
-        bigMap.steo( stepNumber: stepCount )
+//    for stepCount in 1 ... stepLimit {
+//        bigMap.steo( stepNumber: stepCount )
         
 //        if stepCount == 10 {
 //            print( "At step \(stepCount)" )
@@ -296,24 +366,62 @@ func part2( input: AOCinput ) -> String {
 //            return "\(bigMap.reachedCount)"
 //        }
         
-//        if bigMap.maps.count > 9 {
+//        if stepCount == 589 {
+//            let center = likeOrigin * bigMap.maps[map.location]!.cycle!.states[gargon].count
+//            let others = unlikeOrigin * bigMap.maps[map.location]!.cycle!.states[pizza].count
+//            print( "\(center) + \(others) = \( center + others )" )
+//            
+//            let poi = [
+//                [ (4,1), (3,2), (2,3) ],
+//                [ (4,-1), (3,-2), (2,-3) ],
+//                [ (-4,1), (-3,2), (-2,3) ],
+//                [ (-4,-1), (-3,-2), (-2,-3) ],
+//                [ (3,1), (2,2), (1,3) ],
+//                [ (3,-1), (2,-2), (1,-3) ],
+//                [ (-3,1), (-2,2), (-1,3) ],
+//                [ (-3,-1), (-2,-2), (-1,-3) ],
+//                [ (4,0), (0,4), (-4,0), (0,-4) ],
+//            ].map { $0.map { Point2D( x: $0.0, y: $0.1 ) } }
+//            for list in poi {
+//                for index1 in 1 ..< list.count {
+//                    for index2 in 0 ..< index1 {
+//                        let current1 = bigMap.maps[list[index1]]!.current
+//                        let current2 = bigMap.maps[list[index2]]!.current
+//                        let header = "\(list[index1]) and \(list[index2]) "
+//                        if current1 == current2 {
+//                            print( "\(header) match (\(current1.count))." )
+//                        } else {
+//                            print( "\(header) don't match (\(current1.count), \(current2.count))." )
+//                        }
+//                    }
+//                }
+//                print()
+//            }
+//            print( bigMap.statusDescription )
 //            return "\(stepCount)"
 //        }
-    }
+//    }
     
-    let cycles = bigMap.maps.filter { $0.value.cycle != nil }.map { $0.value.cycle! }
-    print( "At step \(stepLimit)" )
-    print( "There are \( bigMap.maps.count) small maps." )
-    print( "\( cycles.count ) of them have cycles." )
-    print( "Cycle \(cycles[0].location) has \(cycles[0].states.count) states with counts:" )
-    print( "   \( cycles[0].states.map { $0.count } )" )
-    for otherCycle in cycles[1...] {
-        if cycles[0].states != otherCycle.states {
-            print( "Cycle \(otherCycle.location) is different from cycle \(cycles[0].location)" )
-        }
-    }
+//    let cycles = bigMap.maps.filter { $0.value.cycle != nil }.map { $0.value.cycle! }
+//    print( "At step \(stepLimit)" )
+//    print( "There are \( bigMap.maps.count) small maps." )
+//    print( "\( cycles.count ) of them have cycles." )
+//    print( "Cycle \(cycles[0].location) has \(cycles[0].states.count) states with counts:" )
+//    print( "   \( cycles[0].states.map { $0.count } )" )
+//    print( bigMap.maps[ Point2D( x: 0, y: 0 ) ]!.statusDescription )
+//    for otherCycle in cycles[1...] {
+//        if cycles[0].states != otherCycle.states {
+//            if cycles[0].states[0] == otherCycle.states[1] && cycles[0].states[1] == otherCycle.states[0] {
+//                print( "Cycle \(otherCycle.location) is reversed from cycle \(cycles[0].location)" )
+//            } else {
+//                print( "Cycle \(otherCycle.location) is different from cycle \(cycles[0].location)" )
+//            }
+//        }
+//    }
 //    print( "\( bigMap.maps[ Point2D( x: 0, y: 0 ) ]! )" )
-    return "\(bigMap.reachedCount)"
+//    print()
+//    print( bigMap.statusDescription )
+//    return "\(bigMap.reachedCount)"
 }
 
 
