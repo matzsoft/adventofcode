@@ -49,8 +49,6 @@ struct Map: CustomStringConvertible {
     var history: [ Set<Point2D> : Int ]
     var cycle: Cycle?
     
-    var isFull: Bool { plots.count == current.count }
-    
     var description: String {
         bounds.yRange.map { y in
             bounds.xRange.map { x in
@@ -199,12 +197,20 @@ struct InfinityMap: CustomStringConvertible {
     let plots: [ Point2D : Set<Point2D> ]
     let bounds: Rect2D
     var bigBounds: Rect2D
+    var stepNumber: Int
+    let stepLimit: Int
     
-    init( initial: Map ) {
-        maps = [ initial.location : initial ]
-        plots = initial.plots
-        bounds = initial.bounds
-        bigBounds = Rect2D( min: initial.location, max: initial.location )
+    init( initial: Map, stepLimit: Int ) {
+        self.maps = [ initial.location : initial ]
+        self.plots = initial.plots
+        self.bounds = initial.bounds
+        self.bigBounds = Rect2D( min: initial.location, max: initial.location )
+        self.stepNumber = 0
+        self.stepLimit = stepLimit
+    }
+    
+    subscript( coords: ( Int, Int ) ) -> Map {
+        maps[ Point2D( x: coords.0, y: coords.1 ) ]!
     }
     
     var description: String {
@@ -271,9 +277,26 @@ struct InfinityMap: CustomStringConvertible {
         return point
     }
 
-    mutating func steo( stepNumber: Int ) -> Void {
+    mutating func advanceTo( extent: Int ) -> Bool {
+        repeat {
+            step()
+            guard stepNumber < stepLimit else { return false }
+        } while bigBounds.max.x < extent
+        return true
+    }
+    
+    mutating func advanceTo( stepTarget: Int ) -> Bool {
+        repeat {
+            step()
+            guard stepNumber < stepLimit else { return false }
+        } while stepNumber < stepTarget
+        return true
+    }
+    
+    mutating func step() -> Void {
         var queue = [QueueNode]()
         
+        stepNumber += 1
         for location in maps.keys {
             let escaped = maps[location]!.step( stepNumber: stepNumber )
 
@@ -323,33 +346,75 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-//    let map = Map( lines: input.lines )
+    let map = Map( lines: input.lines )
 //    let stepLimit = 1000
     let stepLimit = Int( input.extras[1] )!
-//    var bigMap = InfinityMap( initial: map )
-    let maxExtent = ( stepLimit + 65 ) / 131
-    let extraSteps = ( stepLimit + 65 ) % 131
-    let inCycle = 2 * ( maxExtent - 1 ) * ( maxExtent - 1 ) + 2 * ( maxExtent - 1 ) + 1
-    let outerLayer = maxExtent * ( 959 + 976 + 973 + 970 )
-    let innerLayer = ( maxExtent - 1 ) * ( 6610 + 6618 + 6638 + 6623 )
-    let corners = 5692 + 5672 + 5705 + 5685
-    let likeOrigin
-        = maxExtent.isMultiple( of: 2 ) ? ( maxExtent - 1 ) * ( maxExtent - 1 ) : maxExtent * maxExtent
-    let unlikeOrigin
-        = maxExtent.isMultiple( of: 2 ) ? maxExtent * maxExtent : ( maxExtent - 1 ) * ( maxExtent - 1 )
-    let cycle = [ 7556, 7602 ]
-    let gargon = ( stepLimit - 129 ) % 2
-    let pizza = ( stepLimit - 130 ) % 2
-    let total = likeOrigin * cycle[gargon] + unlikeOrigin * cycle[pizza] + innerLayer + outerLayer + corners
-    
-    return "\(total)"
+    var bigMap = InfinityMap( initial: map, stepLimit: stepLimit )
     
 //    print( "At step 0" )
 //    print( "\(bigMap)" )
     
-//    for stepCount in 1 ... stepLimit {
-//        bigMap.steo( stepNumber: stepCount )
-        
+    if stepLimit < 10000 {
+//        _ = bigMap.advanceTo( stepTarget: stepLimit )
+        return "\(bigMap.reachedCount)"
+//    } else {
+//        _ = bigMap.advanceTo( extent: 8 )
+//        print( "Step number \(bigMap.stepNumber)" )
+//        print( bigMap.statusDescription )
+//        exit(0)
+    }
+
+    guard bigMap.advanceTo( extent: 2 ) else { return "\(bigMap.reachedCount)" }
+    
+    let point1 = Point2D( x: 1, y: 0 )
+    let point2 = Point2D( x: 2, y: 0 )
+    let period1 = bigMap.maps[point1]!.parentAge
+    let period2 = bigMap.maps[point2]!.parentAge
+    let maxExtent = ( stepLimit + period2 - period1 ) / period2
+    let extraSteps = ( stepLimit + period2 - period1 ) % period2
+    let cycle = bigMap.maps[map.location]!.cycle!.states.map { $0.count }
+
+    guard bigMap.advanceTo( stepTarget: bigMap.stepNumber + extraSteps ) else {
+        return "\(bigMap.reachedCount)" }
+    
+    let outerLayer = maxExtent * [ (1,2), (1,-2), (-1,2), (-1,-2) ]
+        .map { bigMap[$0].current.count }
+        .reduce( 0, + )
+    let innerLayer = ( maxExtent - 1 ) * [ (1,1), (1,-1), (-1,1), (-1,-1) ]
+        .map { bigMap[$0].current.count }
+        .reduce( 0, + )
+    let corners = [ (2,0), (0,2), (-2,0), (0,-2) ] .map { bigMap[$0].current.count }.reduce( 0, + )
+    let likeOrigin
+        = maxExtent.isMultiple( of: 2 ) ? ( maxExtent - 1 ) * ( maxExtent - 1 ) : maxExtent * maxExtent
+    let unlikeOrigin
+        = maxExtent.isMultiple( of: 2 ) ? maxExtent * maxExtent : ( maxExtent - 1 ) * ( maxExtent - 1 )
+    let gargon = ( stepLimit - 129 ) % 2
+    let pizza = ( stepLimit - 130 ) % 2
+    let total = likeOrigin * cycle[gargon] + unlikeOrigin * cycle[pizza] + innerLayer + outerLayer + corners
+
+//    let poi = [
+//        [ (2,0), (0,2), (-2,0), (0,-2) ],
+//        [ (1,1), (1,-1), (-1,1), (-1,-1) ],
+//        [ (1,2), (1,-2), (-1,2), (-1,-2) ],
+//        [ (2,1), (2,-1), (-2,1), (-2,-1) ],
+//    ].map { $0.map { Point2D( x: $0.0, y: $0.1 ) } }
+//    for list in poi {
+//        for index1 in 1 ..< list.count {
+//            for index2 in 0 ..< index1 {
+//                let current1 = bigMap.maps[list[index1]]!.current
+//                let current2 = bigMap.maps[list[index2]]!.current
+//                let header = "\(list[index1]) and \(list[index2]) "
+//                if current1 == current2 {
+//                    print( "\(header) match (\(current1.count))." )
+//                } else {
+//                    print( "\(header) don't match (\(current1.count), \(current2.count))." )
+//                }
+//            }
+//        }
+//        print()
+//    }
+
+//    print( bigMap.statusDescription )
 //        if stepCount == 10 {
 //            print( "At step \(stepCount)" )
 //            print( "\(bigMap)" )
@@ -358,12 +423,6 @@ func part2( input: AOCinput ) -> String {
 //        if stepCount > 16 {
 //            print( "At step \(stepCount)" )
 //            print( "\(bigMap)" )
-//        }
-        
-//        if bigMap.maps[ Point2D( x: 0, y: 0 ) ]!.isStable {
-//            print( "At step \(stepCount)" )
-//            print( "\( bigMap.maps[ Point2D( x: 0, y: 0 ) ]! )" )
-//            return "\(bigMap.reachedCount)"
 //        }
         
 //        if stepCount == 589 {
@@ -400,7 +459,6 @@ func part2( input: AOCinput ) -> String {
 //            print( bigMap.statusDescription )
 //            return "\(stepCount)"
 //        }
-//    }
     
 //    let cycles = bigMap.maps.filter { $0.value.cycle != nil }.map { $0.value.cycle! }
 //    print( "At step \(stepLimit)" )
@@ -422,11 +480,13 @@ func part2( input: AOCinput ) -> String {
 //    print()
 //    print( bigMap.statusDescription )
 //    return "\(bigMap.reachedCount)"
+    
+    return "\(total)"
 }
 
 
 try print( projectInfo() )
 try runTests( part1: part1 )
-//try runTests( part2: part2 )
+try runTests( part2: part2 )
 try solve( part1: part1 )
 try solve( part2: part2 )
