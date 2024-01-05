@@ -209,8 +209,8 @@ struct InfinityMap: CustomStringConvertible {
         self.stepLimit = stepLimit
     }
     
-    subscript( coords: ( Int, Int ) ) -> Map {
-        maps[ Point2D( x: coords.0, y: coords.1 ) ]!
+    subscript( coords: ( Int, Int ) ) -> Map? {
+        maps[ Point2D( x: coords.0, y: coords.1 ) ]
     }
     
     var description: String {
@@ -276,22 +276,6 @@ struct InfinityMap: CustomStringConvertible {
         }
         return point
     }
-
-    mutating func advanceTo( extent: Int ) -> Bool {
-        repeat {
-            step()
-            guard stepNumber < stepLimit else { return false }
-        } while bigBounds.max.x < extent
-        return true
-    }
-    
-    mutating func advanceTo( stepTarget: Int ) -> Bool {
-        repeat {
-            step()
-            guard stepNumber < stepLimit else { return false }
-        } while stepNumber < stepTarget
-        return true
-    }
     
     mutating func step() -> Void {
         var queue = [QueueNode]()
@@ -330,6 +314,30 @@ struct InfinityMap: CustomStringConvertible {
         )
         bigBounds = bigBounds.expand( with: node.location )
     }
+
+    mutating func advanceTo( extent: Int ) -> Bool {
+        repeat {
+            step()
+            guard stepNumber < stepLimit else { return false }
+        } while bigBounds.max.x < extent
+        return true
+    }
+    
+    mutating func advanceTo( stepTarget: Int ) -> Bool {
+        repeat {
+            step()
+            guard stepNumber < stepLimit else { return false }
+        } while stepNumber < stepTarget
+        return true
+    }
+    
+    mutating func advanceUntilStable() -> Bool {
+        repeat {
+            step()
+            guard stepNumber < stepLimit else { return false }
+        } while maps[ Point2D( x: bigBounds.max.x, y: 0 ) ]!.parentAge != bounds.width
+        return true
+    }
 }
 
 
@@ -354,42 +362,52 @@ func part2( input: AOCinput ) -> String {
 //    print( "At step 0" )
 //    print( "\(bigMap)" )
     
-    if stepLimit < 10000 {
-//        _ = bigMap.advanceTo( stepTarget: stepLimit )
-        return "\(bigMap.reachedCount)"
-//    } else {
-//        _ = bigMap.advanceTo( extent: 8 )
-//        print( "Step number \(bigMap.stepNumber)" )
-//        print( bigMap.statusDescription )
-//        exit(0)
-    }
-
-    guard bigMap.advanceTo( extent: 2 ) else { return "\(bigMap.reachedCount)" }
+    guard bigMap.advanceUntilStable() else { return "\(bigMap.reachedCount)" }
     
-    let point1 = Point2D( x: 1, y: 0 )
-    let point2 = Point2D( x: 2, y: 0 )
-    let period1 = bigMap.maps[point1]!.parentAge
-    let period2 = bigMap.maps[point2]!.parentAge
-    let maxExtent = ( stepLimit + period2 - period1 ) / period2
+//    let point1 = Point2D( x: 1, y: 0 )
+//    let point2 = Point2D( x: 2, y: 0 )
+//    let period1 = bigMap.maps[point1]!.parentAge
+//    let period2 = bigMap.maps[point2]!.parentAge
+    let period2 = map.bounds.width
+    let period1 = bigMap[ ( bigMap.bigBounds.max.x, 0 ) ]!.startStep % period2
+    let maxExtent = ( stepLimit - bigMap.bigBounds.max.x ) / period2
+//    let maxExtent = ( stepLimit + period2 - period1 ) / period2
     let extraSteps = ( stepLimit + period2 - period1 ) % period2
     let cycle = bigMap.maps[map.location]!.cycle!.states.map { $0.count }
+    let bigBounds = bigMap.bigBounds
 
+//    print( bigMap.statusDescription )
     guard bigMap.advanceTo( stepTarget: bigMap.stepNumber + extraSteps ) else {
         return "\(bigMap.reachedCount)" }
+
+//    print()
+//    print( bigMap.statusDescription )
+    let cornerPoints = [
+        (bigBounds.max.x, 0), (bigBounds.min.x, 0), ( 0, bigBounds.max.y), (0, bigBounds.min.y)
+    ]
+    let corners = cornerPoints.map { bigMap[$0]!.current.count }.reduce( 0, + )
+
+    let innerPoints = [
+        (bigBounds.max.x-1, bigBounds.max.y-1), (bigBounds.max.x-1, bigBounds.min.y+1),
+        (bigBounds.min.x+1, bigBounds.max.y-1), (bigBounds.min.x+1, bigBounds.min.y+1)
+    ]
+    if innerPoints.contains(where: { bigMap[$0] == nil } ) {
+        guard bigMap.advanceTo( stepTarget: bigMap.stepNumber + period2 ) else {
+            return "\(bigMap.reachedCount)" }
+    }
+    let innerLayer = ( maxExtent - 1 ) * innerPoints.map { bigMap[$0]!.current.count }.reduce( 0, + )
     
-    let outerLayer = maxExtent * [ (1,2), (1,-2), (-1,2), (-1,-2) ]
-        .map { bigMap[$0].current.count }
-        .reduce( 0, + )
-    let innerLayer = ( maxExtent - 1 ) * [ (1,1), (1,-1), (-1,1), (-1,-1) ]
-        .map { bigMap[$0].current.count }
-        .reduce( 0, + )
-    let corners = [ (2,0), (0,2), (-2,0), (0,-2) ] .map { bigMap[$0].current.count }.reduce( 0, + )
+    let outerPoints = [
+        (bigBounds.max.x, 1), (bigBounds.max.x, -1), (bigBounds.min.x, 1), (bigBounds.min.x, -1)
+    ]
+    let outerLayer = maxExtent * outerPoints.map { bigMap[$0]!.current.count }.reduce( 0, + )
+
     let likeOrigin
         = maxExtent.isMultiple( of: 2 ) ? ( maxExtent - 1 ) * ( maxExtent - 1 ) : maxExtent * maxExtent
     let unlikeOrigin
         = maxExtent.isMultiple( of: 2 ) ? maxExtent * maxExtent : ( maxExtent - 1 ) * ( maxExtent - 1 )
-    let gargon = ( stepLimit - 129 ) % 2
-    let pizza = ( stepLimit - 130 ) % 2
+    let gargon = ( stepLimit - bigMap.maps[map.location]!.cycle!.startStep ) % 2
+    let pizza = ( gargon + 1 ) % 2
     let total = likeOrigin * cycle[gargon] + unlikeOrigin * cycle[pizza] + innerLayer + outerLayer + corners
 
 //    let poi = [
