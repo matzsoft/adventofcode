@@ -142,6 +142,20 @@ struct Map: CustomStringConvertible {
 //        print( "\(location) created at step 0" )
     }
     
+    mutating func stepFinite( stepNumber: Int ) -> Void {
+        var inside = Set<Point2D>()
+
+        for plot in current {
+            for neighbor in plots[plot]! {
+                if bounds.contains( point: neighbor ) {
+                    inside.insert( neighbor )
+                }
+            }
+        }
+        
+        current = inside
+    }
+    
     mutating func step( stepNumber: Int ) -> Set<Point2D> {
         var inside = Set<Point2D>()
         var outside = Set<Point2D>()
@@ -346,7 +360,7 @@ func part1( input: AOCinput ) -> String {
     let stepLimit = Int( input.extras[0] )!
     
     for stepNumber in 1 ... stepLimit {
-        _ = map.step( stepNumber: stepNumber )
+        map.stepFinite( stepNumber: stepNumber )
     }
     
     return "\( map.current.count )"
@@ -359,6 +373,31 @@ func part2( input: AOCinput ) -> String {
     let stepLimit = Int( input.extras[1] )!
     var bigMap = InfinityMap( initial: map, stepLimit: stepLimit )
     
+//    (decimal x0, decimal y0) = (65, steps[65]);
+//    (decimal x1, decimal y1) = (196, steps[196]);
+//    (decimal x2, decimal y2) = (327, steps[327]);
+//
+//    decimal y01 = (y1 - y0) / (x1 - x0);
+//    decimal y12 = (y2 - y1) / (x2 - x1);
+//    decimal y012 = (y12 - y01) / (x2 - x0);
+    
+    guard bigMap.advanceTo( stepTarget: 65 ) else { return "\(bigMap.stepNumber)=\(bigMap.reachedCount)" }
+    let ( x0, y0 ) = ( 65, bigMap.reachedCount )
+    
+    guard bigMap.advanceTo( stepTarget: 196 ) else { return "\(bigMap.stepNumber)=\(bigMap.reachedCount)" }
+    let ( x1, y1 ) = ( 196, bigMap.reachedCount )
+
+    guard bigMap.advanceTo( stepTarget: 327 ) else { return "\(bigMap.stepNumber)=\(bigMap.reachedCount)" }
+    let ( x2, y2 ) = ( 327, bigMap.reachedCount )
+
+//    let y01 = ( y1 - y0 ) / ( x1 - x0 )
+//    let y12 = ( y2 - y1 ) / ( x2 - x1 )
+//    let y012 = ( y12 - y01 ) / ( x2 - x0 )
+    let n = stepLimit / map.bounds.width
+    // a+n*(b-a+(n-1)*(c-b-b+a)//2)
+    let it = y0 + n * ( y1 - y0 + ( n - 1 ) * ( y2 - y1 - y1 + y0 ) / 2 )
+    return "\(it)"
+
 //    print( "At step 0" )
 //    print( "\(bigMap)" )
     
@@ -505,6 +544,6 @@ func part2( input: AOCinput ) -> String {
 
 try print( projectInfo() )
 try runTests( part1: part1 )
-try runTests( part2: part2 )
+//try runTests( part2: part2 )
 try solve( part1: part1 )
 try solve( part2: part2 )
