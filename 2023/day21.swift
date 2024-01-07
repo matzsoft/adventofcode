@@ -18,8 +18,6 @@ extension Int {
 }
 
 
-enum TileType: Character { case plot = ".", rock = "#" }
-
 struct Map: CustomStringConvertible {
     let plots: [ Point2D : Set<Point2D> ]
     let bounds: Rect2D
@@ -36,37 +34,31 @@ struct Map: CustomStringConvertible {
         }.joined( separator: "\n" )
     }
     
+    static func zone( point: Point2D, bounds: Rect2D ) -> ( Point2D, Point2D ) {
+        let base = Point2D(
+            x: point.x.floorDiv( bounds.width ) * bounds.width,
+            y: point.y.floorDiv( bounds.height ) * bounds.height
+        )
+        let relative = point - base
+        
+        return ( base, relative )
+    }
+    
     init( lines: [String] ) {
         var start: Point2D?
         let bounds = Rect2D( min: Point2D( x: 0, y: 0 ), width: lines[0].count, height: lines.count )!
         var plots = lines.indices.reduce( into: [ Point2D : Set<Point2D> ]() ) { neighbors, y in
             let characters = Array( lines[y] )
             characters.indices.forEach { x in
-                if let tile = TileType( rawValue: characters[x] ) {
-                    if tile == .plot { neighbors[ Point2D( x: x, y: y ) ] = Set() }
-                } else {
-                    guard characters[x] == "S" else {
-                        fatalError( "Invalid character '\(characters[x])' in map." )
-                    }
+                if characters[x] == "." {
+                    neighbors[ Point2D( x: x, y: y ) ] = Set()
+                } else if characters[x] == "S" {
                     start = Point2D( x: x, y: y )
                     neighbors[ start! ] = Set()
                 }
             }
         }
         
-        func clip( point: Point2D ) -> Point2D {
-            if point.x > bounds.max.x {
-                return Point2D( x: point.x - bounds.max.x - 1 + bounds.min.x, y: point.y )
-            } else if point.x < bounds.min.x {
-                return Point2D( x: bounds.max.x + point.x + 1 - bounds.min.x, y: point.y )
-            } else if point.y > bounds.max.y {
-                return Point2D( x: point.x, y: point.y - bounds.max.y - 1 + bounds.min.y )
-            } else if point.y < bounds.min.y {
-                return Point2D( x: point.x, y: bounds.max.y + point.y + 1 - bounds.min.y )
-            }
-            return point
-        }
-
         for plot in plots.keys {
             let neighbors = DirectionUDLR.allCases
                 .map { plot + $0.vector }
@@ -74,7 +66,7 @@ struct Map: CustomStringConvertible {
                     if plots[$0] != nil { return true }
                     if bounds.contains( point: $0 ) { return false }
                     
-                    let revised = clip( point: $0 )
+                    let ( _, revised ) = Map.zone( point: $0, bounds: bounds )
                     return plots[revised] != nil
                 }
             
@@ -98,6 +90,10 @@ struct Map: CustomStringConvertible {
         }
         
         current = inside
+    }
+    
+    func zone( point: Point2D ) -> ( Point2D, Point2D ) {
+        Map.zone( point: point, bounds: bounds )
     }
 }
 
@@ -123,11 +119,7 @@ struct InfinityMap: CustomStringConvertible {
                 let location = Point2D( x: x, y: y )
                 if current.contains( location ) { return "O" }
                 if map.current.contains( location ) { return "S" }
-                let base = Point2D(
-                    x: location.x.floorDiv( map.bounds.width ) * map.bounds.width,
-                    y: location.y.floorDiv( map.bounds.height ) * map.bounds.height
-                )
-                let relative = location - base
+                let ( _, relative ) = map.zone( point: location )
                 return map.plots[relative] != nil ? "." : "#"
             }.joined()
         }.joined( separator: "\n" )
@@ -138,11 +130,8 @@ struct InfinityMap: CustomStringConvertible {
 
         stepNumber += 1
         for plot in current {
-            let base = Point2D(
-                x: plot.x.floorDiv( map.bounds.width ) * map.bounds.width,
-                y: plot.y.floorDiv( map.bounds.height ) * map.bounds.height
-            )
-            let relative = plot - base
+            let ( base, relative ) = map.zone( point: plot )
+
             for neighbor in map.plots[relative]! {
                 next.insert( base + neighbor )
                 bounds = bounds.expand( with: base + neighbor )
