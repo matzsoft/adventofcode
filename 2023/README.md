@@ -10,7 +10,7 @@ I would like to speed up part 2. I believe one possible way is to replace the us
 
 ### Day 21
 
-Part 2 is a complete mess and doesn't even solve the general problem. It only works on my data and not even on the examples. It uses a bunch of numbers derived by looking at my data with the help of the program. Then I took the numbers and just output the result. I need to write code that will determine those numbers for any data.
+Part 2 is now a general solution for any "real" data. It does not work on the examples and still takes over 2 seconds to run.
 
 ### Day 25
 
