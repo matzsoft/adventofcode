@@ -1,7 +1,8 @@
 //
 //         FILE: day21.swift
 //  DESCRIPTION: Advent of Code 2023 Day 21: Step Counter
-//        NOTES: ---
+//        NOTES: For part 2 the solution to the quadratic was taken from 4HbQ on the subreddit.
+//               My solution is commented out because it is more complex.
 //       AUTHOR: Mark T. Johnson, markj@matzsoft.com
 //    COPYRIGHT: © 2023 MATZ Software & Consulting. All rights reserved.
 //      VERSION: 1.0
@@ -104,6 +105,7 @@ struct InfinityMap: CustomStringConvertible {
     var current: Set<Point2D>
     var stepNumber: Int
     let stepLimit: Int
+    var counts: [Int]
     
     init( initial: Map, stepLimit: Int ) {
         self.map = initial
@@ -111,6 +113,7 @@ struct InfinityMap: CustomStringConvertible {
         self.current = initial.current
         self.stepNumber = 0
         self.stepLimit = stepLimit
+        self.counts = []
     }
         
     var description: String {
@@ -152,6 +155,24 @@ struct InfinityMap: CustomStringConvertible {
     mutating func advanceBy( steps: Int ) -> Bool {
         advanceTo( stepTarget: stepNumber + steps )
     }
+    
+    mutating func advanceUntilStable() -> Bool {
+        let period = map.bounds.width
+        let extras = stepLimit % period
+        var valid = 0
+
+        guard advanceBy( steps: extras ) else { return false }
+        counts.append( current.count )
+        valid = bounds.width == ( 2 * counts.count - 1 ) * period ? valid + 1 : 0
+        
+        while true {
+            guard advanceBy( steps: period ) else { return false }
+            counts.append( current.count )
+            valid = bounds.width == ( 2 * counts.count - 1 ) * period ? valid + 1 : 0
+            if valid == 3 { break }
+        }
+        return true
+    }
 }
 
 
@@ -171,22 +192,21 @@ func part2( input: AOCinput ) -> String {
     let map = Map( lines: input.lines )
     let stepLimit = Int( input.extras[1] )!
     var bigMap = InfinityMap( initial: map, stepLimit: stepLimit )
-    let period = map.bounds.width
-    let extent = stepLimit / period
-    let extras = stepLimit % period
     
-    guard bigMap.advanceBy( steps: extras ) else { return "\(bigMap.current.count)" }
-    let y0 = bigMap.current.count
-    
-    guard bigMap.advanceBy( steps: period ) else { return "\(bigMap.current.count)" }
-    let y1 = bigMap.current.count
-
-    guard bigMap.advanceBy(steps: period ) else { return "\(bigMap.current.count)" }
-    let y2 = bigMap.current.count
-
-    let n = extent
+    guard bigMap.advanceUntilStable() else { return "\(bigMap.current.count)" }
+    let y0 = bigMap.counts[ bigMap.counts.count - 3 ]
+    let y1 = bigMap.counts[ bigMap.counts.count - 2 ]
+    let y2 = bigMap.counts[ bigMap.counts.count - 1 ]
+    let n = stepLimit / map.bounds.width
     // a+n*(b-a+(n-1)*(c-b-b+a)//2)
     let it = y0 + n * ( y1 - y0 + ( n - 1 ) * ( y2 - y1 - y1 + y0 ) / 2 )
+    
+//    let a = ( y2 - 2 * y1 + y0 ) / 2
+//    let b = ( 4 * y1 - 3 * y0 - y2 ) / 2
+//    let c = y0
+//    let that = a * n * n + b * n + c
+//    print( that == it )
+    
     return "\(it)"
 }
 
