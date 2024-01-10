@@ -21,7 +21,18 @@ struct Pulse {
 
 
 struct Module {
-    enum ModuleType: Character { case flipFlop = "%", conjuction = "&" }
+    enum ModuleType: Character {
+        case flipFlop = "%", conjunction = "&"
+        var description: String {
+            switch self {
+            case .flipFlop:
+                return "FlipFlop"
+            case .conjunction:
+                return "Conjunction"
+            }
+        }
+    }
+    
     enum State {
         case off, on
         
@@ -35,6 +46,8 @@ struct Module {
     let outputs: [String]
     var inputs: [ String : PulseType ]
     var state: State
+    var cycleLow: Int?
+    var cycleHigh: Int?
     
     init( name: String, type: Module.ModuleType?, outputs: [String], inputs: [String : PulseType] ) {
         self.name = name
@@ -60,10 +73,19 @@ struct Module {
         state = .off
     }
     
+    var outputsLine: String {
+        "\(name)\( type == nil ? "" : " " + type!.description ) -> \(outputs.joined(separator: ", " ) )"
+    }
+    
+    var inputsLine: String {
+        "\(name)\( type == nil ? "" : " " + type!.description ) <- \(inputs.keys.joined(separator: ", " ) )"
+    }
+    
     mutating func process( pulse: Pulse ) -> [ Pulse ] {
         if name == "broadcaster" {
             return outputs.map { Pulse( source: name, destination: $0, type: pulse.type ) }
         }
+        if name == "rx" && pulse.type == .low { state.toggle() }
         guard let type = type else { return [] }
         
         switch type {
@@ -72,7 +94,7 @@ struct Module {
             state.toggle()
             if state == .off { return outputs.map { Pulse( source: name, destination: $0, type: .low ) } }
             return outputs.map { Pulse( source: name, destination: $0, type: .high ) }
-        case .conjuction:
+        case .conjunction:
             inputs[pulse.source] = pulse.type
             if inputs.values.allSatisfy( { $0 == .high } ) {
                 return outputs.map { Pulse( source: name, destination: $0, type: .low ) }
@@ -88,6 +110,12 @@ struct Network {
     var lowCount = 0
     var highCount = 0
 
+    init( modules: [String : Module], lowCount: Int = 0, highCount: Int = 0 ) {
+        self.modules = modules
+        self.lowCount = lowCount
+        self.highCount = highCount
+    }
+    
     init( lines: [String] ) {
         var modules = lines
             .map { Module( line: $0 ) }
@@ -95,7 +123,7 @@ struct Network {
         
         for ( name, module ) in modules {
             for output in module.outputs {
-                if let outputModule = modules[output] {
+                if modules[output] != nil {
                     modules[output]!.inputs[name] = .low
                 } else {
                     modules[output] = Module( name: output, type: nil, outputs: [], inputs: [ name : .low ] )
@@ -103,6 +131,37 @@ struct Network {
             }
         }
         self.modules = modules
+    }
+    
+    func diagram( node: String, inputs: Bool = true ) -> String {
+        var done = Set<String>()
+        
+        func diagramInputs( _ node: String, prefix: String ) -> String? {
+            if done.contains( node ) { return nil }
+            done.insert( node )
+            
+            let outputLines = modules[node]!
+                .inputs.keys.filter { !done.contains( $0 ) }
+                .compactMap { diagramInputs( $0, prefix: "\( "|  " + prefix )" ) }
+            let lines = [ prefix + modules[node]!.inputsLine ] + outputLines
+            
+            return lines.joined( separator: "\n" )
+        }
+        
+        func diagramOutputs( _ node: String, prefix: String ) -> String? {
+            if done.contains( node ) { return nil }
+            done.insert( node )
+            
+            let outputLines = modules[node]!
+                .outputs.filter { !done.contains( $0 ) }
+                .compactMap { diagramOutputs( $0, prefix: "\( "|  " + prefix )" ) }
+            let lines = [ prefix + modules[node]!.outputsLine ] + outputLines
+            
+            return lines.joined( separator: "\n" )
+        }
+        
+        if inputs { return diagramInputs( node, prefix: "" )! }
+        return diagramOutputs( node, prefix: "" )!
     }
     
     mutating func push() -> Void {
@@ -114,6 +173,50 @@ struct Network {
             
             if pulse.type == .low { lowCount += 1 } else { highCount += 1 }
             queue.append( contentsOf: results )
+        }
+    }
+    
+    func extractSubnet( parent: String, start: String, exclude: String ) -> Network {
+        guard modules[start]?.type == .flipFlop else { fatalError( "\(start) is not a flipflop." ) }
+        var modules = [ parent : Module( name: parent, type: nil, outputs: [start], inputs: [:] ) ]
+        var queue = [ start ]
+        var seen = Set( [start] )
+        
+        while !queue.isEmpty {
+            let next = queue.removeFirst()
+            let old = self.modules[next]!
+            let outputs = old.outputs.filter { $0 != exclude }
+            
+            modules[next] = Module( name: next, type: old.type, outputs: outputs, inputs: old.inputs )
+            let more = outputs.filter { !seen.contains( $0 ) }
+            
+            seen.formUnion( more )
+            queue.append( contentsOf: more )
+        }
+        
+        if modules.values.contains( where: { $0.inputs.keys.contains( where: { modules[$0] == nil } ) } ) {
+            fatalError( "Non-disjoint subnetork." )
+        }
+        
+        if modules.values.filter( { $0.outputs.isEmpty } ).count != 1 {
+            fatalError( "Unexpected conjunction count." )
+        }
+        
+        return Network( modules: modules )
+    }
+    
+    mutating func watch( for pulseType: PulseType, on node: String ) -> Int {
+        var pushNumber = 0
+        
+        while true {
+            var queue = [ Pulse( source: "button", destination: "broadcaster", type: .low ) ]
+            
+            pushNumber += 1
+            while !queue.isEmpty {
+                let pulse = queue.removeFirst()
+                if pulse.type == pulseType && pulse.destination == node { return pushNumber }
+                queue.append( contentsOf: modules[ pulse.destination ]!.process( pulse: pulse ) )
+            }
         }
     }
 }
@@ -133,8 +236,18 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    return ""
+    var network = Network( lines: input.lines )
+    let terminal = network.modules["rx"]!.inputs.keys.first!
+    let subnets = network.modules["broadcaster"]!.outputs
+        .map { network.extractSubnet( parent: "broadcaster", start: $0, exclude: terminal ) }
+    
+    let cycles = subnets.map {
+        var subnet = $0
+        let final = subnet.modules.values.first { $0.outputs.isEmpty }!.name
+        return subnet.watch( for: .low, on: final )
+    }
+
+    return "\( cycles.reduce( 1, { lcm( $0, $1 ) } ) )"
 }
 
 
