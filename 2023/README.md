@@ -4,6 +4,10 @@
 
 Part 2 needs to be sped up. One potential way is to recognize that if all the arrangements in the first fold end the same way, there is no need to calculate the other folds.
 
+### Day 17
+
+My attempts to use Dijksta's algorithm and A* both failed in the same way. They produced non-deterministic results. I had to resort to the subreddit to solve this one. Perhaps I should revisit.
+
 ### Day 19
 
 I would like to speed up part 2. I believe one possible way is to replace the use of Set with a new type that behaves the same externally but uses a list of Ranges internally.
