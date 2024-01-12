@@ -10,10 +10,14 @@
 
 import Foundation
 
-struct MinHeap<Element: Comparable> {
+public struct MinHeap<Element: Comparable> {
     var items: [Element] = []
     
     var isEmpty: Bool { items.isEmpty }
+    
+    public init( items: [Element] = [] ) {
+        self.items = items
+    }
     
     //Get Index
     private func getLeftChildIndex( _ parentIndex: Int ) -> Int { return 2 * parentIndex + 1 }
