@@ -16,6 +16,10 @@ I would like to speed up part 2. I believe one possible way is to replace the us
 
 Part 2 is now a general solution for any "real" data. It does not work on the examples and still takes over 2 seconds to run.
 
+### Day 23
+
+Part 2 is exceedingly slow.
+
 ### Day 25
 
 Takes 10 minutes to run. Must be a more efficient way.
