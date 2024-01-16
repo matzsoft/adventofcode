@@ -34,17 +34,21 @@ enum Tile: Equatable {
         }
     }
 
-    init( from: Character ) {
+    init( from: Character, slipperySlope: Bool = true ) {
         switch from {
         case ".":
             self = .path
         case "#":
             self = .forest
         default:
-            guard let direction = DirectionUDLR.fromArrows( char: String( from ) ) else {
-                fatalError( "\(from) is not a valid tile." )
+            if !slipperySlope {
+                self = .path
+            } else {
+                guard let direction = DirectionUDLR.fromArrows( char: String( from ) ) else {
+                    fatalError( "\(from) is not a valid tile." )
+                }
+                self = .slope( direction )
             }
-            self = .slope( direction )
         }
     }
 }
@@ -66,8 +70,8 @@ struct Trails {
         tiles[point.y][point.x]
     }
     
-    init( lines: [String] ) {
-        let tiles = lines.map { $0.map { Tile( from: $0 ) } }
+    init( lines: [String], slipperySlope: Bool = true ) {
+        let tiles = lines.map { $0.map { Tile( from: $0, slipperySlope: slipperySlope ) } }
         let startX = tiles.first!.indices.first( where: { tiles.first![$0] == .path } )!
         let finishX = tiles.last!.indices.first( where: { tiles.last![$0] == .path } )!
         
@@ -102,15 +106,11 @@ struct Trails {
         return 0
     }
     
-    func longestPath( slipperySlope: Bool = true ) -> Int {
-        allPaths(
-            start: Node( location: start, steps: 0),
-            seen: Set<Point2D>(),
-            slipperySlope: slipperySlope
-        ).max()!
+    func longestPath() -> Int {
+        allPaths( start: Node( location: start, steps: 0), seen: Set<Point2D>() ).max()!
     }
     
-    func allPaths( start: Node, seen: Set<Point2D>, slipperySlope: Bool ) -> [ Int ] {
+    func allPaths( start: Node, seen: Set<Point2D> ) -> [ Int ] {
         var seen = seen
         var queue = [ start ]
         
@@ -129,7 +129,7 @@ struct Trails {
                     case .path:
                         return true
                     case .slope( let tileDirection ):
-                        return !slipperySlope || tileDirection == direction
+                        return tileDirection == direction
                     }
                 }
                 .map { Node(location: current.location + $0.vector, steps: current.steps + 1 ) }
@@ -139,7 +139,7 @@ struct Trails {
             if neighbors.count == 1 {
                 queue.append( contentsOf: neighbors )
             } else {
-                return neighbors.flatMap { allPaths( start: $0, seen: seen, slipperySlope: slipperySlope ) }
+                return neighbors.flatMap { allPaths( start: $0, seen: seen ) }
             }
         }
         
@@ -155,8 +155,8 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let trails = Trails( lines: input.lines )
-    return "\( trails.longestPath( slipperySlope: false ) )"
+    let trails = Trails( lines: input.lines, slipperySlope: false )
+    return "\( trails.longestPath() )"
 }
 
 
