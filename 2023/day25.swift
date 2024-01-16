@@ -11,9 +11,23 @@
 import Foundation
 import Library
 
+extension Array {
+    func pairwise() -> [ ( Element, Element ) ]? {
+        guard count > 1 else { return nil }
+        return ( 1 ..< count )
+            .reduce( into: [ ( Element, Element ) ]() ) { $0.append( ( self[$1-1], self[$1] ) ) }
+    }
+}
+
+
 struct Network {
     let components: [ String : Set<String> ]
     let dist: [ String : [ String : Int ] ]
+    
+    init( components: [String : Set<String>], dist: [String : [String : Int]] ) {
+        self.components = components
+        self.dist = dist
+    }
     
     init( lines: [String] ) {
         var components = [ String : Set<String> ]()
@@ -55,10 +69,103 @@ struct Network {
         self.components = components
         self.dist = dist
     }
+    
+    func randomPair() -> ( String, String )? {
+        guard components.count > 1 else { return nil }
+        guard let first = components.keys.randomElement() else { return nil }
+        while true {
+            guard let second = components.keys.randomElement() else { return nil }
+            if first != second { return ( first, second ) }
+        }
+    }
+    
+    func shortestPath( start: String, end: String ) -> [ String ]? {
+        var seen = Set( [ start ] )
+        var queue = [ ( start, [start] ) ]
+        
+        while !queue.isEmpty {
+            let ( current, path ) = queue.removeFirst()
+            
+            for neighbor in components[current]!.filter( { !seen.contains( $0 ) } ) {
+                let newPath = path + [neighbor]
+                if neighbor == end { return newPath }
+                seen.insert( neighbor )
+                queue.append( ( neighbor, newPath ) )
+            }
+        }
+        
+        return nil
+    }
+    
+    func cut( edge: Edge ) -> Network {
+        var components = self.components
+        components[ edge.start ]!.remove( edge.end )
+        components[ edge.end ]!.remove( edge.start )
+        return Network( components: components, dist: dist )
+    }
+    
+    func reachableCount( from: String ) -> Int {
+        var seen = Set<String>()
+        var queue = [from]
+        
+        while !queue.isEmpty {
+            let current = queue
+            
+            queue = []
+            for node in current {
+                if !seen.contains( node ) {
+                    seen.insert( node )
+                    queue.append( contentsOf: components[node]! )
+                }
+            }
+        }
+        
+        return seen.count
+    }
+}
+
+
+struct Edge: Hashable {
+    let start: String
+    let end: String
+    
+    init( start: String, end: String ) {
+        if start < end {
+            self.start = start
+            self.end = end
+        } else {
+            self.start = end
+            self.end = start
+        }
+    }
 }
 
 
 func part1( input: AOCinput ) -> String {
+    let network = Network( lines: input.lines )
+    var histogram = [ Edge : Int ]()
+    
+    for _ in 1 ... 100 {
+        let ( start, end ) = network.randomPair()!
+        let path = network.shortestPath( start: start, end: end )!
+        
+        for ( left, right ) in path.pairwise()! {
+            histogram[ Edge( start: left, end: right ), default: 0 ] += 1
+        }
+    }
+    
+    let sorted = histogram.sorted { $0.value > $1.value }
+    var splitNetwork = network
+    for index in 0 ..< 3 {
+        splitNetwork = splitNetwork.cut( edge: sorted[index].key )
+    }
+    
+    let leftCount = splitNetwork.reachableCount( from: sorted[0].key.start )
+    return "\( leftCount * ( network.components.count - leftCount ) )"
+}
+
+
+func oldPart1( input: AOCinput ) -> String {
     let network = Network( network: Network( lines: input.lines ) )
     let components = network.components.keys.map { String( $0 ) }.sorted()
 
