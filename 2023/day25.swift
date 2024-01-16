@@ -59,21 +59,6 @@ struct Network {
 
 
 func part1( input: AOCinput ) -> String {
-    let network = Network( lines: input.lines )
-    var shadow = Set( network.components.keys )
-    func count( node: String ) -> Int { network.components[node]!.subtracting( shadow ).count }
-
-    while shadow.map( count ).reduce( 0, + ) != 3 {
-        if shadow.isEmpty { fatalError( "Vampire" ) }
-        shadow.remove( shadow.map { ( $0, count( node: $0 ) ) }.max { $0.1 < $1.1 }!.0 )
-//        shadow.remove( shadow.max( by: { count( node: $0 ) < count(node: $1 ) } )! )
-    }
-    
-    return "\( shadow.count * Set( network.components.keys ).subtracting( shadow ).count )"
-}
-
-
-func oldPart1( input: AOCinput ) -> String {
     let network = Network( network: Network( lines: input.lines ) )
     let components = network.components.keys.map { String( $0 ) }.sorted()
 
