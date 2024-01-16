@@ -22,4 +22,4 @@ Part 2 is exceedingly slow.
 
 ### Day 25
 
-Takes 10 minutes to run. Must be a more efficient way.
+Solution uses Monte Carlo and runs acceptably fast. It might be worth finding a deterministic solution.
