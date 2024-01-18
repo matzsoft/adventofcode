@@ -36,53 +36,40 @@ public struct MinHeap<Element: Comparable> {
     
     // Heap Operations
     mutating private func swap( indexOne: Int, indexTwo: Int ) {
-        let placeholder = items[indexOne]
-        items[indexOne] = items[indexTwo]
-        items[indexTwo] = placeholder
+        ( items[indexOne], items[indexTwo] ) = ( items[indexTwo], items[indexOne] )
     }
     
-    public func peek() -> Element? {
-        if items.isEmpty { return nil }
-        return items[0]
-    }
+    public func peek() -> Element? { items.first }
     
     mutating public func poll() -> Element? {
-        if items.isEmpty { return nil }
-        
-        let item = items[0]
+        guard let item = items.first else { return nil }
+        var index = 0
+
         items[0] = items[ items.count - 1 ]
-        heapifyDown()
+        // heapifyDown
+        while hasLeftChild( index ) {
+            let childIndex = hasRightChild( index ) && rightChild( index ) < leftChild( index )
+                ? getRightChildIndex( index ) : getLeftChildIndex( index )
+            
+            if items[index] < items[childIndex] {
+                break
+            } else {
+                swap( indexOne: index, indexTwo: childIndex )
+            }
+            index = childIndex
+        }
         items.removeLast()
         return item
     }
     
     mutating public func add( _ item: Element ) {
+        var index = items.count
+        
         items.append( item )
-        heapifyUp()
-    }
-    
-    mutating private func heapifyUp() {
-        var index = items.count - 1
-        while hasParent( index ) && parent( index ) > items[index] {
+        // heapifyUp
+        while hasParent( index ) && items[index] < parent( index ) {
             swap( indexOne: getParentIndex( index ), indexTwo: index )
             index = getParentIndex( index )
-        }
-    }
-    
-    mutating private func heapifyDown() {
-        var index = 0
-        while hasLeftChild( index ) {
-            var smallerChildIndex = getLeftChildIndex( index )
-            if hasRightChild( index ) && rightChild( index ) < leftChild( index ) {
-                smallerChildIndex = getRightChildIndex( index )
-            }
-            
-            if items[index] < items[smallerChildIndex] {
-                break
-            } else {
-                swap(indexOne: index, indexTwo: smallerChildIndex)
-            }
-            index = smallerChildIndex
         }
     }
 }
