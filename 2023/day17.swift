@@ -58,7 +58,7 @@ struct City {
     
     func leastHeatLoss( start: Point2D, end: Point2D, moveRange: ClosedRange<Int> ) -> Int? {
         var seen = Set<SeenNode>()
-        var queue = MinHeap( items: [
+        var queue = Heap( type: .min, items: [
             QueueNode( heatLoss: 0, position: start, direction: .right ),
             QueueNode( heatLoss: 0, position: start, direction: .down )
         ] )

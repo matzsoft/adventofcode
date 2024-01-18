@@ -10,13 +10,28 @@
 
 import Foundation
 
-public struct MinHeap<Element: Comparable> {
+public struct Heap<Element: Comparable> {
+    public enum HeapType {
+        case min, max
+        func compare( _ lhs: Element, _ rhs: Element ) -> Bool {
+            switch self {
+            case .min:
+                return lhs < rhs
+            case .max:
+                return lhs > rhs
+            }
+        }
+    }
+    
+    let type: HeapType
     var items: [Element] = []
     
     var isEmpty: Bool { items.isEmpty }
     
-    public init( items: [Element] = [] ) {
-        self.items = items
+    public init( type: HeapType, items: [Element] = [] ) {
+        self.type = type
+        self.items = []
+        items.forEach { add( $0 ) }
     }
     
     //Get Index
@@ -48,10 +63,11 @@ public struct MinHeap<Element: Comparable> {
         items[0] = items[ items.count - 1 ]
         // heapifyDown
         while hasLeftChild( index ) {
-            let childIndex = hasRightChild( index ) && rightChild( index ) < leftChild( index )
+            let childIndex
+                = hasRightChild( index ) && type.compare( rightChild( index ), leftChild( index ) )
                 ? getRightChildIndex( index ) : getLeftChildIndex( index )
             
-            if items[index] < items[childIndex] {
+            if type.compare( items[index], items[childIndex] ) {
                 break
             } else {
                 swap( indexOne: index, indexTwo: childIndex )
@@ -67,7 +83,7 @@ public struct MinHeap<Element: Comparable> {
         
         items.append( item )
         // heapifyUp
-        while hasParent( index ) && items[index] < parent( index ) {
+        while hasParent( index ) && type.compare( items[index], parent( index ) ) {
             swap( indexOne: getParentIndex( index ), indexTwo: index )
             index = getParentIndex( index )
         }
