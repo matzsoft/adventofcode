@@ -58,12 +58,13 @@ struct City {
     
     func leastHeatLoss( start: Point2D, end: Point2D, moveRange: ClosedRange<Int> ) -> Int? {
         var seen = Set<SeenNode>()
-        var queue = Heap( type: .min, items: [
+        var queue = BinaryHeap<QueueNode>.minHeap()
+        queue.insert( contentsOf: [
             QueueNode( heatLoss: 0, position: start, direction: .right ),
             QueueNode( heatLoss: 0, position: start, direction: .down )
         ] )
-        
-        while let current = queue.poll() {
+
+        while let current = queue.pop() {
             if current.position == end { return current.heatLoss }
             if seen.insert( SeenNode( node: current ) ).inserted {
                 for direction in current.direction.orthogonal {
@@ -72,7 +73,7 @@ struct City {
                             let heat = ( 1 ... index ).reduce( 0 ) {
                                 $0 + self[ current.position + $1 * direction.vector ]
                             }
-                            queue.add(
+                            queue.insert(
                                 QueueNode(
                                     heatLoss: current.heatLoss + heat,
                                     position: current.position + index * direction.vector,
