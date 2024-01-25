@@ -18,7 +18,7 @@ Part 2 is now a general solution for any "real" data. It does not work on the ex
 
 ### Day 23
 
-Part 2 is exceedingly slow.
+Reducing the data to a network of significant nodes gave a massive speed up. But part 2 still takes 11 seconds.
 
 ### Day 25
 

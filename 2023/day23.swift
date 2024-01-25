@@ -54,9 +54,102 @@ enum Tile: Equatable {
 }
 
 
-struct Node {
-    let location: Point2D
-    let steps: Int
+struct Network: CustomStringConvertible {
+    struct Edge: Hashable {
+        let position: Point2D
+        let direction: DirectionUDLR
+        let length: Int
+        
+        init( position: Point2D, direction: DirectionUDLR, length: Int ) {
+            self.position = position
+            self.direction = direction
+            self.length = length
+        }
+        
+        var step: Edge {
+            Edge( position: position + direction.vector, direction: direction, length: length + 1 )
+        }
+    }
+
+    let nodes: [ Point2D : [ DirectionUDLR : Edge ] ]
+    let start: Edge
+    let finish: Edge
+    
+    var description: String {
+        let sorted = nodes.sorted {
+            if $0.key.y < $1.key.y { return true }
+            if $0.key.y > $1.key.y { return false }
+            return $0.key.x < $1.key.x
+        }
+        var lines = [String]()
+        
+        for node in sorted {
+            lines.append( "\(node.key)" )
+            for edge in node.value {
+                lines.append(
+                    "   \(edge.key) => \(edge.value.position), \(edge.value.direction), \(edge.value.length)"
+                )
+            }
+        }
+        return lines.joined( separator: "\n" )
+    }
+    
+    init( trails: Trails ) {
+        start = Edge( position: trails.start, direction: .down, length: 0 )
+        finish = Edge(position: trails.finish, direction: .down, length: 0 )
+        var nodes = [
+            start.position : [ DirectionUDLR : Edge ](),
+            finish.position : [ DirectionUDLR : Edge ](),
+        ]
+        var queue = [ start ]
+
+        while !queue.isEmpty {
+            let current = queue.removeFirst()
+            let next = trails.walk( from: current )
+            let neighbors = trails.neighbors( node: next )
+                .filter { nodes[ next.position ]?[ $0.direction ] == nil }
+            
+            if neighbors.count > 1 || nodes[next.position] != nil {
+                nodes[ current.position, default: [:] ][ current.direction ] = next
+                neighbors.forEach {
+                    queue.append( Edge( position: next.position, direction: $0.direction, length: 0 ) )
+                }
+            }
+        }
+        
+        self.nodes = nodes
+    }
+    
+    struct QueueNode {
+        let position: Point2D
+        let steps: Int
+    }
+
+    func longestPath() -> Int {
+        allPaths( start: QueueNode( position: start.position, steps: 0), seen: Set<Point2D>() ).max()!
+    }
+    
+    func allPaths( start: QueueNode, seen: Set<Point2D> ) -> [ Int ] {
+        var seen = seen
+        var queue = [ start ]
+        
+        while !queue.isEmpty {
+            let current = queue.removeFirst()
+            let neighbors = nodes[current.position]!
+                .filter { !seen.contains( $0.value.position ) }
+                .map { QueueNode( position: $0.value.position, steps: current.steps + $0.value.length ) }
+            
+            seen.insert( current.position )
+            if current.position == finish.position { return [ current.steps ] }
+            if neighbors.count == 1 {
+                queue.append( contentsOf: neighbors )
+            } else {
+                return neighbors.flatMap { allPaths( start: $0, seen: seen ) }
+            }
+        }
+        
+        return []
+    }
 }
 
 
@@ -81,82 +174,43 @@ struct Trails {
         self.finish = Point2D( x: finishX, y: tiles.count - 1 )
     }
     
-    var traverse: Int {
-        var seen = Set<Point2D>()
-        var queue = [ Node( location: start, steps: 0 ) ]
-        
-        while !queue.isEmpty {
-            let current = queue.removeFirst()
-            let neighbors = DirectionUDLR.allCases
-                .filter { bounds.contains( point: current.location + $0.vector ) }
-                .filter { direction in
-                    let location = current.location + direction.vector
-                    guard bounds.contains( point: location ) else { return false }
-                    if seen.contains( location ) { return false }
-                    let tile = self[ location ]
-                    return tile == .path || tile.direction == direction
-                }
-                .map { Node(location: current.location + $0.vector, steps: current.steps + 1 ) }
-            
-            seen.insert( current.location )
-            if current.location == finish { return current.steps }
-            queue.append( contentsOf: neighbors )
-        }
-        
-        return 0
-    }
-    
-    func longestPath() -> Int {
-        allPaths( start: Node( location: start, steps: 0), seen: Set<Point2D>() ).max()!
-    }
-    
-    func allPaths( start: Node, seen: Set<Point2D> ) -> [ Int ] {
-        var seen = seen
-        var queue = [ start ]
-        
-        while !queue.isEmpty {
-            let current = queue.removeFirst()
-            let neighbors = DirectionUDLR.allCases
-                .filter { bounds.contains( point: current.location + $0.vector ) }
-                .filter { direction in
-                    let location = current.location + direction.vector
-                    guard bounds.contains( point: location ) else { return false }
-                    if seen.contains( location ) { return false }
-                    let tile = self[ location ]
-                    switch tile {
-                    case .forest:
-                        return false
-                    case .path:
-                        return true
-                    case .slope( let tileDirection ):
-                        return tileDirection == direction
-                    }
-                }
-                .map { Node(location: current.location + $0.vector, steps: current.steps + 1 ) }
-            
-            seen.insert( current.location )
-            if current.location == finish { return [ current.steps ] }
-            if neighbors.count == 1 {
-                queue.append( contentsOf: neighbors )
-            } else {
-                return neighbors.flatMap { allPaths( start: $0, seen: seen ) }
+    func neighbors( node: Network.Edge ) -> [Network.Edge] {
+        DirectionUDLR.allCases
+            .map {
+                Network.Edge( position: node.position + $0.vector, direction: $0, length: node.length + 1 )
             }
-        }
+            .filter {
+                guard bounds.contains( point: $0.position ) else { return false }
+                let tile = self[$0.position]
+                return tile == .path || tile.direction == $0.direction
+            }
+    }
+    
+    func walk( from: Network.Edge ) -> Network.Edge {
+        var current = from.step
         
-        return []
+        while true {
+            let neighbors = neighbors( node: current )
+                .filter { $0.direction != current.direction.turn( .back ) }
+            
+            if neighbors.count != 1 { return current }
+            current = neighbors[0]
+        }
     }
 }
 
 
 func part1( input: AOCinput ) -> String {
     let trails = Trails( lines: input.lines )
-    return "\( trails.longestPath() )"
+    let network = Network( trails: trails )
+    return "\( network.longestPath() )"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let trails = Trails( lines: input.lines, slipperySlope: false )
-    return "\( trails.longestPath() )"
+    let network = Network( trails: trails )
+    return "\( network.longestPath() )"
 }
 
 
