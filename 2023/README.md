@@ -18,7 +18,7 @@ Part 2 is now a general solution for any "real" data. It does not work on the ex
 
 ### Day 23
 
-Reducing the data to a network of significant nodes gave a massive speed up. But part 2 still takes 11 seconds.
+Reducing the data to a network of significant nodes gave a massive speed up. But part 2 still takes 11 seconds. Making it a directed graph reduces the run time to 2.5 seconds.
 
 ### Day 25
 

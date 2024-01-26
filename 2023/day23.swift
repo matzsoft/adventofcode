@@ -94,6 +94,12 @@ struct Network: CustomStringConvertible {
         return lines.joined( separator: "\n" )
     }
     
+    init( nodes: [ Point2D : [ DirectionUDLR : Network.Edge ] ], start: Edge, finish: Edge ) {
+        self.nodes = nodes
+        self.start = start
+        self.finish = finish
+    }
+    
     init( trails: Trails ) {
         start = Edge( position: trails.start, direction: .down, length: 0 )
         finish = Edge(position: trails.finish, direction: .down, length: 0 )
@@ -118,6 +124,29 @@ struct Network: CustomStringConvertible {
         }
         
         self.nodes = nodes
+    }
+    
+    var refined: Network {
+        struct QueueNode {
+            let from: Point2D
+            let to: Point2D
+        }
+        
+        var newNodes = nodes
+        var queue = [ QueueNode( from: start.position, to: nodes[start.position]!.first!.value.position ) ]
+        var edges = Set( nodes.filter { $0.value.count == 3 }.map { $0.key } ).union( [finish.position ] )
+
+        while let current = queue.first {
+            queue.removeFirst()
+            edges.remove( current.to )
+            newNodes[current.to] = newNodes[current.to]!.filter { $0.value.position != current.from }
+            queue.append( contentsOf: newNodes[current.to]!
+                .filter { edges.contains( $0.value.position ) }
+                .map { QueueNode( from: current.to, to: $0.value.position ) }
+            )
+        }
+        
+        return Network( nodes: newNodes, start: start, finish: finish )
     }
     
     struct QueueNode {
@@ -209,7 +238,7 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let trails = Trails( lines: input.lines, slipperySlope: false )
-    let network = Network( trails: trails )
+    let network = Network( trails: trails ).refined
     return "\( network.longestPath() )"
 }
 
