@@ -16,12 +16,15 @@ func parse( input: AOCinput ) -> ( [Int], [Int] ) {
     let left = input.lines.map { Int( $0.split( separator: " " ).first! )! }
     let right = input.lines.map { Int( $0.split( separator: " " ).last! )! }
     
-    return ( left.sorted(), right.sorted() )
+    return ( left, right )
 }
 
 
 func part1( input: AOCinput ) -> String {
-    let ( left, right ) = parse( input: input )
+    let ( left_raw, right_raw ) = parse( input: input )
+    let left = left_raw.sorted()
+    let right = right_raw.sorted()
+    
     return "\( left.indices.reduce( 0 ) { $0 + abs( left[ $1 ] - right[ $1 ] ) } )"
 }
 
