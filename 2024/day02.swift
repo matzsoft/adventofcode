@@ -11,41 +11,54 @@
 import Foundation
 import Library
 
-
-func isSafe( levels: [Int] ) -> Bool {
-    var direction: Bool? = nil
-    for index in levels.indices.dropFirst( 1 ) {
-        if levels[ index ] > levels[ index - 1 ] {
-            if direction == false {
-                return false
-            }
-            if levels[ index ] - levels[ index - 1 ] > 3 {
-                return false
-            }
-            direction = true
-        } else if levels[ index ] < levels[ index - 1 ] {
-            if direction == true {
-                return false
-            }
-            if levels[ index - 1 ] - levels[ index ] > 3 {
-                return false
-            }
-            direction = false
-        } else {
-            return false
-        }
+extension Array {
+    func drop( at: Index ) -> Array {
+        var copy = self
+        copy.remove( at: at )
+        return copy
     }
-    return direction != nil
 }
 
 
+func isSafe( levels: [Int] ) -> Bool {
+    let deltas = levels.indices.dropFirst().map { levels[$0] - levels[ $0 - 1 ] }
+    if deltas[0] == 0 { return false }
+    
+    let direction = deltas[0].signum()
+    return deltas.allSatisfy { $0.signum() == direction && -3 <= $0 && $0 <= 3 }
+}
+
+
+// The following version, while not as pretty, runs about 20% faster than the one above.
+//func isSafe( levels: [Int] ) -> Bool {
+//    var direction: Bool? = nil
+//    for index in levels.indices.dropFirst( 1 ) {
+//        if levels[ index ] > levels[ index - 1 ] {
+//            if direction == false {
+//                return false
+//            }
+//            if levels[ index ] - levels[ index - 1 ] > 3 {
+//                return false
+//            }
+//            direction = true
+//        } else if levels[ index ] < levels[ index - 1 ] {
+//            if direction == true {
+//                return false
+//            }
+//            if levels[ index - 1 ] - levels[ index ] > 3 {
+//                return false
+//            }
+//            direction = false
+//        } else {
+//            return false
+//        }
+//    }
+//    return direction != nil
+//}
+
+
 func isSafeEnough( levels: [Int] ) -> Bool {
-    for index in levels.indices {
-        var newLevels = levels
-        newLevels.remove( at: index )
-        if isSafe( levels: newLevels ) { return true }
-    }
-    return false
+    return levels.indices.contains { isSafe( levels: levels.drop( at: $0 ) ) }
 }
 
 
@@ -55,18 +68,12 @@ func parse( input: AOCinput ) -> [[Int]] {
 
 
 func part1( input: AOCinput ) -> String {
-    let reports = parse( input: input )
-    let safe = reports.filter { isSafe( levels: $0 ) }
-    return "\(safe.count)"
+    return "\( parse( input: input ).filter { isSafe( levels: $0 ) }.count )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let reports = parse( input: input )
-    let safe = reports.filter { isSafe( levels: $0 ) }
-    let unsafe = reports.filter { !isSafe( levels: $0 ) }
-    let safeEnough = unsafe.filter { isSafeEnough( levels: $0 ) }
-    return "\( safe.count + safeEnough.count )"
+    return "\( parse( input: input ).filter { isSafeEnough( levels: $0 ) }.count )"
 }
 
 
