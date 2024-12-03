@@ -209,19 +209,14 @@ func scan( line: String, conditionals: Bool ) -> [ ( Int, Int ) ] {
 }
 
 
-func parse( input: AOCinput ) -> [ ( Int, Int ) ] {
-    input.lines.flatMap { scan( line: $0, conditionals: false ) }
-}
-
-
 func part1( input: AOCinput ) -> String {
-    let pairs = input.lines.flatMap { scan( line: $0, conditionals: false ) }
+    let pairs = scan( line: input.lines.joined(), conditionals: false )
     return "\( pairs.reduce( 0, { $0 + $1.0 * $1.1 } ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let pairs = input.lines.flatMap { scan( line: $0, conditionals: true ) }
+    let pairs = scan( line: input.lines.joined(), conditionals: true )
     return "\( pairs.reduce( 0, { $0 + $1.0 * $1.1 } ) )"
 }
 
