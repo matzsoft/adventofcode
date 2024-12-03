@@ -12,194 +12,85 @@ import Foundation
 import Library
 
 
-func scan( line: String, conditionals: Bool ) -> [ ( Int, Int ) ] {
+func scan( line: String, conditionals: Bool ) -> [Int] {
     var state = 0
     var left = ""
     var right = ""
     var enabled = true
-    var result: [ ( Int, Int ) ] = []
+    var result: [Int] = []
     
     for character in line {
+        if character == "m" { state = 1; continue }
+        if character == "d" && conditionals { state = 9; continue }
+        
         switch state {
         case 0:
-            switch character {
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
-                state = 0
-            }
+            break
         case 1:
             left = ""
             right = ""
-            switch character {
-            case "u":
-                state = 2
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
-                state = 0
-            }
+            if character == "u" { state = 2 } else { state = 0 }
         case 2:
-            switch character {
-            case "l":
-                state = 3
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
-                state = 0
-            }
+            if character == "l" { state = 3 } else { state = 0 }
         case 3:
-            switch character {
-            case "(":
-                state = 4
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
-                state = 0
-            }
+            if character == "(" { state = 4 } else { state = 0 }
         case 4:
-            switch character {
-            case let c where c.isNumber:
+            if character.isNumber {
                 left.append( String( character ) )
                 state = 5
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
+            } else {
                 state = 0
             }
         case 5:
-            switch character {
-            case let c where c.isNumber:
+            if character.isNumber {
                 left.append( String( character ) )
-            case ",":
+            } else if character == "," {
                 state = 6
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
+            } else {
                 state = 0
             }
         case 6:
-            switch character {
-            case let c where c.isNumber:
+            if character.isNumber {
                 right.append( String( character ) )
                 state = 7
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
+            } else {
                 state = 0
             }
         case 7:
-            switch character {
-            case let c where c.isNumber:
+            if character.isNumber {
                 right.append( String( character ) )
-            case ")":
+            } else if character == ")" {
                 if enabled {
-                    result.append( ( Int( left )!, Int( right )! ) )
+                    result.append( Int( left )! * Int( right )! )
                 }
                 state = 0
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
+            } else {
                 state = 0
             }
 
         case 9:
-            switch character {
-            case "o":
-                state = 10
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
-                state = 0
-            }
+            if character == "o" { state = 10 } else { state = 0 }
        case 10:
             switch character {
             case "(":
                 state = 11
             case "n":
                 state = 12
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
             default:
                 state = 0
             }
         case 11:
-            switch character {
-            case ")":
-                enabled = true
-                state = 0
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
-                state = 0
-            }
+            if character == ")" { enabled = true }
+            state = 0
         case 12:
-            switch character {
-            case "'":
-                state = 13
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
-                state = 0
-            }
+            if character == "'" { state = 13 } else { state = 0 }
         case 13:
-            switch character {
-            case "t":
-                state = 14
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
-                state = 0
-            }
+            if character == "t" { state = 14 } else { state = 0 }
         case 14:
-            switch character {
-            case "(":
-                state = 15
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
-                state = 0
-            }
+            if character == "(" { state = 15 } else { state = 0 }
         case 15:
-            switch character {
-            case ")":
-                enabled = false
-                state = 0
-            case "m":
-                state = 1
-            case "d":
-                if conditionals { state = 9 } else { state = 0 }
-            default:
-                state = 0
-            }
+            if character == ")" { enabled = false }
+            state = 0
         default:
             fatalError( "Error in FSA" )
         }
@@ -211,13 +102,13 @@ func scan( line: String, conditionals: Bool ) -> [ ( Int, Int ) ] {
 
 func part1( input: AOCinput ) -> String {
     let pairs = scan( line: input.lines.joined(), conditionals: false )
-    return "\( pairs.reduce( 0, { $0 + $1.0 * $1.1 } ) )"
+    return "\( pairs.reduce( 0, + ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let pairs = scan( line: input.lines.joined(), conditionals: true )
-    return "\( pairs.reduce( 0, { $0 + $1.0 * $1.1 } ) )"
+    return "\( pairs.reduce( 0, + ) )"
 }
 
 
