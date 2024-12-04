@@ -79,16 +79,13 @@ func part1( input: AOCinput ) -> String {
 func part2( input: AOCinput ) -> String {
     var wordSearch = parse( input: input )
     var count = 0
+    let diagonals = [ Direction8.NW, Direction8.NE, Direction8.SE, Direction8.SW ]
     
     while let nextX = wordSearch.find( value: "A" ) {
         var masCount = 0
-        for direction in [ Direction8.NW, Direction8.NE ] {
+        for direction in diagonals {
             if wordSearch[ nextX + direction.vector ] == "M" {
                 if wordSearch[ nextX + direction.opposite.vector ] == "S" {
-                    masCount += 1
-                }
-            } else if wordSearch[ nextX + direction.vector ] == "S" {
-                if wordSearch[ nextX + direction.opposite.vector ] == "M" {
                     masCount += 1
                 }
             }
