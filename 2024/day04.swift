@@ -14,12 +14,11 @@ import Library
 struct WordSearch {
     let map: [[Character]]
     let bounds: Rect2D
-    var position: Point2D
     
     init( lines: [String] ) {
         map = lines.map { $0.map { $0 } }
-        position = Point2D( x: 0, y: 0 )
-        bounds = Rect2D( min: position, width: lines[0].count, height: lines.count )!
+        bounds = Rect2D(
+            min: Point2D( x: 0, y: 0 ), width: lines[0].count, height: lines.count )!
     }
     
     subscript( location: Point2D ) -> Character? {
@@ -29,69 +28,42 @@ struct WordSearch {
         }
     }
     
-    mutating func find( value: Character ) -> Point2D? {
-        if self[position] == value { let found = position; next(); return found }
-        
-        while let candidate = next() {
-            if self[candidate] == value { next(); return candidate }
-        }
-        
-        return nil
+    func findAll( target: Character ) -> [Point2D] {
+        bounds.points.compactMap { self[$0] == target ? $0 : nil }
     }
     
-    @discardableResult
-    mutating func next() -> Point2D? {
-        guard bounds.contains( point: position ) else { return nil }
-        
-        position = position + Direction8.E.vector
-        if bounds.contains( point: position ) { return position }
-        
-        position = Point2D( x: 0, y: position.y + 1 )
-        if bounds.contains( point: position ) { return position }
-        
-        return nil
+    func substr( start: Point2D, direction: Direction8, length: Int ) -> String {
+        let array = ( 0 ..< length ).compactMap {
+            self[ start + $0 * direction.vector ]
+        }
+        return String( array )
     }
-}
-
-
-func parse( input: AOCinput ) -> WordSearch {
-    return WordSearch( lines: input.lines )
 }
 
 
 func part1( input: AOCinput ) -> String {
-    var wordSearch = parse( input: input )
-    var count = 0
-    
-    while let nextX = wordSearch.find( value: "X" ) {
-        for direction in Direction8.allCases {
-            if wordSearch[ nextX + direction.vector ] != "M" { continue }
-            if wordSearch[ nextX + 2 * direction.vector ] != "A" { continue }
-            if wordSearch[ nextX + 3 * direction.vector ] == "S" {
-                count += 1
-            }
-        }
+    let wordSearch = WordSearch( lines: input.lines )
+    let count = wordSearch.findAll( target: "X" ).reduce( 0 ) { sum, nextX in
+        sum + Direction8.allCases.filter {
+            wordSearch.substr( start: nextX, direction: $0, length: 4 ) == "XMAS"
+        }.count
     }
     return "\(count)"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    var wordSearch = parse( input: input )
-    var count = 0
-    let diagonals = [ Direction8.NW, Direction8.NE, Direction8.SE, Direction8.SW ]
-    
-    while let nextX = wordSearch.find( value: "A" ) {
-        var masCount = 0
-        for direction in diagonals {
-            if wordSearch[ nextX + direction.vector ] == "M" {
-                if wordSearch[ nextX + direction.opposite.vector ] == "S" {
-                    masCount += 1
-                }
-            }
-        }
-        
-        if masCount == 2 { count += 1}
+    let diagonals = [ Direction8.NW, Direction8.NE ]
+    let goal = Set( "MAS" )
+    let wordSearch = WordSearch( lines: input.lines )
+    let count = wordSearch.findAll( target: "A" ).reduce( 0 ) { sum, nextA in
+        let success = diagonals.filter {
+            let start = nextA + $0.opposite.vector
+            let substr = wordSearch.substr( start: start, direction: $0, length: 3 )
+            let candidate = Set( substr )
+            return candidate == goal
+        }.count == 2
+        return sum + ( success ? 1 : 0 )
     }
     
     return "\(count)"
