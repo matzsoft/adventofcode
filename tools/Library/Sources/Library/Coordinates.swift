@@ -223,6 +223,27 @@ public enum Direction8: String, CaseIterable, Direction2D {
             return Point2D( x: -1, y: 1 )
         }
     }
+    
+    public var opposite: Direction8 {
+        switch self {
+        case .N:
+            return .S
+        case .NE:
+            return .SW
+        case .E:
+            return .W
+        case .SE:
+            return .NW
+        case .S:
+            return .N
+        case .SW:
+            return .NE
+        case .W:
+            return .E
+        case .NW:
+            return .SE
+        }
+    }
 }
 
 

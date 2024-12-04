@@ -11,30 +11,6 @@
 import Foundation
 import Library
 
-extension Direction8 {
-    var opposite: Direction8 {
-        switch self {
-        case .N:
-            return .S
-        case .NE:
-            return .SW
-        case .E:
-            return .W
-        case .SE:
-            return .NW
-        case .S:
-            return .N
-        case .SW:
-            return .NE
-        case .W:
-            return .E
-        case .NW:
-            return .SE
-        }
-    }
-}
-
-
 struct WordSearch {
     let map: [[Character]]
     let bounds: Rect2D
