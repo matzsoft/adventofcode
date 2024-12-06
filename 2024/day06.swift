@@ -14,20 +14,23 @@ import Library
 struct Visited: Hashable {
     let position: Point2D
     let direction: DirectionUDLR
+    
+    func turn() -> Visited {
+        Visited( position: position, direction: direction.turn( .right ) )
+    }
+    
+    func move() -> Visited {
+        Visited( position: position + direction.vector, direction: direction )
+    }
 }
 
 struct Map {
-    var sentryPosition: Point2D
-    var sentryDirection: DirectionUDLR
+    var sentry: Visited
     let obstacles: Set<Point2D>
     let bounds: Rect2D
     
-    init(
-        sentryPosition: Point2D, sentryDirection: DirectionUDLR,
-        obstacles: Set<Point2D>, bounds: Rect2D
-    ) {
-        self.sentryPosition = sentryPosition
-        self.sentryDirection = sentryDirection
+    init( sentry: Visited, obstacles: Set<Point2D>, bounds: Rect2D ) {
+        self.sentry = sentry
         self.obstacles = obstacles
         self.bounds = bounds
     }
@@ -36,18 +39,19 @@ struct Map {
         var obstacles = Set<Point2D>()
         let map = lines.map { $0.map { $0 } }
                     
-        sentryPosition = Point2D( x: 0, y: 0 )
-        sentryDirection = .up
+        sentry = Visited( position: Point2D( x: 0, y: 0 ), direction: .up )
         bounds = Rect2D(
-            min: sentryPosition, width: map[0].count, height: map.count )!
+            min: sentry.position, width: map[0].count, height: map.count )!
 
         for y in map.indices {
             for x in map[y].indices {
                 if map[y][x] == "#" { obstacles.insert( Point2D( x: x, y: y ) ) }
                 else if map[y][x] != "." {
-                    sentryPosition = Point2D( x: x, y: y )
-                    sentryDirection = DirectionUDLR.fromArrows(
-                        char: String( map[y][x] ) )!
+                    sentry = Visited(
+                        position: Point2D( x: x, y: y ),
+                        direction: DirectionUDLR.fromArrows(
+                            char: String( map[y][x] ) )!
+                    )
                 }
             }
         }
@@ -58,33 +62,33 @@ struct Map {
     mutating func countPositions() -> Set<Point2D> {
         var positions = Set<Point2D>()
         
-        while bounds.contains( point: sentryPosition ) {
-            positions.insert( sentryPosition )
-            while obstacles.contains( sentryPosition + sentryDirection.vector ) {
-                sentryDirection = sentryDirection.turn( .right )
+        while bounds.contains( point: sentry.position ) {
+            positions.insert( sentry.position )
+            while obstacles.contains( sentry.position + sentry.direction.vector ) {
+                sentry = sentry.turn()
             }
-            sentryPosition = sentryPosition + sentryDirection.vector
+            sentry = sentry.move()
         }
         
         return positions
     }
     
     func add( newObstacle: Point2D ) -> Map {
-        Map( sentryPosition: sentryPosition, sentryDirection: sentryDirection, obstacles: obstacles.union( [ newObstacle ] ), bounds: bounds )
+        Map(
+            sentry: sentry,
+            obstacles: obstacles.union( [ newObstacle ] ), bounds: bounds
+        )
     }
     
     mutating func checkLoop() -> Bool {
         var visited = Set<Visited>()
         
-        while bounds.contains( point: sentryPosition ) {
-            if !visited.insert( Visited(
-                position: sentryPosition, direction: sentryDirection ) ).inserted {
-                return true
+        while bounds.contains( point: sentry.position ) {
+            if !visited.insert( sentry ).inserted { return true }
+            while obstacles.contains( sentry.move().position ) {
+                sentry = sentry.turn()
             }
-            while obstacles.contains( sentryPosition + sentryDirection.vector ) {
-                sentryDirection = sentryDirection.turn( .right )
-            }
-            sentryPosition = sentryPosition + sentryDirection.vector
+            sentry = sentry.move()
         }
         
         return false
@@ -109,7 +113,7 @@ func part2( input: AOCinput ) -> String {
     var loopCount = 0
     
     for point in map.bounds.points {
-        if point != map.sentryPosition && !map.obstacles.contains( point ) {
+        if point != map.sentry.position && !map.obstacles.contains( point ) {
             var newMap = map.add( newObstacle: point )
             loopCount += ( newMap.checkLoop() ? 1 : 0 )
         }
