@@ -59,18 +59,24 @@ struct Map {
         self.obstacles = obstacles
     }
     
-    mutating func countPositions() -> Set<Point2D> {
-        var positions = Set<Point2D>()
+    mutating func walk() -> Set<Visited> {
+        var positions = Set<Visited>()
         
         while bounds.contains( point: sentry.position ) {
-            positions.insert( sentry.position )
-            while obstacles.contains( sentry.position + sentry.direction.vector ) {
+            positions.insert( sentry )
+            while obstacles.contains( sentry.move().position ) {
                 sentry = sentry.turn()
             }
             sentry = sentry.move()
         }
         
         return positions
+    }
+    
+    mutating func countPositions() -> Set<Point2D> {
+        walk().reduce(into: Set<Point2D>() ) { visited, place in
+            visited.insert( place.position )
+        }
     }
     
     func add( newObstacle: Point2D ) -> Map {
