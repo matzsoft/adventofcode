@@ -74,10 +74,10 @@ struct Map {
         return positions
     }
     
-    mutating func countPositions() -> Set<Point2D> {
+    mutating func countPositions() -> Int {
         walk().reduce(into: Set<Point2D>() ) { visited, place in
             visited.insert( place.position )
-        }
+        }.count
     }
     
     func add( sentry: Visited, newObstacle: Point2D ) -> Map {
@@ -103,20 +103,15 @@ struct Map {
 }
 
 
-func parse( input: AOCinput ) -> Map {
-    return Map( lines: input.lines )
-}
-
-
 func part1( input: AOCinput ) -> String {
-    var map = parse( input: input )
+    var map = Map( lines: input.lines )
     
-    return "\(map.countPositions().count)"
+    return "\(map.countPositions())"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let originalMap = parse( input: input )
+    let originalMap = Map( lines: input.lines )
     var map = originalMap
     let walk = map.walk().filter {
         !originalMap.obstacles.contains( $0.move().position )
