@@ -59,8 +59,9 @@ struct Map {
         self.obstacles = obstacles
     }
     
-    mutating func walk() -> Set<Visited> {
+    mutating func walk() -> [Visited] {
         var positions = Set<Visited>()
+        var walk = [Visited]()
         
         while bounds.contains( point: sentry.position ) {
             positions.insert( sentry )
@@ -68,14 +69,15 @@ struct Map {
                 sentry = sentry.turn()
                 positions.insert( sentry )
             }
+            walk.append( sentry )
             sentry = sentry.move()
         }
         
-        return positions
+        return walk
     }
     
     mutating func countPositions() -> Int {
-        walk().reduce(into: Set<Point2D>() ) { visited, place in
+        walk().reduce( into: Set<Point2D>() ) { visited, place in
             visited.insert( place.position )
         }.count
     }
@@ -113,9 +115,7 @@ func part1( input: AOCinput ) -> String {
 func part2( input: AOCinput ) -> String {
     let originalMap = Map( lines: input.lines )
     var map = originalMap
-    let walk = map.walk().filter {
-        !originalMap.obstacles.contains( $0.move().position )
-    }
+    let walk = map.walk()
     var loopCount = 0
     var added = Set<Point2D>()
     
