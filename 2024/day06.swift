@@ -66,6 +66,7 @@ struct Map {
             positions.insert( sentry )
             while obstacles.contains( sentry.move().position ) {
                 sentry = sentry.turn()
+                positions.insert( sentry )
             }
             sentry = sentry.move()
         }
@@ -79,7 +80,7 @@ struct Map {
         }
     }
     
-    func add( newObstacle: Point2D ) -> Map {
+    func add( sentry: Visited, newObstacle: Point2D ) -> Map {
         Map(
             sentry: sentry,
             obstacles: obstacles.union( [ newObstacle ] ), bounds: bounds
@@ -115,13 +116,21 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let map = parse( input: input )
+    let originalMap = parse( input: input )
+    var map = originalMap
+    let walk = map.walk().filter {
+        !originalMap.obstacles.contains( $0.move().position )
+    }
     var loopCount = 0
+    var added = Set<Point2D>()
     
-    for point in map.bounds.points {
-        if point != map.sentry.position && !map.obstacles.contains( point ) {
-            var newMap = map.add( newObstacle: point )
-            loopCount += ( newMap.checkLoop() ? 1 : 0 )
+    for visited in walk {
+        let newObstacle = visited.move().position
+        if newObstacle != originalMap.sentry.position {
+            if added.insert( newObstacle ).inserted {
+                map = originalMap.add( sentry: visited, newObstacle: newObstacle )
+                loopCount += ( map.checkLoop() ? 1 : 0 )
+            }
         }
     }
     return "\(loopCount)"
