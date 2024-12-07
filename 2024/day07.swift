@@ -59,24 +59,24 @@ struct Equation {
         values = numbers[1...].map { Int( $0 )! }
     }
     
-    var isValid: Bool {
-        let possibles = Operation.somePossibles( length: values.count - 1 )
-        let results = possibles.map { list in
-            values.indices.dropLast().reduce( values[0] ) {
-                list[$1].operate( left: $0, right: values[$1+1 ] )
+    func isValid( possibles: [[Operation]] ) -> Bool {
+        for opList in possibles {
+            var result = values[0]
+            for index in values.indices.dropLast() {
+                result = opList[index].operate( left: result, right: values[index+1] )
+                if result > solution { break }
             }
+            if result == solution { return true }
         }
-        return results.contains( solution )
+        return false
+    }
+    
+    var isValid: Bool {
+        isValid( possibles: Operation.somePossibles( length: values.count - 1 ) )
     }
 
     var isReallyValid: Bool {
-        let possibles = Operation.allPossibles( length: values.count - 1 )
-        let results = possibles.map { list in
-            values.indices.dropLast().reduce( values[0] ) {
-                list[$1].operate( left: $0, right: values[$1+1 ] )
-            }
-        }
-        return results.contains( solution )
+        isValid( possibles: Operation.allPossibles( length: values.count - 1 ) )
     }
 }
 
