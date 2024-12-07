@@ -11,30 +11,6 @@
 import Foundation
 import Library
 
-//enum Operation: CaseIterable {
-//    case add, multiply, concatenate
-//    
-//    static var someCases: [Operation] { [ .add, .multiply ] }
-//    
-//    func operate( left: Int, right: Int ) -> Int {
-//        switch self {
-//        case .add:
-//            return right + left
-//        case .multiply:
-//            return right * left
-//        case .concatenate:
-//            var left = left
-//            var temp = right
-//            
-//            while temp > 0 {
-//                temp /= 10
-//                left *= 10
-//            }
-//            return left + right
-//        }
-//    }
-//}
-
 typealias Operation = ( Int, Int ) -> Int
 
 func add( left: Int, right: Int ) -> Int { left + right }
@@ -68,7 +44,6 @@ struct Equation {
             var result = values[0]
             for index in values.indices.dropLast() {
                 result = opList[index]( result, values[index+1] )
-//                result = opList[index].operate( left: result, right: values[index+1] )
                 if result > solution { break }
             }
             if result == solution { return true }
