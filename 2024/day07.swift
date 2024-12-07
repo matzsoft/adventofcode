@@ -14,18 +14,7 @@ import Library
 enum Operation: CaseIterable {
     case add, multiply, concatenate
     
-    static var someCases: [Operation] {
-        [ .add, .multiply ]
-    }
-    
-    static func possibles( length: Int, opList: [Operation] ) -> [[Operation]] {
-        if length == 1 { return opList.map { [$0] } }
-        
-        let next = possibles( length: length - 1, opList: opList )
-        return next.flatMap { array in
-            opList.map { op -> [Operation] in array + [op] }
-        }
-    }
+    static var someCases: [Operation] { [ .add, .multiply ] }
     
     func operate( left: Int, right: Int ) -> Int {
         switch self {
@@ -50,8 +39,9 @@ struct Equation {
         values = numbers[1...].map { Int( $0 )! }
     }
     
-    func isValid( opList: [Operation] ) -> Bool {
-        let possibles = Operation.possibles( length: values.count - 1, opList: opList )
+    func isValid( opDict: [ Int : [[Operation]] ] ) -> Bool {
+        let possibles = opDict[ values.count - 1 ]!
+
         for opList in possibles {
             var result = values[0]
             for index in values.indices.dropLast() {
@@ -65,16 +55,37 @@ struct Equation {
 }
 
 
+func makeOpDict(
+    opList: [Operation], equations: [Equation] ) -> [ Int : [[Operation]] ]
+{
+    let maxLength = equations.map { $0.values.count }.max()!
+    
+    return ( 1 ..< maxLength ).reduce( into: [ Int : [[Operation]] ]() ) {
+        dict, length in
+        
+        if length == 1 { dict[1] = opList.map { [$0] } }
+        else {
+            let next = dict[ length - 1 ]!
+            dict[length] = next.flatMap { array in
+                opList.map { op -> [Operation] in array + [op] }
+            }
+        }
+    }
+}
+
+
 func part1( input: AOCinput ) -> String {
     let equations = input.lines.map { Equation( line: $0 ) }
-    let valids = equations.filter { $0.isValid(opList: Operation.someCases ) }
+    let opDict = makeOpDict( opList: Operation.someCases, equations: equations )
+    let valids = equations.filter { $0.isValid( opDict: opDict ) }
     return "\(valids.reduce( 0, { $0 + $1.solution } ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let equations = input.lines.map { Equation( line: $0 ) }
-    let valids = equations.filter { $0.isValid(opList: Operation.allCases ) }
+    let opDict = makeOpDict( opList: Operation.allCases, equations: equations )
+    let valids = equations.filter { $0.isValid( opDict: opDict ) }
     return "\(valids.reduce( 0, { $0 + $1.solution } ) )"
 }
 
