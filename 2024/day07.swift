@@ -18,21 +18,12 @@ enum Operation: CaseIterable {
         [ .add, .multiply ]
     }
     
-    static func somePossibles( length: Int ) -> [[Operation]] {
-        if length == 1 { return Operation.someCases.map { [$0] } }
+    static func possibles( length: Int, opList: [Operation] ) -> [[Operation]] {
+        if length == 1 { return opList.map { [$0] } }
         
-        let next = somePossibles( length: length - 1 )
+        let next = possibles( length: length - 1, opList: opList )
         return next.flatMap { array in
-            Operation.someCases.map { op -> [Operation] in array + [op] }
-        }
-    }
-    
-    static func allPossibles( length: Int ) -> [[Operation]] {
-        if length == 1 { return Operation.allCases.map { [$0] } }
-        
-        let next = allPossibles( length: length - 1 )
-        return next.flatMap { array in
-            Operation.allCases.map { op -> [Operation] in array + [op] }
+            opList.map { op -> [Operation] in array + [op] }
         }
     }
     
@@ -59,7 +50,8 @@ struct Equation {
         values = numbers[1...].map { Int( $0 )! }
     }
     
-    func isValid( possibles: [[Operation]] ) -> Bool {
+    func isValid( opList: [Operation] ) -> Bool {
+        let possibles = Operation.possibles( length: values.count - 1, opList: opList )
         for opList in possibles {
             var result = values[0]
             for index in values.indices.dropLast() {
@@ -70,31 +62,19 @@ struct Equation {
         }
         return false
     }
-    
-    var isValid: Bool {
-        isValid( possibles: Operation.somePossibles( length: values.count - 1 ) )
-    }
-
-    var isReallyValid: Bool {
-        isValid( possibles: Operation.allPossibles( length: values.count - 1 ) )
-    }
-}
-
-
-func parse( input: AOCinput ) -> [Equation] {
-    return input.lines.map { Equation( line: $0 ) }
 }
 
 
 func part1( input: AOCinput ) -> String {
-    let equations = parse( input: input )
-    return "\(equations.filter { $0.isValid }.reduce( 0, { $0 + $1.solution } ) )"
+    let equations = input.lines.map { Equation( line: $0 ) }
+    let valids = equations.filter { $0.isValid(opList: Operation.someCases ) }
+    return "\(valids.reduce( 0, { $0 + $1.solution } ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let equations = parse( input: input )
-    let valids = equations.filter { $0.isReallyValid }
+    let equations = input.lines.map { Equation( line: $0 ) }
+    let valids = equations.filter { $0.isValid(opList: Operation.allCases ) }
     return "\(valids.reduce( 0, { $0 + $1.solution } ) )"
 }
 
