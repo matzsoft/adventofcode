@@ -11,28 +11,43 @@
 import Foundation
 import Library
 
-enum Operation: CaseIterable {
-    case add, multiply, concatenate
+//enum Operation: CaseIterable {
+//    case add, multiply, concatenate
+//    
+//    static var someCases: [Operation] { [ .add, .multiply ] }
+//    
+//    func operate( left: Int, right: Int ) -> Int {
+//        switch self {
+//        case .add:
+//            return right + left
+//        case .multiply:
+//            return right * left
+//        case .concatenate:
+//            var left = left
+//            var temp = right
+//            
+//            while temp > 0 {
+//                temp /= 10
+//                left *= 10
+//            }
+//            return left + right
+//        }
+//    }
+//}
+
+typealias Operation = ( Int, Int ) -> Int
+
+func add( left: Int, right: Int ) -> Int { left + right }
+func multiply( left: Int, right: Int ) -> Int { left * right }
+func concatenate( left: Int, right: Int ) -> Int {
+    var left = left
+    var temp = right
     
-    static var someCases: [Operation] { [ .add, .multiply ] }
-    
-    func operate( left: Int, right: Int ) -> Int {
-        switch self {
-        case .add:
-            return right + left
-        case .multiply:
-            return right * left
-        case .concatenate:
-            var left = left
-            var temp = right
-            
-            while temp > 0 {
-                temp /= 10
-                left *= 10
-            }
-            return left + right
-        }
+    while temp > 0 {
+        temp /= 10
+        left *= 10
     }
+    return left + right
 }
 
 struct Equation {
@@ -52,7 +67,8 @@ struct Equation {
         for opList in possibles {
             var result = values[0]
             for index in values.indices.dropLast() {
-                result = opList[index].operate( left: result, right: values[index+1] )
+                result = opList[index]( result, values[index+1] )
+//                result = opList[index].operate( left: result, right: values[index+1] )
                 if result > solution { break }
             }
             if result == solution { return true }
@@ -83,7 +99,7 @@ func makeOpDict(
 
 func part1( input: AOCinput ) -> String {
     let equations = input.lines.map { Equation( line: $0 ) }
-    let opDict = makeOpDict( opList: Operation.someCases, equations: equations )
+    let opDict = makeOpDict( opList: [ add, multiply ], equations: equations )
     let valids = equations.filter { $0.isValid( opDict: opDict ) }
     return "\(valids.reduce( 0, { $0 + $1.solution } ) )"
 }
@@ -91,7 +107,8 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let equations = input.lines.map { Equation( line: $0 ) }
-    let opDict = makeOpDict( opList: Operation.allCases, equations: equations )
+    let opDict = makeOpDict(
+        opList: [ add, multiply, concatenate ], equations: equations )
     let valids = equations.filter { $0.isValid( opDict: opDict ) }
     return "\(valids.reduce( 0, { $0 + $1.solution } ) )"
 }
