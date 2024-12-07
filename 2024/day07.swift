@@ -23,7 +23,14 @@ enum Operation: CaseIterable {
         case .multiply:
             return right * left
         case .concatenate:
-            return Int( String( left ) + String( right ) )!
+            var left = left
+            var temp = right
+            
+            while temp > 0 {
+                temp /= 10
+                left *= 10
+            }
+            return left + right
         }
     }
 }
