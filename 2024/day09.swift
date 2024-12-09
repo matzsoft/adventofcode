@@ -41,7 +41,7 @@ struct Disk {
         }.joined()
     }
     
-    mutating func jamPack() -> Void {
+    mutating func compact() -> Void {
         var firstFree = blocks.firstIndex( of: nil )!
         var lastUsed = blocks.lastIndex { $0 != nil}!
         
@@ -95,7 +95,7 @@ struct Disk2 {
         }
     }
     
-    mutating func smartPack() -> Void {
+    mutating func compact() -> Void {
         for fileID in files.indices.reversed() {
             let file = files[fileID]
             let available = free.prefix { $0.block < file.block }
@@ -121,21 +121,16 @@ struct Disk2 {
 }
 
 
-func parse( input: AOCinput ) -> Any? {
-    return nil
-}
-
-
 func part1( input: AOCinput ) -> String {
     var disk = Disk( line: input.line )
-    disk.jamPack()
+    disk.compact()
     return "\(disk.checksum)"
 }
 
 
 func part2( input: AOCinput ) -> String {
     var disk = Disk2( line: input.line )
-    disk.smartPack()
+    disk.compact()
     return "\(disk.checksum)"
 }
 
