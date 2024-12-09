@@ -65,6 +65,7 @@ struct Disk {
 
 struct Disk2 {
     struct Chunk {
+        let id: Int
         var block: Int
         var size: Int
     }
@@ -84,11 +85,11 @@ struct Disk2 {
             let size = Int( String( character ) )!
             switch state {
             case .file:
-                files.append( Chunk( block: block, size: size ) )
+                files.append( Chunk( id: fileID, block: block, size: size ) )
                 fileID += 1
                 state = .freespace
             case .freespace:
-                free.append( Chunk( block: block, size: size ) )
+                free.append( Chunk( id: 0, block: block, size: size ) )
                 state = .file
             }
             block += size
@@ -112,10 +113,8 @@ struct Disk2 {
     }
     
     var checksum: Int {
-        files.indices.reduce( 0 ) {
-            let file = files[$1]
-            let blockSum = ( file.block ..< file.block + file.size ).reduce( 0, + )
-            return $0 + $1 * blockSum
+        files.reduce( 0 ) {
+            return $0 + $1.id * ( $1.block ..< $1.block + $1.size ).reduce( 0, + )
         }
     }
 }
