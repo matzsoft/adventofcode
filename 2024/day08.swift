@@ -17,7 +17,7 @@ struct Map {
     
     init( lines: [String] ) {
         bounds = Rect2D(
-            min: Point2D(x: 0, y: 0), width: lines[0].count, height: lines.count )!
+            min: Point2D( x: 0, y: 0), width: lines[0].count, height: lines.count )!
         
         let characters = lines.map { Array<Character>( $0 ) }
         antennas = characters.indices.reduce( into: [ Character : [Point2D] ]() ) {
@@ -72,22 +72,13 @@ struct Map {
 }
 
 
-func parse( input: AOCinput ) -> Any? {
-    return nil
-}
-
-
 func part1( input: AOCinput ) -> String {
-    let map = Map( lines: input.lines )
-    let antinodes = map.antinodes
-    return "\(antinodes.count)"
+    "\(Map( lines: input.lines ).antinodes.count)"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let map = Map( lines: input.lines )
-    let antinodes = map.harmonics
-    return "\(antinodes.count)"
+    "\(Map( lines: input.lines ).harmonics.count)"
 }
 
 
