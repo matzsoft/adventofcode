@@ -158,7 +158,7 @@ func build( line: Line, blinks: Int ) -> Int {
     }
     
     func expansion( stone: Stone ) -> Int {
-        guard let info = dict[stone.label] else { return 0 }
+        guard let info = dict[stone.label] else { return 1 }
         if let count = info.counts[stone.level] { return count }
         
         let count = info.blinksTo.reduce( 0 ) {
@@ -186,8 +186,8 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    var stones = input.line.split( separator: " " ).map { Int( $0 )! }
-    return "\( blink( stones: stones, blinks: 75 ) )"
+    let line = Line( line: input.line )
+    return "\( build( line: line, blinks: 75 ) )"
 }
 
 
