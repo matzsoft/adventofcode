@@ -62,10 +62,6 @@ struct Line: Hashable {
         stones = []
     }
 
-    init( stones: [Stone] ) {
-        self.stones = stones
-    }
-    
     init( line: String ) {
         stones = line.split( separator: " " ).map {
             Stone( label: Int( $0 )!, level: 0 )
@@ -78,65 +74,7 @@ struct Line: Hashable {
 }
 
 
-func blink( stones: [Int], blinks: Int ) -> Int {
-    var total = 0
-    
-    for stone in stones {
-        var stones = [ stone ]
-        
-        for _ in 1 ... blinks {
-            var newStones = [Int]()
-            
-            for stone in stones {
-                switch stone {
-                case 0:
-                    newStones.append( 1 )
-                case let n where n.digitCount.isMultiple( of: 2 ):
-                    let string = String( stone )
-                    let left = string.startIndex ..< string.index( string.startIndex, offsetBy: string.count / 2 )
-                    let right = string.index( string.startIndex, offsetBy: string.count / 2 ) ..< string.endIndex
-                    newStones.append( Int( string[left] )! )
-                    newStones.append( Int( string[right] )! )
-                default:
-                    newStones.append( stone * 2024 )
-                }
-            }
-            stones = newStones
-        }
-        total += stones.count
-    }
-    
-    return total
-}
-
-func dontBlink( stones: [Int], blinks: Int ) -> Int {
-    var stones = stones
-    
-    for step in 1 ... blinks {
-        var newStones = [Int]()
-        
-        for stone in stones {
-            switch stone {
-            case 0:
-                newStones.append( 1 )
-            case let n where n.digitCount.isMultiple( of: 2 ):
-                let string = String( stone )
-                let left = string.startIndex ..< string.index( string.startIndex, offsetBy: string.count / 2 )
-                let right = string.index( string.startIndex, offsetBy: string.count / 2 ) ..< string.endIndex
-                newStones.append( Int( string[left] )! )
-                newStones.append( Int( string[right] )! )
-            default:
-                newStones.append( stone * 2024 )
-            }
-        }
-        stones = newStones
-    }
-    
-    return stones.count
-}
-
-
-func build( line: Line, blinks: Int ) -> Int {
+func dontBlink( line: Line, blinks: Int ) -> Int {
     var lines = [ line ]
     var dict = [ Int : StoneInfo ]()
     
@@ -173,28 +111,20 @@ func build( line: Line, blinks: Int ) -> Int {
 }
 
 
-func wildOne( input: AOCinput ) -> String {
-    let line = Line( line: input.line )
-    return "\( build( line: line, blinks: 25 ) )"
-}
-
-
 func part1( input: AOCinput ) -> String {
-    var stones = input.line.split( separator: " " ).map { Int( $0 )! }
-    return "\( dontBlink( stones: stones, blinks: 25 ) )"
+    let line = Line( line: input.line )
+    return "\( dontBlink( line: line, blinks: 25 ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let line = Line( line: input.line )
-    return "\( build( line: line, blinks: 75 ) )"
+    return "\( dontBlink( line: line, blinks: 75 ) )"
 }
 
 
 try print( projectInfo() )
 try runTests( part1: part1 )
-try runTests( part1: wildOne, label: "trial" )
 try runTests( part2: part2 )
 try solve( part1: part1 )
-try solve( part1: wildOne, label: "trial" )
 try solve( part2: part2 )
