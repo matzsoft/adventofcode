@@ -34,6 +34,27 @@ struct Stone: Hashable {
 }
 
 
+struct StoneInfo {
+    let blinksTo: [Int]
+    var counts: [Int?]
+    
+    init( label: Int, blinks: Int ) {
+        switch label {
+        case 0:
+            blinksTo = [ 1 ]
+        case let n where n.digitCount.isMultiple( of: 2 ):
+            let string = String( label )
+            let left = string.startIndex ..< string.index( string.startIndex, offsetBy: string.count / 2 )
+            let right = string.index( string.startIndex, offsetBy: string.count / 2 ) ..< string.endIndex
+            blinksTo = [ Int( string[left] )!, Int( string[right] )! ]
+        default:
+            blinksTo = [ label * 2024 ]
+        }
+        counts = [ 1, blinksTo.count ] + Array( repeating: nil, count: blinks - 1 )
+    }
+}
+
+
 struct Line: Hashable {
     var stones: [Stone]
     
@@ -117,7 +138,7 @@ func dontBlink( stones: [Int], blinks: Int ) -> Int {
 
 func build( line: Line, blinks: Int ) -> Int {
     var lines = [ line ]
-    var dict = [ Int : [Line] ]()
+    var dict = [ Int : StoneInfo ]()
     
     for step in 1 ... blinks {
         var newLine = Line()
@@ -126,27 +147,29 @@ func build( line: Line, blinks: Int ) -> Int {
             if dict[stone.label] != nil {
                 newLine.add( stone: stone.increment )
             } else {
-                dict[stone.label] = [ Line( stones: [stone] ) ]
-                switch stone.label {
-                case 0:
-                    newLine.add( stone: Stone( label: 1, level: 0 ) )
-                case let n where n.digitCount.isMultiple( of: 2 ):
-                    let string = String( stone.label )
-                    let left = string.startIndex ..< string.index( string.startIndex, offsetBy: string.count / 2 )
-                    let right = string.index( string.startIndex, offsetBy: string.count / 2 ) ..< string.endIndex
-                    let leftLabel = Int( string[left] )!
-                    let rightLabel = Int( string[right] )!
-                    newLine.add( stone: Stone( label: leftLabel, level: 0 ) )
-                    newLine.add( stone: Stone( label: rightLabel, level: 0 ) )
-                default:
-                    newLine.add( stone: Stone( label: stone.label * 2024, level: 0 ) )
+                let info = StoneInfo( label: stone.label, blinks: blinks )
+                dict[stone.label] = info
+                info.blinksTo.forEach {
+                    newLine.add( stone: Stone( label: $0, level: 0 ) )
                 }
             }
         }
         lines.append( newLine )
     }
     
-    return 0
+    func expansion( stone: Stone ) -> Int {
+        guard let info = dict[stone.label] else { return 0 }
+        if let count = info.counts[stone.level] { return count }
+        
+        let count = info.blinksTo.reduce( 0 ) {
+            $0 + expansion( stone: Stone( label: $1, level: stone.level - 1 ) )
+        }
+        
+        dict[stone.label]!.counts[stone.level] = count
+        return count
+    }
+    
+    return lines[blinks].stones.reduce( 0 ) { $0 + expansion( stone: $1 ) }
 }
 
 
@@ -169,8 +192,9 @@ func part2( input: AOCinput ) -> String {
 
 
 try print( projectInfo() )
-try runTests( part1: wildOne, label: "trial" )
 try runTests( part1: part1 )
+try runTests( part1: wildOne, label: "trial" )
 try runTests( part2: part2 )
 try solve( part1: part1 )
+try solve( part1: wildOne, label: "trial" )
 try solve( part2: part2 )
