@@ -86,26 +86,19 @@ struct Garden {
                 
                 while !plots.isEmpty {
                     let plot = plots.removeFirst()
-                    for next in 1... {
-                        let nextPlot = plot + next * left.vector
-                        if bounds.contains( point: nextPlot )
-                            && plots.contains( nextPlot )
-                            /* && self[nextPlot].type == self[plot].type */ {
-                            plots.remove( nextPlot )
-                        } else {
-                            break
+                    
+                    func scan( direction: DirectionUDLR ) -> Void {
+                        for next in 1... {
+                            let nextPlot = plot + next * direction.vector
+                            if plots.contains( nextPlot ) {
+                                plots.remove( nextPlot )
+                            } else {
+                                return
+                            }
                         }
                     }
-                    for next in 1... {
-                        let nextPlot = plot + next * right.vector
-                        if bounds.contains( point: nextPlot )
-                            && plots.contains( nextPlot )
-                            /* && self[nextPlot].type == self[plot].type */ {
-                            plots.remove( nextPlot )
-                        } else {
-                            break
-                        }
-                    }
+                    scan( direction: left )
+                    scan( direction: right )
                     sides += 1
                 }
             }
