@@ -16,17 +16,24 @@ struct Machine {
     let bButton: Point2D
     let prize:   Point2D
     
+    static func parse(
+        line: String, delimiters: String, xIndex: Int, yIndex: Int ) -> Point2D
+    {
+        let fields = line.split( whereSeparator: { delimiters.contains( $0 ) } )
+        return Point2D( x: Int( fields[xIndex] )!, y: Int( fields[yIndex] )! )
+    }
+    
     init( lines: [String], prizeIncrement: Int = 0 ) {
-        let aInfo = lines[0].split( whereSeparator: { " ,+".contains( $0 ) } )
-        let bInfo = lines[1].split( whereSeparator: { " ,+".contains( $0 ) } )
-        let pInfo = lines[2].split( whereSeparator: { "=,".contains( $0 ) } )
+        aButton = Machine.parse(
+            line: lines[0], delimiters: " ,+", xIndex: 3, yIndex: 5 )
+        bButton = Machine.parse(
+            line: lines[1], delimiters: " ,+", xIndex: 3, yIndex: 5 )
         
-        aButton = Point2D( x: Int( aInfo[3] )!, y: Int( aInfo[5] )! )
-        bButton = Point2D( x: Int( bInfo[3] )!, y: Int( bInfo[5] )! )
-        prize   = Point2D(
-            x: Int( pInfo[1] )! + prizeIncrement,
-            y: Int( pInfo[3] )! + prizeIncrement
-        )
+        let prize = Machine.parse(
+            line: lines[2], delimiters: "=,", xIndex: 1, yIndex: 3 )
+        let increment = Point2D( x: prizeIncrement, y: prizeIncrement )
+
+        self.prize = prize + increment
     }
 
     var prizeCost: Int {
