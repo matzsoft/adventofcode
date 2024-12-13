@@ -39,8 +39,8 @@ struct Machine {
         let xb = bButton.x * xmultiplier
         let yb = bButton.y * ymultiplier
         
-        let cdiff = abs( xprize - yprize )
-        let bdiff = abs( xb - yb )
+        let cdiff = xprize - yprize
+        let bdiff = xb - yb
         
         guard cdiff % bdiff == 0 else { return 0 }
         
@@ -48,22 +48,16 @@ struct Machine {
         let numerator = prize.x - bvalue * bButton.x
         
         guard numerator % aButton.x == 0 else { return 0 }
-        let avalue = ( prize.x - bvalue * bButton.x ) / aButton.x
+        let avalue = numerator / aButton.x
         
         return 3 * avalue + bvalue
     }
 }
 
 
-func parse( input: AOCinput ) -> Any? {
-    return nil
-}
-
-
 func part1( input: AOCinput ) -> String {
     let machines = input.paragraphs.map { Machine( lines: $0 ) }
-    let costs = machines.map { $0.prizeCost }
-    return "\( costs.reduce( 0, + ) )"
+    return "\( machines.map { $0.prizeCost }.reduce( 0, + ) )"
 }
 
 
@@ -71,8 +65,7 @@ func part2( input: AOCinput ) -> String {
     let machines = input.paragraphs.map {
         Machine( lines: $0, prizeIncrement: 10000000000000 )
     }
-    let costs = machines.map { $0.prizeCost }
-    return "\( costs.reduce( 0, + ) )"
+    return "\( machines.map { $0.prizeCost }.reduce( 0, + ) )"
 }
 
 
