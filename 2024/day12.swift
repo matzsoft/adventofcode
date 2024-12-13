@@ -35,7 +35,7 @@ struct Garden {
     
     subscript( point: Point2D ) -> Plot { plots[point.y][point.x] }
 
-    func expensive() -> Int {
+    var regions: [Region] {
         var regions = [Region]()
         var unexamined = Set( bounds.points )
         
@@ -64,36 +64,14 @@ struct Garden {
             )
         }
         
-        let price = regions.map { $0.plots.count * $0.edges }.reduce( 0, + )
-
-        return price
+        return regions
     }
     
-    func discounted() -> Int {
-        var regions = [Region]()
-        var unexamined = Set( bounds.points )
-        
-        while !unexamined.isEmpty {
-            var queue = [unexamined.removeFirst()]
-            var region = Set<Point2D>()
-            let type = self[queue[0]].type
-            
-            while !queue.isEmpty {
-                let next = queue.removeFirst()
-                unexamined.remove( next )
-                if region.insert( next ).inserted {
-                    let neighbors = DirectionUDLR.allCases
-                        .map { next + $0.vector }
-                        .filter {
-                            bounds.contains( point: $0 ) && self[$0].type == type
-                        }
-                    let remaining = neighbors.filter { unexamined.contains( $0 ) }
-                    queue.append( contentsOf: remaining )
-                }
-            }
-            regions.append( Region( type: type, plots: region, edges: 0 ) )
-        }
-        
+    var expensive: Int {
+        regions.map { $0.plots.count * $0.edges }.reduce( 0, + )
+    }
+    
+    var discounted: Int {
         var newRegions = [Region]()
         for region in regions {
             var sides = 0
@@ -144,12 +122,12 @@ struct Garden {
 
 
 func part1( input: AOCinput ) -> String {
-    return "\(Garden( lines: input.lines ).expensive())"
+    return "\(Garden( lines: input.lines ).expensive)"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    return "\(Garden( lines: input.lines ).discounted())"
+    return "\(Garden( lines: input.lines ).discounted)"
 }
 
 
