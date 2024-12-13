@@ -19,26 +19,21 @@ struct Plot {
 struct Region {
     let type: Character
     let plots: Set<Point2D>
-    let perimeter: Int
+    let edges: Int
 }
 
 struct Garden {
     var plots: [[Plot]]
-    var regionCount: Int
     let bounds: Rect2D
     
     init( lines: [String] ) {
         plots = lines.map { $0.map { Plot( type: $0, region: nil ) } }
-        regionCount = 0
         bounds = Rect2D(
             min: Point2D( x: 0, y: 0 ), width: plots[0].count, height: plots.count
         )!
     }
     
-    subscript( point: Point2D ) -> Plot {
-        get { plots[point.y][point.x] }
-        set { plots[point.y][point.x] = newValue }
-    }
+    subscript( point: Point2D ) -> Plot { plots[point.y][point.x] }
 
     func expensive() -> Int {
         var regions = [Region]()
@@ -54,7 +49,7 @@ struct Garden {
                 let next = queue.removeFirst()
                 unexamined.remove( next )
                 if region.insert( next ).inserted {
-                    let neighbors = Direction4.allCases
+                    let neighbors = DirectionUDLR.allCases
                         .map { next + $0.vector }
                         .filter {
                             bounds.contains( point: $0 ) && self[$0].type == type
@@ -65,11 +60,11 @@ struct Garden {
                 }
             }
             regions.append(
-                Region( type: type, plots: region, perimeter: perimeter )
+                Region( type: type, plots: region, edges: perimeter )
             )
         }
         
-        let price = regions.map { $0.plots.count * $0.perimeter }.reduce( 0, + )
+        let price = regions.map { $0.plots.count * $0.edges }.reduce( 0, + )
 
         return price
     }
@@ -96,7 +91,7 @@ struct Garden {
                     queue.append( contentsOf: remaining )
                 }
             }
-            regions.append( Region( type: type, plots: region, perimeter: 0 ) )
+            regions.append( Region( type: type, plots: region, edges: 0 ) )
         }
         
         var newRegions = [Region]()
@@ -137,30 +132,24 @@ struct Garden {
                 }
             }
             newRegions.append(
-                Region( type: region.type, plots: region.plots, perimeter: sides )
+                Region( type: region.type, plots: region.plots, edges: sides )
             )
         }
         
-        let price = newRegions.map { $0.plots.count * $0.perimeter }.reduce( 0, + )
+        let price = newRegions.map { $0.plots.count * $0.edges }.reduce( 0, + )
 
         return price
     }
 }
 
-func parse( input: AOCinput ) -> Any? {
-    return nil
-}
-
 
 func part1( input: AOCinput ) -> String {
-    let garden = Garden( lines: input.lines )
-    return "\(garden.expensive())"
+    return "\(Garden( lines: input.lines ).expensive())"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let garden = Garden( lines: input.lines )
-    return "\(garden.discounted())"
+    return "\(Garden( lines: input.lines ).discounted())"
 }
 
 
