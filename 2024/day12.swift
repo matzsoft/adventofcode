@@ -11,29 +11,23 @@
 import Foundation
 import Library
 
-struct Plot {
-    let type: Character
-    var region: Int?
-}
-
 struct Region {
-    let type: Character
     let plots: Set<Point2D>
     let edges: Int
 }
 
 struct Garden {
-    var plots: [[Plot]]
+    var plots: [[Character]]
     let bounds: Rect2D
     
     init( lines: [String] ) {
-        plots = lines.map { $0.map { Plot( type: $0, region: nil ) } }
+        plots = lines.map { $0.map { $0 } }
         bounds = Rect2D(
             min: Point2D( x: 0, y: 0 ), width: plots[0].count, height: plots.count
         )!
     }
     
-    subscript( point: Point2D ) -> Plot { plots[point.y][point.x] }
+    subscript( point: Point2D ) -> Character { plots[point.y][point.x] }
 
     var regions: [Region] {
         var regions = [Region]()
@@ -43,7 +37,7 @@ struct Garden {
             var queue = [unexamined.removeFirst()]
             var region = Set<Point2D>()
             var perimeter = 0
-            let type = self[queue[0]].type
+            let type = self[queue[0]]
             
             while !queue.isEmpty {
                 let next = queue.removeFirst()
@@ -52,16 +46,14 @@ struct Garden {
                     let neighbors = DirectionUDLR.allCases
                         .map { next + $0.vector }
                         .filter {
-                            bounds.contains( point: $0 ) && self[$0].type == type
+                            bounds.contains( point: $0 ) && self[$0] == type
                         }
                     perimeter += 4 - neighbors.count
                     let remaining = neighbors.filter { unexamined.contains( $0 ) }
                     queue.append( contentsOf: remaining )
                 }
             }
-            regions.append(
-                Region( type: type, plots: region, edges: perimeter )
-            )
+            regions.append( Region( plots: region, edges: perimeter ) )
         }
         
         return regions
@@ -81,7 +73,7 @@ struct Garden {
                 let right = direction.turn( .right )
                 var plots = region.plots.filter {
                     !bounds.contains( point: $0 + direction.vector )
-                    || self[ $0 + direction.vector ].type != self[$0].type
+                    || self[ $0 + direction.vector ] != self[$0]
                 }
                 
                 while !plots.isEmpty {
@@ -102,9 +94,7 @@ struct Garden {
                     sides += 1
                 }
             }
-            newRegions.append(
-                Region( type: region.type, plots: region.plots, edges: sides )
-            )
+            newRegions.append( Region( plots: region.plots, edges: sides ) )
         }
         
         let price = newRegions.map { $0.plots.count * $0.edges }.reduce( 0, + )
