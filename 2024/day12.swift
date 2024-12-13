@@ -18,7 +18,7 @@ struct Plot {
 
 struct Region {
     let type: Character
-    let area: Int
+    let plots: Set<Point2D>
     let perimeter: Int
 }
 
@@ -40,7 +40,7 @@ struct Garden {
         set { plots[point.y][point.x] = newValue }
     }
 
-    mutating func regions() -> Int {
+    func expensive() -> Int {
         var regions = [Region]()
         var unexamined = Set( bounds.points )
         
@@ -65,11 +65,83 @@ struct Garden {
                 }
             }
             regions.append(
-                Region( type: type, area: region.count, perimeter: perimeter )
+                Region( type: type, plots: region, perimeter: perimeter )
             )
         }
         
-        let price = regions.map { $0.area * $0.perimeter }.reduce( 0, + )
+        let price = regions.map { $0.plots.count * $0.perimeter }.reduce( 0, + )
+
+        return price
+    }
+    
+    func discounted() -> Int {
+        var regions = [Region]()
+        var unexamined = Set( bounds.points )
+        
+        while !unexamined.isEmpty {
+            var queue = [unexamined.removeFirst()]
+            var region = Set<Point2D>()
+            let type = self[queue[0]].type
+            
+            while !queue.isEmpty {
+                let next = queue.removeFirst()
+                unexamined.remove( next )
+                if region.insert( next ).inserted {
+                    let neighbors = DirectionUDLR.allCases
+                        .map { next + $0.vector }
+                        .filter {
+                            bounds.contains( point: $0 ) && self[$0].type == type
+                        }
+                    let remaining = neighbors.filter { unexamined.contains( $0 ) }
+                    queue.append( contentsOf: remaining )
+                }
+            }
+            regions.append( Region( type: type, plots: region, perimeter: 0 ) )
+        }
+        
+        var newRegions = [Region]()
+        for region in regions {
+            var sides = 0
+            
+            for direction in DirectionUDLR.allCases {
+                let left = direction.turn( .left )
+                let right = direction.turn( .right )
+                var plots = region.plots.filter {
+                    !bounds.contains( point: $0 + direction.vector )
+                    || self[ $0 + direction.vector ].type != self[$0].type
+                }
+                
+                while !plots.isEmpty {
+                    let plot = plots.removeFirst()
+                    for next in 1... {
+                        let nextPlot = plot + next * left.vector
+                        if bounds.contains( point: nextPlot )
+                            && plots.contains( nextPlot )
+                            /* && self[nextPlot].type == self[plot].type */ {
+                            plots.remove( nextPlot )
+                        } else {
+                            break
+                        }
+                    }
+                    for next in 1... {
+                        let nextPlot = plot + next * right.vector
+                        if bounds.contains( point: nextPlot )
+                            && plots.contains( nextPlot )
+                            /* && self[nextPlot].type == self[plot].type */ {
+                            plots.remove( nextPlot )
+                        } else {
+                            break
+                        }
+                    }
+                    sides += 1
+                }
+            }
+            newRegions.append(
+                Region( type: region.type, plots: region.plots, perimeter: sides )
+            )
+        }
+        
+        let price = newRegions.map { $0.plots.count * $0.perimeter }.reduce( 0, + )
 
         return price
     }
@@ -81,14 +153,14 @@ func parse( input: AOCinput ) -> Any? {
 
 
 func part1( input: AOCinput ) -> String {
-    var garden = Garden( lines: input.lines )
-    return "\(garden.regions())"
+    let garden = Garden( lines: input.lines )
+    return "\(garden.expensive())"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    return ""
+    let garden = Garden( lines: input.lines )
+    return "\(garden.discounted())"
 }
 
 
