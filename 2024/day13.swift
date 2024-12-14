@@ -36,35 +36,28 @@ struct Machine {
         self.prize = prize + increment
     }
 
-    var prizeCost: Int {
-        let factor = gcd( aButton.x, aButton.y )
-        let xmultiplier = aButton.y / factor
-        let ymultiplier = aButton.x / factor
+    var cost: Int {
+        let aNumerator = bButton.y * prize.x - bButton.x * prize.y
+        let aDenominator = aButton.x * bButton.y - aButton.y * bButton.x
         
-        let xprize = prize.x * xmultiplier
-        let yprize = prize.y * ymultiplier
-        let xb = bButton.x * xmultiplier
-        let yb = bButton.y * ymultiplier
+        guard aNumerator % aDenominator == 0 else { return 0 }
+
+        let bNumerator = aButton.y * prize.x - aButton.x * prize.y
+        let bDenominator = bButton.x * aButton.y - aButton.x * bButton.y
         
-        let cdiff = xprize - yprize
-        let bdiff = xb - yb
+        guard bNumerator % bDenominator == 0 else { return 0 }
         
-        guard cdiff % bdiff == 0 else { return 0 }
+        let a = aNumerator / aDenominator
+        let b = bNumerator / bDenominator
         
-        let bvalue = cdiff / bdiff
-        let numerator = prize.x - bvalue * bButton.x
-        
-        guard numerator % aButton.x == 0 else { return 0 }
-        let avalue = numerator / aButton.x
-        
-        return 3 * avalue + bvalue
+        return 3 * a + b
     }
 }
 
 
 func part1( input: AOCinput ) -> String {
     let machines = input.paragraphs.map { Machine( lines: $0 ) }
-    return "\( machines.map { $0.prizeCost }.reduce( 0, + ) )"
+    return "\( machines.map { $0.cost }.reduce( 0, + ) )"
 }
 
 
@@ -72,7 +65,7 @@ func part2( input: AOCinput ) -> String {
     let machines = input.paragraphs.map {
         Machine( lines: $0, prizeIncrement: 10000000000000 )
     }
-    return "\( machines.map { $0.prizeCost }.reduce( 0, + ) )"
+    return "\( machines.map { $0.cost }.reduce( 0, + ) )"
 }
 
 
