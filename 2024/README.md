@@ -8,3 +8,7 @@ Part 2 runs in about .5s (release build) which is acceptable but hardly fast. Ar
 
 Part 2 still takes 20 seconds which is a big improvement but there must be more I can do.
 
+### Day 14
+
+Think about supporting OutputType other than yes and by default no.
+
