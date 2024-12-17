@@ -112,29 +112,52 @@ struct FatWarehouse: CustomStringConvertible {
     }
     
     mutating func move( direction: DirectionUDLR ) -> Void {
-        let destination = robot + direction.vector
+        var pushes = [robot]
+        var pushedSet = Set<Point2D>()
+        var moved = [Point2D]()
+        var movedSet = Set<Point2D>()
+        let newRobot = robot + direction.vector
         
-        switch self[destination] {
-        case .wall:
-            break
-        case .empty:
-            self[robot] = .empty
-            self[destination] = .robot
-            robot = destination
-//        case .box:
-//            for final in 1 ... Int.max {
-//                let point = destination + final * direction.vector
-//                if self[point] == .wall { break }
-//                if self[point] == .empty {
-//                    self[robot] = .empty
-//                    self[destination] = .robot
-//                    self[point] = .box
-//                    robot = destination
-//                    break
-//                }
-//            }
-        default:
-            fatalError( "Unknown obstacle." )
+        LOOP:
+        while !pushes.isEmpty {
+            let pusher = pushes.removeFirst()
+            let destination = pusher + direction.vector
+            
+            switch self[destination] {
+            case .wall:
+                moved = []
+                break LOOP
+            case .empty:
+                if movedSet.insert(pusher).inserted { moved.append( pusher ) }
+            case .leftBox:
+                if movedSet.insert(pusher).inserted { moved.append( pusher ) }
+                if direction != .left {
+                    let right = Point2D( x: destination.x + 1, y: destination.y )
+                    if pushedSet.insert( destination ).inserted {
+                        pushes.append( destination )
+                    }
+                    if pushedSet.insert( right ).inserted { pushes.append( right ) }
+                }
+            case .rightBox:
+                if movedSet.insert(pusher).inserted { moved.append( pusher ) }
+                if direction != .right {
+                    let left = Point2D( x: destination.x - 1, y: destination.y )
+                    if pushedSet.insert( destination ).inserted {
+                        pushes.append( destination )
+                    }
+                    if pushedSet.insert( left ).inserted { pushes.append( left ) }
+                }
+            default:
+                fatalError( "Unknown obstacle." )
+            }
+        }
+        
+        if !moved.isEmpty { robot = newRobot }
+        for tile in moved.reversed() {
+            let destination = tile + direction.vector
+            
+            self[destination] = self[tile]
+            self[tile] = .empty
         }
     }
     
@@ -159,10 +182,7 @@ func part1( input: AOCinput ) -> String {
     let ( warehouse, moves ) = parse( input: input )
     var workhouse = warehouse
     
-    for move in moves {
-        workhouse.move( direction: move )
-//        print( "\(workhouse)")
-    }
+    for move in moves { workhouse.move( direction: move ) }
     return "\(workhouse.score)"
 }
 
@@ -171,12 +191,7 @@ func part2( input: AOCinput ) -> String {
     let ( warehouse, moves ) = parse( input: input )
     var workhouse = FatWarehouse( warehouse: warehouse )
     
-    print( "\(workhouse)")
-    
-    for move in moves {
-        workhouse.move( direction: move )
-//        print( "\(workhouse)")
-    }
+    for move in moves { workhouse.move( direction: move ) }
     return "\(workhouse.score)"
 }
 
