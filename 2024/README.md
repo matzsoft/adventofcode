@@ -12,3 +12,7 @@ Part 2 still takes 20 seconds which is a big improvement but there must be more 
 
 Think about supporting OutputType other than yes and by default no. Also turns out my solution does not work for all data.
 
+### Day 16
+
+Needs speed up for both parts.
+
