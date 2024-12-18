@@ -16,3 +16,7 @@ Think about supporting OutputType other than yes and by default no. Also turns o
 
 Needs speed up for both parts.
 
+### Day 18
+
+Way too slow.
+
