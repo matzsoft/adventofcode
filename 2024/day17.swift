@@ -35,7 +35,7 @@ struct Computer {
     var output: [Int]
     
     enum Opcode: Int { case adv, bxl, bst, jnz, bxc, out, bdv, cdv }
-
+    
     init( paragraphs: [[String]] ) {
         ip = 0
         registers = paragraphs[0].map {
@@ -79,6 +79,63 @@ struct Computer {
             ip += 2
         }
     }
+    
+    mutating func fast() -> Void {
+        var A = registers[0]
+        var B = registers[1]
+        var C = registers[2]
+        
+        repeat {
+            B = ( A % 8 ) ^ 3
+            C = A >> B
+            B ^= 5
+            A = A >> 3
+            B = B ^ C
+            output.append( B % 8 )
+        } while A != 0
+    }
+    
+//    var buildOverride: Int {
+//        var A = 0
+//        
+//        for index in memory.indices.reversed() {
+//            let candidates = ( 0 ... 7 ).filter {
+//                let newA = ( A << 3 ) | $0
+//                let b1 = $0 ^ 3
+//                let b2 = b1 ^ 5
+//                let C = newA >> b1
+//                let outValue = ( b2 ^ C ) & 7
+//                return outValue == memory[index]
+//            }
+//            guard candidates.count == 1 else { fatalError( "Confusion reigns" ) }
+//            A = ( A << 3 ) | candidates[0]
+//        }
+//        
+//        return A
+//    }
+
+    var buildOverride: [Int] {
+        var As = [ 0 ]
+        
+        for index in memory.indices.reversed() {
+            var newAs = [Int]()
+            for A in As {
+                let candidates = ( 0 ... 7 ).filter {
+                    let newA = ( A << 3 ) | $0
+                    let b1 = $0 ^ 3
+                    let b2 = b1 ^ 5
+                    let C = newA >> b1
+                    let outValue = ( b2 ^ C ) & 7
+                    return outValue == memory[index]
+                }
+                newAs.append( contentsOf: candidates.map { ( A << 3 ) | $0 } )
+            }
+            guard newAs.count > 0 else { fatalError( "Confusion reigns" ) }
+            As = newAs
+        }
+        
+        return As
+    }
 }
 
 
@@ -94,22 +151,39 @@ func part1( input: AOCinput ) -> String {
 }
 
 
+func part1Fast( input: AOCinput ) -> String {
+    var computer = Computer( paragraphs: input.paragraphs )
+    computer.fast()
+    return computer.output.map { String($0) }.joined( separator: "," )
+}
+
+
 func part2( input: AOCinput ) -> String {
     let original = Computer( paragraphs: input.paragraphs )
+    let overrides = original.buildOverride
     
-    for override in 0 ..< Int.max {
-        var computer = original
-        
-        computer.registers[0] = override
-        computer.process()
-        if computer.output == original.memory { return String( override ) }
-    }
-    return "No Solution Found"
+    return "\(overrides[0])"
 }
+
+
+//func part2( input: AOCinput ) -> String {
+//    let original = Computer( paragraphs: input.paragraphs )
+//    
+//    for override in 0 ..< Int.max {
+//        var computer = original
+//        
+//        computer.registers[0] = override
+//        computer.process()
+//        if computer.output == original.memory { return String( override ) }
+////        if override % 50000000 == 0 { print( override ) }
+//    }
+//    return "No Solution Found"
+//}
 
 
 try print( projectInfo() )
 try runTests( part1: part1 )
-try runTests( part2: part2 )
+//try runTests( part2: part2 )
 try solve( part1: part1 )
+try solve( part1: part1Fast, label: "fast" )
 try solve( part2: part2 )
