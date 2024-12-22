@@ -164,7 +164,23 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let something = parse( input: input )
-    return ""
+    let numeric = Keypad( .numeric )
+    let directional = Keypad( .directional )
+    
+    let first = input.lines.map { numeric.directions( target: $0 ) }
+    let robots = ( 1 ... 25 ).reduce( into: [first] ) { robots, _ in
+        robots.append( robots.last!.map {
+            $0.flatMap { directional.directions( target: $0 ) }
+        } )
+    }
+    let shortests = robots.last!.map { $0.map { $0.count }.min()! }
+    let numericParts = input.lines.map {
+        Int( String( $0.filter { $0.isNumber } ) )!
+    }
+    let total = shortests.indices.reduce( 0 ) {
+        $0 + shortests[$1] * numericParts[$1]
+    }
+    return "\(total)"
 }
 
 
