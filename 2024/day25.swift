@@ -11,21 +11,25 @@
 import Foundation
 import Library
 
+func rotate90( array: [[Character]] ) -> [[Character]] {
+    let array = array.map { [Character]( $0.reversed() ) }
+    let skeleton = Array(
+        repeating: Array( repeating: Character( " " ), count: array.count ),
+        count: array[0].count
+    )
+    
+    return array.indices.reduce( into: skeleton ) { flipped, y in
+        array[0].indices.forEach { x in flipped[x][y] = array[y][x] }
+    }
+}
+
 struct Lock {
     let heights: [Int]
     let space: Int
     
     init( lines: [String] ) {
         let map = lines.map { [Character]( $0 ) }
-        let skeleton = Array(
-            repeating: Array( repeating: Character( " " ), count: map.count ),
-            count: map[0].count
-        )
-        let flipped = map.indices.reduce( into: skeleton ) { flipped, y in
-            map[0].indices.forEach { x in
-                flipped[ map[0].count - x - 1 ][y] = map[y][x]
-            }
-        }
+        let flipped = rotate90( array: map )
         heights = flipped.map { $0.firstIndex( of: "." )! - 1 }
         space = lines.count - 2
     }
@@ -38,15 +42,7 @@ struct Key {
     init( lines: [String] ) {
         let space = lines.count - 2
         let map = lines.map { [Character]( $0 ) }
-        let skeleton = Array(
-            repeating: Array( repeating: Character( " " ), count: map.count ),
-            count: map[0].count
-        )
-        let flipped = map.indices.reduce( into: skeleton ) { flipped, y in
-            map[0].indices.forEach { x in
-                flipped[ map[0].count - x - 1 ][y] = map[y][x]
-            }
-        }
+        let flipped = rotate90( array: map )
         heights = flipped.map { space - $0.lastIndex( of: "." )! }
         self.space = space
     }
@@ -67,19 +63,16 @@ struct Schematics {
     }
     
     var matches: Int {
-        var count = 0
-        for lock in locks {
-            for key in keys {
-                if lock.heights.indices.allSatisfy(
-                    { lock.heights[$0] + key.heights[$0] <= lock.space }
-                ) {
-                    count += 1
+        locks.reduce( 0 ) { total, lock in
+            total + keys.filter { key in
+                lock.heights.indices.allSatisfy {
+                    lock.heights[$0] + key.heights[$0] <= lock.space
                 }
-            }
+            }.count
         }
-        return count
     }
 }
+
 
 func part1( input: AOCinput ) -> String {
     let schematics = Schematics( paragraphs: input.paragraphs )
