@@ -11,15 +11,10 @@
 import Foundation
 import Library
 
-func rotate90( array: [[Character]] ) -> [[Character]] {
-    let array = array.map { [Character]( $0.reversed() ) }
-    let skeleton = Array(
-        repeating: Array( repeating: Character( " " ), count: array.count ),
-        count: array[0].count
-    )
-    
-    return array.indices.reduce( into: skeleton ) { flipped, y in
-        array[0].indices.forEach { x in flipped[x][y] = array[y][x] }
+func rotate90<T>( array: [[T]] ) -> [[T]] {
+    return array[0].indices.reversed().reduce( into: [[T]]() ) {
+        result, x in
+        result.append( array.indices.map { array[$0][x] } )
     }
 }
 
