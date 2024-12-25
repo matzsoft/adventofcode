@@ -90,7 +90,7 @@ struct Keypad {
                 result.append( xVector )
             } else if position + xVector == gap {
                 result.append( contentsOf: [ yVector, xVector ] )
-            } else if position + xVector == gap {
+            } else if position + yVector == gap {
                 result.append( contentsOf: [ xVector, yVector ] )
             } else {
                 result.append( contentsOf: [ xVector, yVector, yVector, xVector ] )
