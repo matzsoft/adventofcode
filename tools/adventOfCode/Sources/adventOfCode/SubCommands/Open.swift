@@ -47,22 +47,23 @@ func performOpen( package: String ) throws -> Void {
     }
     
     if fileManager.fileExists( atPath: package ) {
-        throw reportFailure( "\(package) already exists" )
+        guard fileManager.changeCurrentDirectoryPath( package ) else {
+            throw reportFailure( "Can't change directory to \(package)." )
+        }
+    } else {
+        try fileManager.createDirectory(
+            atPath: package, withIntermediateDirectories: false, attributes: nil )
+        guard fileManager.changeCurrentDirectoryPath( package ) else {
+            throw reportFailure( "Can't change directory to \(package)." )
+        }
+        
+        guard shell( "swift", "package", "init", "--type", "executable" ) == 0 else {
+            throw reportFailure( "Can't create swift package." )
+        }
+        
+        try createMainSwift( swiftFile: "../\(swiftFile)", mainSwift: mainSwift )
+        try fixPackageSwift( package: package )
     }
-    
-    try fileManager.createDirectory( atPath: package, withIntermediateDirectories: false, attributes: nil )
-    guard fileManager.changeCurrentDirectoryPath( package ) else {
-        throw reportFailure( "Can't change directory to \(package)." )
-    }
-    
-    guard shell( "swift", "package", "init", "--type", "executable" ) == 0 else {
-        throw reportFailure( "Can't create swift package." )
-    }
-
-//    try fileManager.removeItem( atPath: mainSwift )
-//    try fileManager.copyItem( atPath: "../\(swiftFile)", toPath: mainSwift )
-    try createMainSwift( swiftFile: "../\(swiftFile)", mainSwift: mainSwift )
-    try fixPackageSwift( package: package )
         
     guard shell( "open", "Package.swift" ) == 0 else {
         throw reportFailure( "Can't open Package.swift." )
