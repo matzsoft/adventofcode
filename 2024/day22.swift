@@ -14,7 +14,7 @@ import Library
 func nextSecret( secret: Int ) -> Int {
     let step1 = ( ( secret << 6 ) ^ secret ) % 16777216
     let step2 = ( ( step1 >> 5 ) ^ step1 ) % 16777216
-    let step3 = ( ( step2 * 2048 ) ^ step2 ) % 16777216
+    let step3 = ( ( step2 << 11 ) ^ step2 ) % 16777216
     
     return step3
 }
@@ -36,8 +36,40 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    return ""
+    let secrets = input.lines.map { Int( $0 )! }.map { initial in
+        ( 1 ... 2000 ).reduce( into: [initial] ) { secrets, _ in
+            secrets.append( nextSecret( secret: secrets.last! ) )
+        }
+    }
+    let prices = secrets.map { $0.map { $0 % 10 } }
+    let deltas = prices.map { buyer in
+        buyer.indices.dropFirst().reduce( into: [0] ) { deltas, index in
+            deltas.append( buyer[index] - buyer[index-1] )
+        }
+    }
+    let changes = deltas.indices.map { index1 in
+        deltas[index1].indices.dropFirst( 4 )
+            .reduce( into: [ [Int] : Int ]() ) { dict, index2 in
+                let prefix = [
+                    deltas[index1][index2-3], deltas[index1][index2-2],
+                    deltas[index1][index2-1], deltas[index1][index2]
+                ]
+                if dict[prefix] == nil {
+                    dict[prefix] = prices[index1][index2]
+                }
+            }
+    }
+    let histogram = changes.reduce(into: [ [Int] : Int ]() ) { histogram, buyer in
+        for ( prefix, _ ) in buyer {
+            histogram[ prefix, default: 0 ] += 1
+        }
+    }
+    let bestPrefix = histogram
+        .sorted { $0.value > $1.value }
+    let bananas = bestPrefix.reduce( into: [Int]() ) { bananas, prefix in
+        bananas.append( changes.reduce( 0 ) { $0 + $1[ prefix.key, default: 0 ] } )
+    }
+    return "\(bananas.max()!)"
 }
 
 
