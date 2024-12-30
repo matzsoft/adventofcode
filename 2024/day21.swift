@@ -11,41 +11,9 @@
 import Foundation
 import Library
 
-extension DirectionUDLR {
-    static func breakdown( vector: Point2D ) -> [ ( Int, DirectionUDLR ) ] {
-        [
-            ( abs( vector.x ), vector.x < 0 ? .left : .right ),
-            ( abs( vector.y ), vector.y < 0 ? .up : .down )
-        ]
-    }
-}
-
-
 func point( _ x: Int, _ y: Int ) -> Point2D {
     Point2D( x: x, y: y )
 }
-
-
-
-func xDirection( _ xVector: Point2D ) -> String {
-    let magnitude = abs( xVector.x )
-    
-    if xVector.x < 0 {
-        return String( repeating: DirectionUDLR.left.toArrow, count: magnitude )
-    }
-    return String( repeating: DirectionUDLR.right.toArrow, count: magnitude )
-}
-
-
-func yDirection( _ yVector: Point2D ) -> String {
-    let magnitude = abs( yVector.y )
-    
-    if yVector.y < 0 {
-        return String( repeating: DirectionUDLR.up.toArrow, count: magnitude )
-    }
-    return String( repeating: DirectionUDLR.down.toArrow, count: magnitude )
-}
-
 
 struct Keypad {
     enum KeypadType { case numeric, directional }
@@ -74,84 +42,65 @@ struct Keypad {
         }
     }
     
-    func directions( target: String ) -> [String] {
-        var position = buttons["A"]!
-        let vectors = target.reduce( into: [[Point2D]]() ) { vectors, button in
-            var result = [Point2D]()
-            let vector = buttons[button]! - position
-            let xVector = Point2D( x: vector.x, y: 0 )
-            let yVector = Point2D( x: 0, y: vector.y )
-
-            if vector.x == 0 {
-                if vector.y != 0 {
-                    result.append( yVector )
-                }
-            } else if vector.y == 0 {
-                result.append( xVector )
-            } else if position + xVector == gap {
-                result.append( contentsOf: [ yVector, xVector ] )
-            } else if position + yVector == gap {
-                result.append( contentsOf: [ xVector, yVector ] )
-            } else {
-                result.append( contentsOf: [ xVector, yVector, yVector, xVector ] )
-            }
-            
-            vectors.append( result )
-            position = buttons[button]!
-        }
-        let strings = vectors.reduce( into: [""] ) { strings, vectors in
-            switch vectors.count {
-            case 0:
-                strings = strings.map { $0 + "A" }
-            case 1:
-                if vectors[0].y == 0 {
-                    strings = strings.map { $0 + xDirection( vectors[0] ) + "A" }
-                } else {
-                    strings = strings.map { $0 + yDirection( vectors[0] ) + "A" }
-                }
-            case 2:
-                if vectors[0].y == 0 {
-                    strings = strings.map {
-                        $0 + xDirection( vectors[0] ) + yDirection( vectors[1] ) + "A"
-                    }
-                } else {
-                    strings = strings.map {
-                        $0 + yDirection( vectors[0] ) + xDirection( vectors[1] ) + "A"
-                    }
-                }
-            case 4:
-                let front = strings.map {
-                    $0 + xDirection( vectors[0] ) + yDirection( vectors[1] ) + "A"
-                }
-                let back  = strings.map {
-                    $0 + yDirection( vectors[1] ) + xDirection( vectors[0] ) + "A"
-                }
-                strings = front + back
-            default:
-                fatalError( "Oingo Boingo" )
-            }
-        }
+    func shortestPath( button1: Character, button2: Character ) -> String {
+        let position1 = buttons[button1]!
+        let position2 = buttons[button2]!
+        let vector = position2 - position1
+        let ud = vector.y < 0
+            ? String( repeating: "^", count: -vector.y )
+            : String( repeating: "v", count:  vector.y )
+        let lr = vector.x < 0
+            ? String( repeating: "<", count: -vector.x )
+            : String( repeating: ">", count:  vector.x )
         
-        return strings
+        if vector.x > 0 && Point2D( x: position1.x, y: position2.y ) != gap {
+            // Safe to move vertically first if heading right and
+            // corner point isn't the gap
+            return "\(ud)\(lr)A"
+        }
+        if Point2D( x: position2.x, y: position1.y ) != gap {
+            // Safe to move horizontally first if corner point isn't the gap
+            return "\(lr)\(ud)A"
+        }
+        // Must be safe to move vertically first because
+        // we can't be in same column as gap.
+        return "\(ud)\(lr)A"
+    }
+    
+    func directions( target: String ) -> [String] {
+        var previous: Character = "A"
+        return target.reduce( into: [String]() ) { strings, button in
+            strings.append( shortestPath( button1: previous, button2: button ) )
+            previous = button
+        }
+    }
+    
+    func frequencies( target: String ) -> [ String : Int ] {
+        let directions = directions( target: target )
+        return directions.reduce( into: [ String : Int ]() ) {
+            $0[ $1, default: 0 ] += 1
+        }
+    }
+    
+    func update( previous: [ String : Int ] ) -> [ String : Int ] {
+        previous.reduce( into: [ String : Int ]() ) { newDict, entry in
+            let directions = frequencies( target: entry.key )
+            directions.forEach {
+                newDict[ $0.key, default: 0 ] += entry.value * $0.value
+            }
+        }
     }
 }
 
 
-func parse( input: AOCinput ) -> Any? {
-    return nil
-}
-
-
 func part1( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    let keypad0 = Keypad( .numeric )
-    let keypad1 = Keypad( .directional )
-    let keypad2 = Keypad( .directional )
-    
-    let first = input.lines.map { keypad0.directions( target: $0 ) }
-    let second = first.map { $0.flatMap { keypad1.directions( target: $0 ) } }
-    let third = second.map { $0.flatMap { keypad2.directions( target: $0 ) } }
-    let shortests = third.map { $0.map { $0.count }.min()! }
+    let numeric = Keypad( .numeric )
+    let directional = Keypad( .directional )
+
+    let first = input.lines.map { numeric.directions( target: $0 ) }
+    let second = first.map { directional.directions( target: $0.joined() ) }
+    let third = second.map { directional.directions( target: $0.joined() ) }
+    let shortests = third.map { $0.joined().count }
     let numericParts = input.lines.map {
         Int( String( $0.filter { $0.isNumber } ) )!
     }
@@ -163,17 +112,21 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
     let numeric = Keypad( .numeric )
     let directional = Keypad( .directional )
     
-    let first = input.lines.map { numeric.directions( target: $0 ) }
+    let first = input.lines.map { numeric.frequencies( target: $0 ) }
     let robots = ( 1 ... 25 ).reduce( into: [first] ) { robots, _ in
-        robots.append( robots.last!.map {
-            $0.flatMap { directional.directions( target: $0 ) }
-        } )
+        let level = robots.last!
+        let nextLevel = level.reduce( into: [[ String : Int ]]() ) {
+            nextLevel, dict in
+            nextLevel.append( directional.update( previous: dict ) )
+        }
+        robots.append( nextLevel )
     }
-    let shortests = robots.last!.map { $0.map { $0.count }.min()! }
+
+    let shortests = robots.last!
+        .map { $0.reduce( 0 ) { $0 + $1.key.count * $1.value } }
     let numericParts = input.lines.map {
         Int( String( $0.filter { $0.isNumber } ) )!
     }
