@@ -32,6 +32,16 @@ struct Gate {
     let output: String
     var fired: Bool
     
+    init(
+        left: String, right: String, operation: Gate.Operation, output: String, fired: Bool
+    ) {
+        self.left = left
+        self.right = right
+        self.operation = operation
+        self.output = output
+        self.fired = fired
+    }
+    
     init( line : String ) {
         let fields = line
             .split( whereSeparator: { " ->".contains( $0 ) } )
@@ -41,6 +51,10 @@ struct Gate {
         operation = Operation( rawValue: fields[1] )!
         right = fields[2]
         output = fields[3]
+        fired = false
+    }
+    
+    mutating func reset() -> Void {
         fired = false
     }
     
@@ -58,19 +72,35 @@ struct Gate {
             return left != right
         }
     }
+    
+    func update( output: String ) -> Gate {
+        Gate( left: left, right: right, operation: operation, output: output, fired: fired )
+    }
 }
 
 struct Monitor {
     let initialWires: [Wire]
     var wireValues: [ String : Bool ]
     var gates: [Gate]
+    let gatesMap: [ String : Int ]
     
     init( paragraphs: [[String]] ) {
         initialWires = paragraphs[0].map { Wire( line: $0 ) }
         wireValues = initialWires.reduce( into: [ String : Bool ]() ) {
             $0[$1.name] = $1.value
         }
-        gates = paragraphs[1].map { Gate( line: $0 ) }
+        let gates = paragraphs[1].map { Gate( line: $0 ) }
+        self.gates = gates
+        gatesMap = gates.indices.reduce( into: [ String : Int ]() ) {
+            $0[ gates[$1].output ] = $1
+        }
+    }
+    
+    mutating func reset() -> Void {
+        wireValues = initialWires.reduce( into: [ String : Bool ]() ) {
+            $0[$1.name] = $1.value
+        }
+        gates.indices.forEach { gates[$0].reset() }
     }
     
     func valueOf( startsWith: String ) -> Int {
@@ -91,33 +121,77 @@ struct Monitor {
         }
     }
     
-    func blarg( zAffected: [String] ) -> [ String : Set<String> ] {
-        let zAffected = Set( zAffected )
-        let allZ = wireValues.keys.filter { $0.hasPrefix( "z" ) }
-        var result = [ String : Set<String> ]()
+    func allInfluences() -> [ String : Set<String> ] {
+        let allZ = Set( wireValues.keys.filter { $0.hasPrefix( "z" ) } )
         
-        for thisZ in allZ {
+        return allZ.reduce( into: [ String : Set<String> ]() ) { result, thisZ in
             var queue = [thisZ]
             var seen = Set<String>()
             while !queue.isEmpty {
                 let current = queue.removeFirst()
-                let matchingGates = gates.filter { $0.output == current }
-                
-                for gate in matchingGates {
+                if let gateIndex = gatesMap[current] {
+                    let gate = gates[gateIndex]
+                    
                     if seen.insert( gate.left ).inserted { queue.append( gate.left ) }
                     if seen.insert( gate.right ).inserted { queue.append( gate.right ) }
                 }
             }
             result[thisZ] = seen
         }
-        let jango = result.sorted { $0.key < $1.key }
-        let wango = result.reduce( into: [ String : Set<String> ]() ) { wango, thisZ in
-            if !thisZ.value.isDisjoint( with: zAffected ) {
-                wango[thisZ.key] = result[thisZ.key]
+    }
+    
+    mutating func swapPair( zAffected: [String], allInfluences: [ String : Set<String> ] ) {
+        let zAffected = Set( zAffected )
+        let allZ = Set( wireValues.keys.filter { $0.hasPrefix( "z" ) } )
+        let notAffected = allZ.subtracting( zAffected )
+        let moose = zAffected
+            .reduce( into: [ String : Set<String> ]() ) { moose, thisZ in
+                moose[thisZ] = notAffected.reduce( allInfluences[thisZ]! ) {
+                    $0.subtracting( allInfluences[$1]! )
             }
         }
-        return result
+            .filter { !$0.value.isEmpty }
+        
+        guard moose.count == 1 else { fatalError( "Pair count invalid" ) }
+        guard moose.first!.value.count == 2 else { fatalError( "Not a pair" ) }
+        
+        let pair = Array( moose.first!.value )
+        
+        gates[ gatesMap[pair[0]]! ] = gates[ gatesMap[pair[0]]! ].update( output: pair[1] )
+        gates[ gatesMap[pair[1]]! ] = gates[ gatesMap[pair[1]]! ].update( output: pair[0] )
     }
+
+//    func blarg( zAffected: [String] ) -> [ String : Set<String> ] {
+//        let zAffected = Set( zAffected )
+//        let allZ = Set( wireValues.keys.filter { $0.hasPrefix( "z" ) } )
+//        let notAffected = allZ.subtracting( zAffected )
+//        let result = allZ.reduce( into: [ String : Set<String> ]() ) { result, thisZ in
+//            var queue = [thisZ]
+//            var seen = Set<String>()
+//            while !queue.isEmpty {
+//                let current = queue.removeFirst()
+//                if let gateIndex = gatesMap[current] {
+//                    let gate = gates[gateIndex]
+//                    
+//                    if seen.insert( gate.left ).inserted { queue.append( gate.left ) }
+//                    if seen.insert( gate.right ).inserted { queue.append( gate.right ) }
+//                }
+//            }
+//            result[thisZ] = seen
+//        }
+//        let moose = zAffected.reduce( into: [ String : Set<String> ]() ) { moose, thisZ in
+//            moose[thisZ] = notAffected.reduce( result[thisZ]! ) {
+//                $0.subtracting( result[$1]! )
+//            }
+//        }
+//        let jango = result.sorted { $0.key < $1.key }
+//        let wango = result.reduce( into: [ String : Set<String> ]() ) { wango, thisZ in
+//            if !thisZ.value.isDisjoint( with: zAffected ) {
+//                wango[thisZ.key] = result[thisZ.key]
+//            }
+//        }
+//        return result
+//    }
 }
 
 
@@ -137,11 +211,6 @@ func enabled( value: Int, startsWith: String ) -> [String] {
 }
 
 
-func parse( input: AOCinput ) -> Any? {
-    return nil
-}
-
-
 func part1( input: AOCinput ) -> String {
     var monitor = Monitor( paragraphs: input.paragraphs )
     monitor.engage()
@@ -151,13 +220,24 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     var monitor = Monitor( paragraphs: input.paragraphs )
-    monitor.engage()
     let xValue = monitor.valueOf( startsWith: "x" )
     let yValue = monitor.valueOf( startsWith: "y" )
-    let zValue = monitor.valueOf( startsWith: "z" )
-    let effected = ( xValue + yValue ) ^ zValue
-    let zAffected = enabled( value: effected, startsWith: "z" )
-    let blarg = monitor.blarg( zAffected: zAffected )
+    let sum = xValue + yValue
+    
+    monitor.engage()
+    var zValue = monitor.valueOf( startsWith: "z" )
+
+    while sum != zValue {
+        let bitsAffected = ( xValue + yValue ) ^ zValue
+        let zAffected = enabled( value: bitsAffected, startsWith: "z" )
+        let allInfluences = monitor.allInfluences()
+        
+        monitor.swapPair( zAffected: zAffected, allInfluences: allInfluences )
+        monitor.reset()
+        monitor.engage()
+        zValue = monitor.valueOf( startsWith: "z" )
+    }
+    
     return "\( ( xValue + yValue ) ^ zValue )"
 }
 
