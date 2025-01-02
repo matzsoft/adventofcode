@@ -228,18 +228,13 @@ struct Monitor {
         for index in 0 ..< gates.count {
             let target = adder.gates[index].replacing( mapping: mapping )!
             if let actual = find( gate: target ) {
+                if actual.output.hasPrefix( "z" ) && actual.output != target.output {
+                    let bad = newGates[ standardIndex( of: actual.output )! ].output
+                    return ( actual.output, bad )
+                }
                 mapping[target.output] = actual.output
                 newGates.append( actual )
             } else {
-                if target.left.hasPrefix( "z" ) {
-                    let other = newGates[ standardIndex( of: target.left )! ].output
-                    return ( target.left, other )
-                }
-                if target.right.hasPrefix( "z" ) {
-                    let other = newGates[ standardIndex( of: target.right )! ].output
-                    return ( target.right, other )
-                }
-                
                 let leftInputs = find( input: target.left )
                 let rightInputs = find( input: target.right )
                 switch target.operation {
