@@ -223,13 +223,9 @@ struct Monitor {
             .map { $0.name }
             .reduce( into: [ String : String ]() ) { $0[$1] = $1 }
         var badWires = Set<String>()
+        var newGates = [Gate]()
         
-        var newGates = ( 0 ... 1 ).map {
-            find( gate: adder.gates[$0].replacing( mapping: mapping )! )!
-        }
-        mapping["c00"] = newGates[1].output
-        
-        for index in 2 ..< gates.count {
+        for index in 0 ..< gates.count {
             let target = adder.gates[index].replacing( mapping: mapping )!
             if let actual = find( gate: target ) {
                 mapping[target.output] = actual.output
@@ -286,7 +282,6 @@ struct Monitor {
         
         return Monitor( initialWires: initialWires, gates: newGates )
     }
-    
 }
 
 
