@@ -217,6 +217,18 @@ struct Monitor {
         gates.filter { $0.left == input || $0.right == input }
     }
     
+    mutating func badWires() -> Set<String> {
+        let adder = makeAdder
+        var badWires = Set<String>()
+        
+        while let pair = canonical( adder: adder ) {
+            badWires.formUnion( [ pair.0, pair.1 ] )
+            self = swapingPair( output1: pair.0, output2: pair.1 )
+        }
+        
+        return badWires
+    }
+    
     func canonical( adder: Monitor ) -> ( String, String )? {
         var mapping = initialWires
             .map { $0.name }
@@ -291,6 +303,7 @@ struct Monitor {
 
 func part1( input: AOCinput ) -> String {
     var monitor = Monitor( paragraphs: input.paragraphs )
+    
     monitor.engage()
     return "\( monitor.valueOf( startsWith: "z" ) )"
 }
@@ -298,15 +311,8 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     var monitor = Monitor( paragraphs: input.paragraphs )
-    let adder = monitor.makeAdder
-    var badWires = Set<String>()
     
-    while let pair = monitor.canonical( adder: adder ) {
-        badWires.formUnion( [ pair.0, pair.1 ] )
-        monitor = monitor.swapingPair( output1: pair.0, output2: pair.1 )
-    }
-    
-    return "\( badWires.sorted().joined( separator: "," ) )"
+    return "\( monitor.badWires().sorted().joined( separator: "," ) )"
 }
 
 
