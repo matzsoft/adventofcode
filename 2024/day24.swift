@@ -122,12 +122,8 @@ struct Monitor {
     let bitCount: Int
     var wireValues: [ String : Bool ]
     var gates: [Gate]
-    let gatesMap: [ String : Gate ]
     
-    init(
-        initialWires: [Wire], wireValues: [String : Bool]? = nil,
-        gates: [Gate], gatesMap: [ String : Gate ]? = nil
-    ) {
+    init( initialWires: [Wire], wireValues: [String : Bool]? = nil, gates: [Gate] ) {
         self.initialWires = initialWires
         self.bitCount = initialWires.count / 2
         if let wireValues = wireValues {
@@ -138,13 +134,6 @@ struct Monitor {
             }
         }
         self.gates = gates
-        if let gatesMap = gatesMap {
-            self.gatesMap = gatesMap
-        } else {
-            self.gatesMap = gates.reduce( into: [ String : Gate ]() ) {
-                $0[ $1.output ] = $1
-            }
-        }
     }
     
     init( paragraphs: [[String]] ) {
