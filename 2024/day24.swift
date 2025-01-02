@@ -61,10 +61,6 @@ struct Gate: Hashable {
         )
     }
     
-    mutating func reset() -> Void {
-        fired = false
-    }
-    
     mutating func operate( wireValues: [ String : Bool ] ) -> Bool? {
         guard let left = wireValues[self.left] else { return nil }
         guard let right = wireValues[self.right] else { return nil }
@@ -87,7 +83,7 @@ struct Gate: Hashable {
         )
     }
     
-    func replacing( mapping: Mapping ) -> Gate? {
+    func replacing( mapping: [ String : String ] ) -> Gate? {
         guard let left = mapping[left] else { return nil }
         guard let right = mapping[right] else { return nil }
         
@@ -118,25 +114,6 @@ struct Names {
         } else {
             cnn = String( format: "z%02d", bitCount )
         }
-    }
-}
-
-struct Mapping {
-    var canonical: [ String : String ]
-    var actual: [ String : String ]
-    
-    init( initial: [String] ) {
-        canonical = initial.reduce( into: [ String : String ]() ) { $0[$1] = $1 }
-        actual = canonical
-    }
-    
-    subscript( _ key: String ) -> String? {
-        canonical[key]
-    }
-    
-    mutating func add( canonical: String, actual: String ) -> Void {
-        self.canonical[canonical] = actual
-        self.actual[actual] = canonical
     }
 }
 
@@ -211,13 +188,6 @@ struct Monitor {
         }
     }
     
-    mutating func reset() -> Void {
-        wireValues = initialWires.reduce( into: [ String : Bool ]() ) {
-            $0[$1.name] = $1.value
-        }
-        gates.indices.forEach { gates[$0].reset() }
-    }
-    
     func valueOf( startsWith: String ) -> Int {
         let keys = wireValues.keys
             .filter { $0.hasPrefix( startsWith ) }.sorted().reversed()
@@ -247,37 +217,21 @@ struct Monitor {
         gates.filter { $0.left == input || $0.right == input }
     }
     
-    func isOK( zGate: Gate, xorGate: Gate ) -> Bool {
-        let bitNo = Int( zGate.output.dropFirst() )!
-        let xnn = String( format: "x%02d", bitNo )
-        let ynn = String( format: "y%02d", bitNo )
-        
-        return xorGate.left == xnn && xorGate.right == ynn
-    }
-    
-    func isOK( zGate: Gate, orGate: Gate ) -> Bool {
-        let left = gatesMap[ orGate.left ]!
-        let right = gatesMap[ orGate.right ]!
-        
-        return left.operation == .and && right.operation == .and
-    }
-    
-    func canonical() -> ( String, String )? {
-        let adder = makeAdder
-        var mapping = Mapping( initial: initialWires.map { $0.name } )
-        var badBunnies = Set<String>()
+    func canonical( adder: Monitor ) -> ( String, String )? {
+        var mapping = initialWires
+            .map { $0.name }
+            .reduce( into: [ String : String ]() ) { $0[$1] = $1 }
+        var badWires = Set<String>()
         
         var newGates = ( 0 ... 1 ).map {
             find( gate: adder.gates[$0].replacing( mapping: mapping )! )!
         }
-        mapping.add( canonical: "c00", actual: newGates[1].output )
+        mapping["c00"] = newGates[1].output
         
         for index in 2 ..< gates.count {
             let target = adder.gates[index].replacing( mapping: mapping )!
             if let actual = find( gate: target ) {
-                mapping.add(
-                    canonical: adder.gates[ index].output, actual: actual.output
-                )
+                mapping[target.output] = actual.output
                 newGates.append( actual )
             } else {
                 if target.left.hasPrefix( "z" ) {
@@ -294,46 +248,29 @@ struct Monitor {
                 switch target.operation {
                 case .or:
                     if leftInputs.count == 2 {
-                        badBunnies.insert( target.left )
+                        badWires.insert( target.left )
                     }
                     if rightInputs.count == 2 {
-                        badBunnies.insert( target.right )
+                        badWires.insert( target.right )
                     }
                 case .xor, .and:
                     if leftInputs.count == 1 {
-                        badBunnies.insert( target.left )
+                        badWires.insert( target.left )
                     }
                     if rightInputs.count == 1 {
-                        badBunnies.insert( target.right )
+                        badWires.insert( target.right )
                     }
                 }
-                mapping.add( canonical: target.output, actual: target.output )
+                mapping[target.output] = target.output
                 newGates.append( target )
-                if badBunnies.count > 1 {
-                    let pair = Array( badBunnies )
+                if badWires.count > 1 {
+                    let pair = Array( badWires )
                     return ( pair[0], pair[1] )
                 }
             }
         }
         
         return nil
-    }
-    
-    func allInfluences() -> [ String : Set<String> ] {
-        let allZ = Set( wireValues.keys.filter { $0.hasPrefix( "z" ) } )
-        
-        return allZ.reduce( into: [ String : Set<String> ]() ) { result, thisZ in
-            var queue = [thisZ]
-            var seen = Set<String>()
-            while !queue.isEmpty {
-                let current = queue.removeFirst()
-                if let gate = gatesMap[current] {
-                    if seen.insert( gate.left ).inserted { queue.append( gate.left ) }
-                    if seen.insert( gate.right ).inserted { queue.append( gate.right ) }
-                }
-            }
-            result[thisZ] = seen
-        }
     }
     
     func swapingPair( output1: String, output2: String ) -> Monitor {
@@ -352,22 +289,6 @@ struct Monitor {
 }
 
 
-func enabled( value: Int, startsWith: String ) -> [String] {
-    var bitNumber = 0
-    var value = value
-    var result = [String]()
-    
-    while value > 0 {
-        if value & 1 == 1 {
-            result.append( String( format: "\(startsWith)%02d", bitNumber ) )
-        }
-        bitNumber += 1
-        value >>= 1
-    }
-    return result
-}
-
-
 func part1( input: AOCinput ) -> String {
     var monitor = Monitor( paragraphs: input.paragraphs )
     monitor.engage()
@@ -377,17 +298,12 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     var monitor = Monitor( paragraphs: input.paragraphs )
-    let xValue = monitor.valueOf( startsWith: "x" )
-    let yValue = monitor.valueOf( startsWith: "y" )
-    let sum = xValue + yValue
-    
-    var modified = monitor
+    let adder = monitor.makeAdder
     var badWires = Set<String>()
     
-    while true {
-        guard let pair = modified.canonical() else { break }
+    while let pair = monitor.canonical( adder: adder ) {
         badWires.formUnion( [ pair.0, pair.1 ] )
-        modified = modified.swapingPair( output1: pair.0, output2: pair.1 )
+        monitor = monitor.swapingPair( output1: pair.0, output2: pair.1 )
     }
     
     return "\( badWires.sorted().joined( separator: "," ) )"
