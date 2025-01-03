@@ -210,59 +210,66 @@ struct Monitor {
         let adder = makeAdder
         var badWires = Set<String>()
         
-        while let pair = canonical( adder: adder ) {
-            badWires.formUnion( [ pair.0, pair.1 ] )
-            self = swapingPair( output1: pair.0, output2: pair.1 )
+        while badWires.count < 8 {
+            for pair in canonical( adder: adder ) ?? [] {
+                badWires.formUnion( [ pair.0, pair.1 ] )
+                self = swapingPair( output1: pair.0, output2: pair.1 )
+            }
         }
         
         return badWires
     }
     
-    func canonical( adder: Monitor ) -> ( String, String )? {
+    func canonical( adder: Monitor ) -> [ ( String, String ) ]? {
         var mapping = initialWires
             .map { $0.name }
             .reduce( into: [ String : String ]() ) { $0[$1] = $1 }
-        var badWires = Set<String>()
-        var newGates = [Gate]()
+        var badWires = [ ( String, String ) ]()
+        var candidates = Set<String>()
+        var outputs = [String]()
         
         for index in 0 ..< gates.count {
             let target = adder.gates[index].replacing( mapping: mapping )!
             if let actual = find( gate: target ) {
                 if actual.output.hasPrefix( "z" ) && actual.output != target.output {
-                    let bad = newGates[ standardIndex( of: actual.output )! ].output
-                    return ( actual.output, bad )
+                    let bad = outputs[ standardIndex( of: actual.output )! ]
+                    badWires.append( ( actual.output, bad ) )
+                    mapping[target.output] = bad
+                    outputs.append( bad )
+                } else {
+                    mapping[target.output] = actual.output
+                    outputs.append( actual.output )
                 }
-                mapping[target.output] = actual.output
-                newGates.append( actual )
             } else {
                 let leftInputs = find( input: target.left )
                 let rightInputs = find( input: target.right )
                 switch target.operation {
                 case .or:
                     if leftInputs.count == 2 {
-                        badWires.insert( target.left )
+                        candidates.insert( target.left )
                     }
                     if rightInputs.count == 2 {
-                        badWires.insert( target.right )
+                        candidates.insert( target.right )
                     }
                 case .xor, .and:
                     if leftInputs.count == 1 {
-                        badWires.insert( target.left )
+                        candidates.insert( target.left )
                     }
                     if rightInputs.count == 1 {
-                        badWires.insert( target.right )
+                        candidates.insert( target.right )
                     }
                 }
                 mapping[target.output] = target.output
-                newGates.append( target )
-                if badWires.count > 1 {
-                    let pair = Array( badWires )
-                    return ( pair[0], pair[1] )
+                outputs.append( target.output )
+                if candidates.count > 1 {
+                    let pair = Array( candidates )
+                    badWires.append( ( pair[0], pair[1] ) )
+                    return badWires
                 }
             }
         }
         
-        return nil
+        return badWires.isEmpty ? nil : badWires
     }
     
     func swapingPair( output1: String, output2: String ) -> Monitor {
