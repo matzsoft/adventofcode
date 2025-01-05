@@ -20,3 +20,6 @@ Needs speed up for both parts.
 
 Way too slow.
 
+### Day 24
+
+Looking for more data to insure that my solution works in all cases. Got up to JAntaresN in the subreddit with no luck.
