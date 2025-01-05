@@ -18,7 +18,7 @@ Needs speed up for both parts.
 
 ### Day 18
 
-Way too slow.
+Now only part 2 is too slow.
 
 ### Day 24
 
