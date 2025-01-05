@@ -64,39 +64,6 @@ struct MemorySpace: CustomStringConvertible {
         )
     }
     
-    var quick: Int? {
-        var queue = Set( bounds.points ).subtracting( corrupted )
-        var dist = queue.reduce( into: [Point2D : Int ]() ) { queue, point in
-            queue[point] = Int.max
-        }
-        var prev = queue.reduce( into: [ Point2D : Point2D? ]() ) { prev, point in
-            prev[point] = nil
-        }
-        dist[bounds.min] = 0
-        
-        while !queue.isEmpty {
-            let u = queue.min { dist[$0]! < dist[$1]! }!
-            if u == bounds.max { return dist[u] }
-            if dist[u] == Int.max { return nil }
-            queue.remove( u )
-            
-            let neighbors = DirectionUDLR.allCases
-                .map { u + $0.vector }
-                .filter { queue.contains( $0 ) }
-                .filter { !corrupted.contains( $0 ) }
-            
-            for neighbor in neighbors {
-                let alt = dist[u]! + 1
-                if alt < dist[neighbor]! {
-                    dist[neighbor] = alt
-                    prev[neighbor] = u
-                }
-            }
-        }
-        
-        return dist[bounds.max]
-    }
-    
     var shortestPath: Int? {
         let initial = Node( position: Point2D( x: 0, y: 0), distance: 0 )
         var unavailable = Array(
