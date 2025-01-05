@@ -65,27 +65,22 @@ struct MemorySpace: CustomStringConvertible {
     }
     
     var shortestPath: Int? {
-        let initial = Node( position: Point2D( x: 0, y: 0), distance: 0 )
+        let initial = Node( position: bounds.min, distance: 0 )
+        var queue = CircularBuffer( initial: [ initial ], limit: 500 )
         var unavailable = Array(
-            repeating: Array( repeating: 0, count: bounds.width ),
+            repeating: Array( repeating: false, count: bounds.width ),
             count: bounds.height
         )
-        var queue = CircularBuffer( initial: [ initial ], limit: 500 )
-        
-        for corrupt in corrupted {
-            unavailable[corrupt.y][corrupt.x] = 1
-        }
+        for corrupt in corrupted { unavailable[corrupt.y][corrupt.x] = true }
         
         while true {
             guard let node = queue.read() else { return nil }
             if node.position == bounds.max { return node.distance }
             for trial in DirectionUDLR.allCases.map( { node.move( direction: $0 ) } ) {
-                if trial.position.x >= 0 && trial.position.x < bounds.width {
-                    if trial.position.y >= 0 && trial.position.y < bounds.height {
-                        if unavailable[trial.position.y][trial.position.x] != 1 {
-                            unavailable[trial.position.y][trial.position.x] = 1
-                            try! queue.write( value: trial )
-                        }
+                if bounds.contains( point: trial.position ) {
+                    if !unavailable[trial.position.y][trial.position.x] {
+                        unavailable[trial.position.y][trial.position.x] = true
+                        try! queue.write( value: trial )
                     }
                 }
             }
