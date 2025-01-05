@@ -40,7 +40,7 @@ public struct RuntimeError: Error {
 ///  provided as extra lines in the header.
 public struct AOCinput {
     let header: [String]
-    let filename: String
+    public let filename: String
     public let lines:  [String]
 
     public var part1:  String?  { header[0] != "" ? header[0] : nil }
