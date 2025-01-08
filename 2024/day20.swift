@@ -55,56 +55,31 @@ struct Cheat: Hashable {
 }
 
 
-struct TargetGroup {
-    let point1: Point2D
-    let points: [Point2D]
-    
-    init( point1: Point2D, points: [Point2D] ) {
-        self.point1 = point1
-        self.points = points
-    }
-    
-    init( from: Point2D, direction: DirectionUDLR ) {
-        let reducedDirections = DirectionUDLR.allCases
-            .filter { $0 != direction.turn( .back) }
-        point1 = from
-        points = reducedDirections.map { from + $0.vector }
-    }
-    
-    func expand( from: Point2D, map: Map ) -> TargetGroup? {
-        let point1 = from + point1
-        guard map[point1] == .empty else { return nil }
-        
-        let points = points.map { from + $0 }.filter { map[$0] == .empty }
-        return TargetGroup( point1: point1, points: points )
-    }
-}
-
-
 struct CheatGroup {
     let point1: Point2D
-    let groups: [TargetGroup]
+    let point2s: [Point2D]
     
-    init( point1: Point2D, groups: [TargetGroup] ) {
+    init( point1: Point2D, point2s: [Point2D] ) {
         self.point1 = point1
-        self.groups = groups
+        self.point2s = point2s
     }
     
     init( direction: DirectionUDLR ) {
         let reducedDirections = DirectionUDLR.allCases
             .filter { $0 != direction.turn( .back) }
         point1 = direction.vector
-        groups = reducedDirections.map {
-            TargetGroup( from: direction.vector + $0.vector, direction: $0 )
-        }
+        point2s = reducedDirections.map { direction.vector + $0.vector }
     }
     
     func expand( from: Point2D, map: Map ) -> CheatGroup? {
         let point1 = from + point1
         guard map[point1] == .wall else { return nil }
 
-        let groups = groups.compactMap { $0.expand( from: from, map: map ) }
-        return CheatGroup( point1: point1, groups: groups )
+        let point2s = point2s.compactMap {
+            let new = from + $0
+            return map[new] == .empty ? new : nil
+        }
+        return CheatGroup( point1: point1, point2s: point2s )
     }
 }
 
@@ -265,24 +240,21 @@ struct Map: CustomStringConvertible {
         let ( best, path ) = shortestPath
         guard let best else { fatalError( "No shortest path" ) }
         var histogram = [ Int : Int ]()
-        var usedCheats = Set<Cheat>()
-        
-        print( pathDescription( path: path ) )
         let cheatGroups = CheatGroups()
         var current = path[end.y][end.x]
         var cheats = [ Cheat : [Int] ]()
+        
         while let previous = current?.previous {
             guard let node = path[previous.y][previous.x] else { fatalError( "Bonkers" ) }
             if node.distance < best - 3 {
                 let groups = cheatGroups.expand( from: previous, map: self )
                 for cheat1 in groups.groups {
-                    for cheat2 in cheat1.groups {
-                        let trial = cheat2.point1
-                        let candidate = path[trial.y][trial.x]!
+                    for cheat2 in cheat1.point2s {
+                        let candidate = path[cheat2.y][cheat2.x]!
                         if candidate.distance - 2 > node.distance {
                             let key = candidate.distance - node.distance - 2
                             let cheat = Cheat(
-                                point1: cheat1.point1, point2: cheat2.point1
+                                point1: cheat1.point1, point2: cheat2
                             )
                             if key == 62 {
                                 cheats[ cheat, default: [] ].append( key )
@@ -308,10 +280,17 @@ func part1( input: AOCinput ) -> String {
     let map = Map( input: input )
     let histogram = map.countCheats.sorted { $0.key < $1.key }
     
+    /*
     for entry in histogram {
         print( "There are \(entry.value) cheats that save \(entry.key) picoseconds." )
     }
-    return ""
+     */
+    
+    let solution = histogram
+        .filter { $0.key >= map.threshold }
+        .map { $0.value }
+        .reduce( 0, + )
+    return "\(solution)"
 }
 
 
