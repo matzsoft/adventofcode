@@ -101,11 +101,6 @@ struct CheatGroups {
 }
 
 
-func vector( _ x: Int, _ y: Int ) -> Point2D {
-    Point2D( x: x, y: y )
-}
-
-
 struct Map: CustomStringConvertible {
     enum External: Character {
         case wall = "#", empty = ".", start = "S", end = "E"
@@ -136,8 +131,6 @@ struct Map: CustomStringConvertible {
     let bounds: Rect2D
     let start: Point2D
     let end: Point2D
-    let threshold: Int
-    let noCheat: Int?
     
     var description: String {
         var representation = map.map { $0.map { $0.toExternal } }
@@ -151,11 +144,10 @@ struct Map: CustomStringConvertible {
         return lines.joined( separator: "\n" )
     }
     
-    init( input: AOCinput ) {
+    init( lines: [String] ) {
         var start = Point2D( x: 0, y: 0 )
         var end = start
-        let trimmed = Array( input.lines[ 1 ..< input.lines.count - 1 ] )
-        let fields = input.extras[0].split( separator: "," ).map { Int( $0 )! }
+        let trimmed = Array( lines[ 1 ..< lines.count - 1 ] )
         map = trimmed.indices.map { y in
             let line = trimmed[y].dropLast().dropFirst().map { $0 }
             return line.indices.map { x in
@@ -170,8 +162,6 @@ struct Map: CustomStringConvertible {
         )!
         self.start = start
         self.end = end
-        threshold = fields[0]
-        noCheat = fields.count > 1 ? fields[1] : nil
     }
     
     subscript( _ point: Point2D ) -> Internal? {
@@ -277,7 +267,8 @@ struct Map: CustomStringConvertible {
 
 
 func part1( input: AOCinput ) -> String {
-    let map = Map( input: input )
+    let map = Map( lines: input.lines )
+    let threshold = input.extras[0].split( separator: "," ).map { Int( $0 )! }[0]
     let histogram = map.countCheats.sorted { $0.key < $1.key }
     
     /*
@@ -287,7 +278,7 @@ func part1( input: AOCinput ) -> String {
      */
     
     let solution = histogram
-        .filter { $0.key >= map.threshold }
+        .filter { $0.key >= threshold }
         .map { $0.value }
         .reduce( 0, + )
     return "\(solution)"
