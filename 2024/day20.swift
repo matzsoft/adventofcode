@@ -11,24 +11,6 @@
 import Foundation
 import Library
 
-extension DirectionUDLR {
-    init( from vector: Point2D ) {
-        switch ( vector.x, vector.y ) {
-        case let ( x, y ) where x < 0 && y == 0:
-            self = .left
-        case let ( x, y ) where x > 0 && y == 0:
-            self = .right
-        case let ( x, y ) where x == 0 && y < 0:
-            self = .up
-        case let ( x, y ) where x == 0 && y > 0:
-            self = .down
-        default:
-            fatalError( "\(vector) is not orthogonal" )
-        }
-    }
-}
-
-
 struct Node {
     let position: Point2D
     let distance: Int
@@ -49,59 +31,7 @@ struct Node {
 }
 
 
-struct Cheat: Hashable {
-    let point1: Point2D
-    let point2: Point2D
-}
-
-
-struct CheatGroup {
-    let point1: Point2D
-    let point2s: [Point2D]
-    
-    init( point1: Point2D, point2s: [Point2D] ) {
-        self.point1 = point1
-        self.point2s = point2s
-    }
-    
-    init( direction: DirectionUDLR ) {
-        let reducedDirections = DirectionUDLR.allCases
-            .filter { $0 != direction.turn( .back) }
-        point1 = direction.vector
-        point2s = reducedDirections.map { direction.vector + $0.vector }
-    }
-    
-    func expand( from: Point2D, map: Map ) -> CheatGroup? {
-        let point1 = from + point1
-        guard map[point1] == .wall else { return nil }
-
-        let point2s = point2s.compactMap {
-            let new = from + $0
-            return map[new] == .empty ? new : nil
-        }
-        return CheatGroup( point1: point1, point2s: point2s )
-    }
-}
-
-
-struct CheatGroups {
-    let groups: [CheatGroup]
-    
-    init( groups: [CheatGroup] ) {
-        self.groups = groups
-    }
-    
-    init() {
-        groups = DirectionUDLR.allCases.map { CheatGroup( direction: $0 ) }
-    }
-    
-    func expand( from: Point2D, map: Map ) -> CheatGroups {
-        CheatGroups( groups: groups.compactMap { $0.expand( from: from, map: map ) } )
-    }
-}
-
-
-struct Map: CustomStringConvertible {
+struct Map {
     enum External: Character {
         case wall = "#", empty = ".", start = "S", end = "E"
         
@@ -114,35 +44,12 @@ struct Map: CustomStringConvertible {
             }
         }
     }
-    enum Internal {
-        case wall, empty
-        
-        var toExternal: External {
-            switch self {
-            case .wall:
-                return .wall
-            case .empty:
-                return .empty
-            }
-        }
-    }
+    enum Internal { case wall, empty }
     
     let map: [[Internal]]
     let bounds: Rect2D
     let start: Point2D
     let end: Point2D
-    
-    var description: String {
-        var representation = map.map { $0.map { $0.toExternal } }
-        representation[start.y][start.x] = .start
-        representation[end.y][end.x] = .end
-        let buffer = representation.map {
-            "#" + $0.map { String( $0.rawValue ) }.joined() + "#"
-        }
-        let bigRow = String( repeating: "#", count: map[0].count + 2 )
-        let lines = [ bigRow ] + buffer + [ bigRow ]
-        return lines.joined( separator: "\n" )
-    }
     
     init( lines: [String] ) {
         var start = Point2D( x: 0, y: 0 )
@@ -157,9 +64,7 @@ struct Map: CustomStringConvertible {
                 return external.toInternal
             }
         }
-        bounds = Rect2D(
-            min: Point2D( x: 0, y: 0 ), width: map[0].count, height: map.count
-        )!
+        bounds = Rect2D( min: Point2D.origin, width: map[0].count, height: map.count )!
         self.start = start
         self.end = end
     }
@@ -169,54 +74,26 @@ struct Map: CustomStringConvertible {
         return map[point.y][point.x]
     }
     
-    func contains( point: Point2D ) -> Bool {
-        bounds.contains( point: point )
-    }
     
-    var shortestPath: ( Int?, [[Node?]] ) {
-        let initial = Node( position: start, distance: 0 )
-        var queue = CircularBuffer( initial: [ initial ], limit: 500 )
-        var available = map
+    var shortestPath: [[Node?]] {
+        var current = Node( position: start, distance: 0 )
+        var previous = current
         var path = map.map { $0.map { _ -> Node? in nil } }
-        available[start.y][start.x] = .wall
-        path[start.y][start.x] = initial
+        path[start.y][start.x] = current
                 
-        while true {
-            guard let node = queue.read() else { return ( nil, path ) }
-            if node.position == end { return ( node.distance, path ) }
-            for trial in DirectionUDLR.allCases.map( { node.move( direction: $0 ) } ) {
+        while current.position != end {
+            for trial in DirectionUDLR.allCases.map( { current.move( direction: $0 ) } ) {
                 if bounds.contains( point: trial.position ) {
-                    if available[trial.position.y][trial.position.x] == .empty {
-                        available[trial.position.y][trial.position.x] = .wall
+                    if self[trial.position] == .empty && trial.position != previous.position {
                         path[trial.position.y][trial.position.x] = trial
-                        try! queue.write( value: trial )
+                        previous = current
+                        current = trial
+                        break
                     }
                 }
             }
         }
-    }
-
-    func pathDescription( path: [[Node?]] ) -> String {
-        var representation = map.map { $0.map { $0.toExternal } }
-        representation[start.y][start.x] = .start
-        representation[end.y][end.x] = .end
-        var buffer = representation.map { $0.map { String( $0.rawValue ) } }
-        
-        var current = path[end.y][end.x]
-        while let previous = current?.previous {
-            guard let node = path[previous.y][previous.x] else { fatalError( "Bonkers" ) }
-            let vector = current!.position - node.position
-            let direction = DirectionUDLR( from: vector )
-            if node.position != start {
-                buffer[node.position.y][node.position.x] = direction.toArrow
-            }
-            current = node
-        }
-        
-        let bigRow = String( repeating: "#", count: map[0].count + 2 )
-        let wango = buffer.map { "#" + $0.joined() + "#" }
-        let lines = [ bigRow ] + wango + [ bigRow ]
-        return lines.joined( separator: "\n" )
+        return path
     }
 
     // ...3...
@@ -226,42 +103,32 @@ struct Map: CustomStringConvertible {
     // .32123.
     // ..323..
     // ...3...
-    var countCheats: [ Int : Int ] {
-        let ( best, path ) = shortestPath
-        guard let best else { fatalError( "No shortest path" ) }
-        var histogram = [ Int : Int ]()
-        let cheatGroups = CheatGroups()
-        var current = path[end.y][end.x]
-        var cheats = [ Cheat : [Int] ]()
-        
-        while let previous = current?.previous {
-            guard let node = path[previous.y][previous.x] else { fatalError( "Bonkers" ) }
-            if node.distance < best - 3 {
-                let groups = cheatGroups.expand( from: previous, map: self )
-                for cheat1 in groups.groups {
-                    for cheat2 in cheat1.point2s {
-                        let candidate = path[cheat2.y][cheat2.x]!
-                        if candidate.distance - 2 > node.distance {
-                            let key = candidate.distance - node.distance - 2
-                            let cheat = Cheat(
-                                point1: cheat1.point1, point2: cheat2
-                            )
-                            if key == 62 {
-                                cheats[ cheat, default: [] ].append( key )
-                            } else {
-                                cheats[ cheat, default: [] ].append( key )
-                            }
-                        }
-                    }
-                }
+    func countCheats( cheatLimit: Int, threshold: Int ) -> Int {
+        let path = shortestPath
+        let circle = manhattenCircle( radius: cheatLimit )
+
+        var total = 0
+        for point1 in bounds.points {
+            guard let path1 = path[point1.y][point1.x] else { continue }
+            let candidatePaths = circle
+                .map { $0 + point1 }
+                .filter { bounds.contains( point: $0 ) }
+                .compactMap { path[$0.y][$0.x] }
+            for path2 in candidatePaths {
+                let delta = path2.distance - path1.distance
+                let distance = point1.distance( other: path2.position )
+                if delta - distance >= threshold { total += 1 }
             }
-            
-            current = node
         }
-        
-        let bestGains = cheats.mapValues { $0.max()! }
-        bestGains.forEach { histogram[ $0.value, default: 0 ] += 1 }
-        return histogram
+        return total
+    }
+    
+    func manhattenCircle( radius: Int ) -> [Point2D] {
+        ( -radius ... radius ).reduce( into: [Point2D]() ) { circle, x in
+            for y in -radius + abs( x ) ... radius - abs( x ) {
+                circle.append( Point2D( x: x, y: y ) )
+            }
+        }
     }
 }
 
@@ -269,25 +136,16 @@ struct Map: CustomStringConvertible {
 func part1( input: AOCinput ) -> String {
     let map = Map( lines: input.lines )
     let threshold = input.extras[0].split( separator: "," ).map { Int( $0 )! }[0]
-    let histogram = map.countCheats.sorted { $0.key < $1.key }
-    
-    /*
-    for entry in histogram {
-        print( "There are \(entry.value) cheats that save \(entry.key) picoseconds." )
-    }
-     */
-    
-    let solution = histogram
-        .filter { $0.key >= threshold }
-        .map { $0.value }
-        .reduce( 0, + )
-    return "\(solution)"
+
+    return "\( map.countCheats( cheatLimit: 2, threshold: threshold ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-//    let something = parse( input: input )
-    return ""
+    let map = Map( lines: input.lines )
+    let threshold = input.extras[0].split( separator: "," ).map { Int( $0 )! }[1]
+
+    return "\( map.countCheats( cheatLimit: 20, threshold: threshold ) )"
 }
 
 
