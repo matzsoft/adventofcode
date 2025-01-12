@@ -11,22 +11,20 @@
 import Foundation
 import Library
 
-struct Node {
-    let position: Point2D
-    let distance: Int
-    let previous: Point2D?
-    
-    init( position: Point2D, distance: Int, previous: Point2D? = nil ) {
-        self.position = position
-        self.distance = distance
-        self.previous = previous
-    }
-    
-    func move( direction: DirectionUDLR ) -> Node {
-        Node(
-            position: position + direction.vector, distance: distance + 1,
-            previous: position
-        )
+extension DirectionUDLR {
+    init( from vector: Point2D ) {
+        switch ( vector.x, vector.y ) {
+        case let ( x, y ) where x < 0 && y == 0:
+            self = .left
+        case let ( x, y ) where x > 0 && y == 0:
+            self = .right
+        case let ( x, y ) where x == 0 && y < 0:
+            self = .up
+        case let ( x, y ) where x == 0 && y > 0:
+            self = .down
+        default:
+            fatalError( "\(vector) is not orthogonal" )
+        }
     }
 }
 
@@ -44,7 +42,18 @@ struct Map {
             }
         }
     }
-    enum Internal { case wall, empty }
+    enum Internal {
+        case wall, empty
+        
+        var toExternal: External {
+            switch self {
+            case .wall:
+                return .wall
+            case .empty:
+                return .empty
+            }
+        }
+    }
     
     let map: [[Internal]]
     let bounds: Rect2D
@@ -75,17 +84,19 @@ struct Map {
     }
     
     
-    var shortestPath: [[Node?]] {
-        var current = Node( position: start, distance: 0 )
+    var shortestPath: ( [Point2D], [[Int?]] ) {
+        var current = start
         var previous = current
-        var path = map.map { $0.map { _ -> Node? in nil } }
-        path[start.y][start.x] = current
+        var points = [ start ]
+        var distances = map.map { $0.map { _ -> Int? in nil } }
+        distances[start.y][start.x] = 0
                 
-        while current.position != end {
-            for trial in DirectionUDLR.allCases.map( { current.move( direction: $0 ) } ) {
-                if bounds.contains( point: trial.position ) {
-                    if self[trial.position] == .empty && trial.position != previous.position {
-                        path[trial.position.y][trial.position.x] = trial
+        while current != end {
+            for trial in DirectionUDLR.allCases.map( { current + $0.vector } ) {
+                if bounds.contains( point: trial ) {
+                    if self[trial] == .empty && trial != previous {
+                        points.append( trial )
+                        distances[trial.y][trial.x] = distances[current.y][current.x]! + 1
                         previous = current
                         current = trial
                         break
@@ -93,9 +104,30 @@ struct Map {
                 }
             }
         }
-        return path
+//        print( pathDescription( points: points, distances: distances ) )
+        return ( points, distances )
     }
 
+    func pathDescription( points: [Point2D], distances: [[Int?]] ) -> String {
+        var pathBuffer = map.map { $0.map { $0.toExternal.rawValue } }
+        pathBuffer[start.y][start.x] = External.start.rawValue
+        pathBuffer[end.y][end.x] = External.end.rawValue
+        
+        for index in points.indices.dropFirst().dropLast() {
+            let vector = points[index+1] - points[index]
+            let point = points[index]
+            pathBuffer[point.y][point.x]
+            = Character( DirectionUDLR( from: vector ).toArrow )
+        }
+        
+        let bigRow = String( repeating: "#", count: bounds.width + 2 )
+        let lines = pathBuffer.map { "#" + String( $0 ) + "#" }
+        let distanceBuffer = distances.map {
+            $0.map { $0 == nil ? "--" : String( format: "%2d", $0! ) }.joined( separator: " ")
+        }
+        return ( [ bigRow ] + lines + [ bigRow ] + distanceBuffer                                                            ).joined( separator: "\n" )
+    }
+    
     // ...3...
     // ..323..
     // .32123.
@@ -104,19 +136,19 @@ struct Map {
     // ..323..
     // ...3...
     func countCheats( cheatLimit: Int, threshold: Int ) -> Int {
-        let path = shortestPath
+        let ( points, distances ) = shortestPath
         let circle = manhattenCircle( radius: cheatLimit )
 
         var total = 0
-        for point1 in bounds.points {
-            guard let path1 = path[point1.y][point1.x] else { continue }
-            let candidatePaths = circle
+        for point1 in points {
+            let distance1 = distances[point1.y][point1.x]!
+            let candidatePoints = circle
                 .map { $0 + point1 }
                 .filter { bounds.contains( point: $0 ) }
-                .compactMap { path[$0.y][$0.x] }
-            for path2 in candidatePaths {
-                let delta = path2.distance - path1.distance
-                let distance = point1.distance( other: path2.position )
+                .filter { distances[$0.y][$0.x] != nil }
+            for point2 in candidatePoints {
+                let delta = distances[point2.y][point2.x]! - distance1
+                let distance = point1.distance( other: point2 )
                 if delta - distance >= threshold { total += 1 }
             }
         }
