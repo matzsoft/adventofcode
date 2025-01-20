@@ -84,9 +84,11 @@ func part1( input: AOCinput ) -> String {
 func part2( input: AOCinput ) -> String {
     let ( towels, designs ) = parse( input: input )
     let maxLength = towels.map { $0.count }.max()!
+    cache = [ "" : 1 ]
     let total1 = designs.reduce( 0 ) {
         $0 + possibleCount1( design: $1, towels: towels, maxLength: maxLength )
     }
+    cache = [ "" : 1 ]
     let total2 = designs.reduce( 0 ) {
         $0 + possibleCount2( design: $1, towels: towels )
     }
