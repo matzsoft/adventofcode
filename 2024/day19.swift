@@ -38,28 +38,6 @@ func isPossible( design: String, towels: Set<String> ) -> Bool {
 
 var cache = [ "" : 1 ]
 
-func possibleCount1( design: String, towels: Set<String>, maxLength: Int ) -> Int {
-    if let possibles = cache[ design ] { return possibles }
-    
-    let maxLength = min( maxLength, design.count )
-    let total = ( 1 ... maxLength ).reduce( 0 ) { total, prefixLength in
-        let prefix = String( design.prefix( prefixLength ) )
-        
-        if towels.contains( prefix ) {
-            let suffix = String( design.dropFirst( prefixLength ) )
-            let suffixCount = possibleCount1(
-                design: suffix, towels: towels, maxLength: maxLength
-            )
-            return total + suffixCount
-        }
-        return total
-    }
-    
-    cache[design] = total
-    return total
-}
-
-
 func possibleCount2( design: String, towels: Set<String> ) -> Int {
     if let possibles = cache[ design ] { return possibles }
     
@@ -82,18 +60,13 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
+    cache = [ "" : 1 ]
+
     let ( towels, designs ) = parse( input: input )
-    let maxLength = towels.map { $0.count }.max()!
-    cache = [ "" : 1 ]
-    let total1 = designs.reduce( 0 ) {
-        $0 + possibleCount1( design: $1, towels: towels, maxLength: maxLength )
-    }
-    cache = [ "" : 1 ]
-    let total2 = designs.reduce( 0 ) {
+    let total = designs.reduce( 0 ) {
         $0 + possibleCount2( design: $1, towels: towels )
     }
-    if total1 != total2 { fatalError( "Arggh" ) }
-    return "\(total1)"
+    return "\(total)"
 }
 
 
