@@ -12,58 +12,6 @@ import Foundation
 import Library
 
 struct Disk {
-    var blocks: [Int?]
-    
-    init( line: String ) {
-        enum State { case file, freespace }
-        var state = State.file
-        var fileID = 0
-        blocks = []
-        
-        for character in line {
-            let size = Int( String( character ) )!
-            switch state {
-            case .file:
-                blocks.append( contentsOf: Array( repeating: fileID, count: size ) )
-                fileID += 1
-                state = .freespace
-            case .freespace:
-                blocks.append( contentsOf: Array( repeating: nil, count: size ) )
-                state = .file
-            }
-        }
-    }
-    
-    var dump: String {
-        blocks.map {
-            if let char = $0 { return String( char ) }
-            return "."
-        }.joined()
-    }
-    
-    mutating func compact() -> Void {
-        var firstFree = blocks.firstIndex( of: nil )!
-        var lastUsed = blocks.lastIndex { $0 != nil}!
-        
-        while firstFree < lastUsed {
-            blocks[firstFree] = blocks[lastUsed]
-            blocks[lastUsed] = nil
-            
-            firstFree = blocks[firstFree...].firstIndex( of: nil )!
-            lastUsed = blocks[..<lastUsed].lastIndex { $0 != nil}!
-        }
-    }
-    
-    var checksum: Int {
-        blocks.indices.reduce( 0 ) {
-            guard let value = blocks[$1] else { return $0 }
-            return $0 + $1 * value
-        }
-    }
-}
-
-
-struct Disk2 {
     struct Chunk {
         let id: Int
         var block: Int
@@ -72,6 +20,7 @@ struct Disk2 {
     
     var files: [Chunk]
     var free: [Chunk]
+    var moved: [Chunk]
     
     init( line: String ) {
         enum State { case file, freespace }
@@ -80,6 +29,7 @@ struct Disk2 {
         var block = 0
         files = []
         free = []
+        moved = []
         
         for character in line {
             let size = Int( String( character ) )!
@@ -97,30 +47,33 @@ struct Disk2 {
     }
     
     mutating func jamPack() -> Void {
-        var firstFree = free.indices.min { free[$0].block < free[$1].block }!
-        var lastFile = files.indices.max { files[$0].block < files[$1].block }!
-        
-        while free[firstFree].block < files[lastFile].block {
-            if files[lastFile].size < free[firstFree].size {
-                files[lastFile].block = free[firstFree].block
-                free[firstFree].block += files[lastFile].size
-                free[firstFree].size -= files[lastFile].size
-            } else if files[lastFile].size == free[firstFree].size {
-                ( files[lastFile].block, free[firstFree].block )
-                    = ( free[firstFree].block, files[lastFile].block )
-            } else {
-                files.append(
-                    Chunk(
-                        id: files[lastFile].id,
-                        block: free[firstFree].block, size: free[firstFree].size
-                    )
+        free = free.reversed()
+        while let file = files.last {
+            guard let space = free.last else { return }
+            guard space.block < file.block else { return }
+            
+            if space.size == file.size {
+                let newFile = Chunk( id: file.id, block: space.block, size: file.size )
+                moved.append( newFile )
+                files.removeLast()
+                free.removeLast()
+            } else if space.size > file.size {
+                let newFile = Chunk( id: file.id, block: space.block, size: file.size )
+                let newSpace = Chunk(
+                    id: 0, block: space.block + file.size, size: space.size - file.size
                 )
-                files[lastFile].size -= free[firstFree].size
-                free[firstFree].block = files[lastFile].block + files[lastFile].size
+                moved.append( newFile )
+                files.removeLast()
+                free.removeLast()
+                free.append( newSpace )
+            } else /* space.size < file.size */ {
+                let front = Chunk( id: file.id, block: space.block, size: space.size )
+                let back = Chunk( id: file.id, block: file.block, size: file.size - space.size )
+                moved.append( front )
+                files.removeLast()
+                free.removeLast()
+                files.append( back )
             }
-
-            firstFree = free.indices.min { free[$0].block < free[$1].block }!
-            lastFile = files.indices.max { files[$0].block < files[$1].block }!
         }
     }
     
@@ -141,29 +94,27 @@ struct Disk2 {
     }
     
     var checksum: Int {
-        files.reduce( 0 ) {
+        let unmoved = files.reduce( 0 ) {
             return $0 + $1.id * ( $1.block ..< $1.block + $1.size ).reduce( 0, + )
         }
+        let wasmoved = moved.reduce( 0 ) {
+            return $0 + $1.id * ( $1.block ..< $1.block + $1.size ).reduce( 0, + )
+        }
+        
+        return unmoved + wasmoved
     }
 }
 
 
 func part1( input: AOCinput ) -> String {
     var disk = Disk( line: input.line )
-    disk.compact()
-    return "\(disk.checksum)"
-}
-
-
-func part1Alternate( input: AOCinput ) -> String {
-    var disk = Disk2( line: input.line )
     disk.jamPack()
     return "\(disk.checksum)"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    var disk = Disk2( line: input.line )
+    var disk = Disk( line: input.line )
     disk.compact()
     return "\(disk.checksum)"
 }
@@ -171,8 +122,6 @@ func part2( input: AOCinput ) -> String {
 
 try print( projectInfo() )
 try runTests( part1: part1 )
-try runTests( part1: part1Alternate, label: "alternate" )
 try runTests( part2: part2 )
 try solve( part1: part1 )
-try solve( part1: part1Alternate, label: "alternate" )
 try solve( part2: part2 )
