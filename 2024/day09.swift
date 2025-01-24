@@ -58,11 +58,11 @@ struct DoublyLinkedList<Value> {
         }
     }
     
-    func lastIndex( where predicate: ( Value ) -> Bool ) -> Int? {
-        var current = tail
+    func firstIndex( where predicate: ( Value ) -> Bool ) -> Int? {
+        var current = head
         while let index = current {
             if predicate( list[index].value ) { return index }
-            current = list[index].prev
+            current = list[index].next
         }
         
         return nil
@@ -159,10 +159,10 @@ struct Disk {
     }
     
     mutating func compact() -> Void {
-        var freeList = DoublyLinkedList( values: free.reversed() )
+        var freeList = DoublyLinkedList( values: free )
         
         for file in files.reversed() {
-            let freeIndex = freeList.lastIndex { $0.block < file.block && file.size <= $0.size }
+            let freeIndex = freeList.firstIndex { $0.block < file.block && file.size <= $0.size }
             guard let freeIndex else {
                 moved.append( file )
                 continue
