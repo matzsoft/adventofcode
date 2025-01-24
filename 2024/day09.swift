@@ -96,6 +96,34 @@ struct Disk2 {
         }
     }
     
+    mutating func jamPack() -> Void {
+        var firstFree = free.indices.min { free[$0].block < free[$1].block }!
+        var lastFile = files.indices.max { files[$0].block < files[$1].block }!
+        
+        while free[firstFree].block < files[lastFile].block {
+            if files[lastFile].size < free[firstFree].size {
+                files[lastFile].block = free[firstFree].block
+                free[firstFree].block += files[lastFile].size
+                free[firstFree].size -= files[lastFile].size
+            } else if files[lastFile].size == free[firstFree].size {
+                ( files[lastFile].block, free[firstFree].block )
+                    = ( free[firstFree].block, files[lastFile].block )
+            } else {
+                files.append(
+                    Chunk(
+                        id: files[lastFile].id,
+                        block: free[firstFree].block, size: free[firstFree].size
+                    )
+                )
+                files[lastFile].size -= free[firstFree].size
+                free[firstFree].block = files[lastFile].block + files[lastFile].size
+            }
+
+            firstFree = free.indices.min { free[$0].block < free[$1].block }!
+            lastFile = files.indices.max { files[$0].block < files[$1].block }!
+        }
+    }
+    
     mutating func compact() -> Void {
         for fileID in files.indices.reversed() {
             let file = files[fileID]
@@ -127,6 +155,13 @@ func part1( input: AOCinput ) -> String {
 }
 
 
+func part1Alternate( input: AOCinput ) -> String {
+    var disk = Disk2( line: input.line )
+    disk.jamPack()
+    return "\(disk.checksum)"
+}
+
+
 func part2( input: AOCinput ) -> String {
     var disk = Disk2( line: input.line )
     disk.compact()
@@ -136,6 +171,8 @@ func part2( input: AOCinput ) -> String {
 
 try print( projectInfo() )
 try runTests( part1: part1 )
+try runTests( part1: part1Alternate, label: "alternate" )
 try runTests( part2: part2 )
 try solve( part1: part1 )
+try solve( part1: part1Alternate, label: "alternate" )
 try solve( part2: part2 )
