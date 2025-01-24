@@ -44,7 +44,7 @@ struct DoublyLinkedList<Value> {
     
     subscript( _ index: Int ) -> Value {
         get { list[index].value }
-        set { list[index]  = list[index].change( value: newValue ) }
+        set { list[index] = list[index].change( value: newValue ) }
     }
     
     mutating func append( _ value: Value ) -> Void {
@@ -58,9 +58,10 @@ struct DoublyLinkedList<Value> {
         }
     }
     
-    func firstIndex( where predicate: ( Value ) -> Bool ) -> Int? {
+    func firstIndex( where predicate: ( Value ) -> Bool, stop: ( Value ) -> Bool ) -> Int? {
         var current = head
         while let index = current {
+            if stop( list[index].value ) { return nil }
             if predicate( list[index].value ) { return index }
             current = list[index].next
         }
@@ -95,8 +96,8 @@ struct DoublyLinkedList<Value> {
 struct Disk {
     struct Chunk {
         let id: Int
-        var block: Int
-        var size: Int
+        let block: Int
+        let size: Int
     }
     
     var files: [Chunk]
@@ -162,7 +163,9 @@ struct Disk {
         var freeList = DoublyLinkedList( values: free )
         
         for file in files.reversed() {
-            let freeIndex = freeList.firstIndex { $0.block < file.block && file.size <= $0.size }
+            let freeIndex = freeList.firstIndex(
+                where: { file.size <= $0.size }, stop: { file.block < $0.block }
+            )
             guard let freeIndex else {
                 moved.append( file )
                 continue
