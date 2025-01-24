@@ -11,6 +11,87 @@
 import Foundation
 import Library
 
+struct DoublyLinkedList<Value> {
+    struct Node {
+        let value: Value
+        let prev: Int?
+        let next: Int?
+        
+        func change( value: Value ) -> Node {
+            Node( value: value, prev: prev, next: next )
+        }
+        
+        func change( prev: Int? ) -> Node {
+            Node( value: value, prev: prev, next: next )
+        }
+
+        func change( next: Int? ) -> Node {
+            Node( value: value, prev: prev, next: next )
+        }
+    }
+    
+    var head: Int?
+    var tail: Int?
+    var list: [Node]
+    
+    init( values: [Value] ) {
+        head = nil
+        tail = nil
+        list = []
+        
+        values.forEach { append( $0 ) }
+    }
+    
+    subscript( _ index: Int ) -> Value {
+        get { list[index].value }
+        set { list[index]  = list[index].change( value: newValue ) }
+    }
+    
+    mutating func append( _ value: Value ) -> Void {
+        list.append( Node( value: value, prev: tail, next: nil ) )
+        if head == nil {
+            head = list.endIndex - 1
+            tail = head
+        } else {
+            list[tail!] = list[tail!].change( next: list.endIndex - 1 )
+            tail = list.endIndex - 1
+        }
+    }
+    
+    func lastIndex( where predicate: ( Value ) -> Bool ) -> Int? {
+        var current = tail
+        while let index = current {
+            if predicate( list[index].value ) { return index }
+            current = list[index].prev
+        }
+        
+        return nil
+    }
+    
+    mutating func delete( at index: Int ) -> Void {
+        if head == nil { fatalError( "List is empty" ) }
+        let node = list[index]
+        
+        if head == index {
+            if tail == index {
+                head = nil
+                tail = nil
+                list = []
+            } else {
+                head = node.next
+                list[head!] = list[head!].change( prev: nil )
+            }
+        } else if tail == index {
+            tail = node.prev
+            list[tail!] = list[tail!].change( next: nil )
+        } else {
+            list[node.prev!] = list[node.prev!].change( next: node.next )
+            list[node.next!] = list[node.next!].change( prev: node.prev )
+        }
+    }
+}
+
+
 struct Disk {
     struct Chunk {
         let id: Int
@@ -78,19 +159,25 @@ struct Disk {
     }
     
     mutating func compact() -> Void {
-        for fileID in files.indices.reversed() {
-            let file = files[fileID]
-            let available = free.prefix { $0.block < file.block }
-            if let freeIndex = available.firstIndex( where: { file.size <= $0.size } ) {
-                files[fileID].block = free[freeIndex].block
-                if file.size < free[freeIndex].size {
-                    free[freeIndex].block += file.size
-                    free[freeIndex].size -= file.size
-                } else {
-                    free.remove( at: freeIndex )
-                }
+        var freeList = DoublyLinkedList( values: free.reversed() )
+        
+        for file in files.reversed() {
+            let freeIndex = freeList.lastIndex { $0.block < file.block && file.size <= $0.size }
+            guard let freeIndex else {
+                moved.append( file )
+                continue
+            }
+            let free = freeList[freeIndex]
+            moved.append( Chunk( id: file.id, block: free.block, size: file.size ) )
+            if free.size == file.size {
+                freeList.delete( at: freeIndex )
+            } else {
+                freeList[freeIndex] = Chunk(
+                    id: 0, block: free.block + file.size, size: free.size - file.size
+                )
             }
         }
+        files = []
     }
     
     var checksum: Int {
