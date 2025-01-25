@@ -102,7 +102,6 @@ struct Disk {
     
     var files: [Chunk]
     var free: [Chunk]
-    var moved: [Chunk]
     
     init( line: String ) {
         enum State { case file, freespace }
@@ -111,7 +110,6 @@ struct Disk {
         var block = 0
         files = []
         free = []
-        moved = []
         
         for character in line {
             let size = Int( String( character ) )!
@@ -129,10 +127,12 @@ struct Disk {
     }
     
     mutating func jamPack() -> Void {
+        var moved = [Chunk]()
+
         free = free.reversed()
         while let file = files.last {
-            guard let space = free.last else { return }
-            guard space.block < file.block else { return }
+            guard let space = free.last else { break }
+            guard space.block < file.block else { break }
             
             if space.size == file.size {
                 let newFile = Chunk( id: file.id, block: space.block, size: file.size )
@@ -157,11 +157,13 @@ struct Disk {
                 files.append( back )
             }
         }
+        files.append( contentsOf: moved )
     }
     
     mutating func compact() -> Void {
         var freeList = DoublyLinkedList( values: free )
-        
+        var moved = [Chunk]()
+
         for file in files.reversed() {
             let freeIndex = freeList.firstIndex(
                 where: { file.size <= $0.size }, stop: { file.block < $0.block }
@@ -180,18 +182,13 @@ struct Disk {
                 )
             }
         }
-        files = []
+        files = moved
     }
     
     var checksum: Int {
-        let unmoved = files.reduce( 0 ) {
+        files.reduce( 0 ) {
             return $0 + $1.id * ( $1.block ..< $1.block + $1.size ).reduce( 0, + )
         }
-        let wasmoved = moved.reduce( 0 ) {
-            return $0 + $1.id * ( $1.block ..< $1.block + $1.size ).reduce( 0, + )
-        }
-        
-        return unmoved + wasmoved
     }
 }
 
