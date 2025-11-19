@@ -63,6 +63,7 @@ func performOpen( package: String ) throws -> Void {
         
         try createMainSwift( swiftFile: "../\(swiftFile)", mainSwift: mainSwift )
         try fixPackageSwift( package: package )
+        try removeNewStyleMain( package: package, sourcesFolder: sourcesFolder )
     }
         
     guard shell( "open", "Package.swift" ) == 0 else {
@@ -125,4 +126,14 @@ func createPackageSwift( directory: String, package: String ) throws -> String {
     ]
     
     return try template.render( templateData )
+}
+
+
+func removeNewStyleMain( package: String, sourcesFolder: String ) throws -> Void {
+    let fileManager = FileManager.default
+    let mainFolder = "\(sourcesFolder)/\(package)"
+    
+    if fileManager.fileExists( atPath: mainFolder ) {
+        try fileManager.removeItem( atPath: mainFolder )
+    }
 }
