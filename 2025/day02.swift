@@ -11,26 +11,6 @@
 import Foundation
 import Library
 
-
-extension String {
-    func splitBy( length: Int ) -> [String] {
-        guard length > 0 else { return [] } // Handle invalid length
-        var result: [String] = []
-        var startIndex = self.startIndex
-        
-        while startIndex < self.endIndex {
-            let endIndex = self
-                .index( startIndex, offsetBy: length, limitedBy: self.endIndex ) ?? self.endIndex
-            let substring = self[ startIndex ..< endIndex ]
-            result.append( String( substring ) )
-            startIndex = endIndex
-        }
-        return result
-    }
-}
-
-
-
 func parse( input: AOCinput ) -> [ClosedRange<Int>] {
     let ranges = input.line.split( separator: "," ).map { String( $0 ) }
     let bounds = ranges.map { $0.split( separator: "-" ).map { Int( $0 )! } }
@@ -39,48 +19,31 @@ func parse( input: AOCinput ) -> [ClosedRange<Int>] {
 }
 
 
-func part1( input: AOCinput ) -> String {
+func findMatches( input: AOCinput, regex: Regex<AnyRegexOutput> ) -> Int {
     let ranges = parse( input: input )
     var sum = 0
     
     for range in ranges {
         for id in range {
             let string = String( id )
-            let len = string.count
-            if len.isMultiple( of: 2 ) {
-                if string.prefix( len/2 ) == string.suffix( len/2 ) {
-                    sum += id
-                }
+            
+            if try! regex.wholeMatch( in: string ) != nil {
+                sum += id
             }
         }
     }
+    return sum
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let sum = findMatches( input: input, regex: try! Regex( #"^(.+)\1$"# ) )
     return "\(sum)"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let ranges = parse( input: input )
-    var sum = 0
-    
-    for range in ranges {
-        for id in range {
-            let string = String( id )
-            let len = string.count
-            
-            if len > 1 {
-                for size in 1 ... len / 2 {
-                    if len.isMultiple( of: size ) {
-                        let parts = string.splitBy( length: size )
-                        if parts.allSatisfy( { $0 == parts[0] } ) {
-                            sum += id
-                            break
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
+    let sum = findMatches( input: input, regex: try! Regex( #"^(.+)\1+$"# ) )
     return "\(sum)"
 }
 
