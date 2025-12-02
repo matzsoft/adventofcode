@@ -20,31 +20,21 @@ func parse( input: AOCinput ) -> [ClosedRange<Int>] {
 
 
 func findMatches( input: AOCinput, regex: Regex<AnyRegexOutput> ) -> Int {
-    let ranges = parse( input: input )
-    var sum = 0
-    
-    for range in ranges {
-        for id in range {
-            let string = String( id )
-            
-            if try! regex.wholeMatch( in: string ) != nil {
-                sum += id
-            }
+    parse( input: input ).reduce( 0 ) {
+        $0 + $1.reduce( 0 ) {
+            $0 + ( try! regex.wholeMatch( in: String( $1 ) ) != nil ? $1 : 0 )
         }
     }
-    return sum
 }
 
 
 func part1( input: AOCinput ) -> String {
-    let sum = findMatches( input: input, regex: try! Regex( #"^(.+)\1$"# ) )
-    return "\(sum)"
+    return "\(findMatches( input: input, regex: try! Regex( #"^(.+)\1$"# ) ))"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let sum = findMatches( input: input, regex: try! Regex( #"^(.+)\1+$"# ) )
-    return "\(sum)"
+    return "\(findMatches( input: input, regex: try! Regex( #"^(.+)\1+$"# ) ))"
 }
 
 
