@@ -12,17 +12,6 @@ import Foundation
 import Library
 
 
-func joltage( bank: [Int] ) -> Int {
-    var jolts = 0
-    for i in 0 ..< bank.count - 1 {
-        for j in i + 1 ..< bank.count {
-            jolts = max( jolts, 10 * bank[i] + bank[j] )
-        }
-    }
-    return jolts
-}
-
-
 func bestJolts( bank: [Int], size: Int ) -> [Int] {
     guard size > 0 else { return [] }
     
@@ -30,15 +19,15 @@ func bestJolts( bank: [Int], size: Int ) -> [Int] {
     let bigIndex = bank.firstIndex( of: big )!
     
     if bank.count - bigIndex >= size {
-        let next = bank[(bigIndex + 1)...]
-        return [big] + bestJolts( bank: Array( next ), size: size - 1 )
+        let nextBank = bank[(bigIndex + 1)...]
+        return [big] + bestJolts( bank: Array( nextBank ), size: size - 1 )
     }
     
     for next in stride( from: big - 1, to: 0, by: -1 ) {
         if let index = bank[..<bigIndex].firstIndex( of: next ) {
             if bank.count - index >= size {
-                let nextBank = bank[(index + 1)...]
-                return [next] + bestJolts( bank: Array( nextBank ), size: size - 1 )
+                let nextBank = Array( bank[(index + 1)...] )
+                return [next] + bestJolts( bank: nextBank, size: size - 1 )
             }
         }
     }
@@ -46,8 +35,8 @@ func bestJolts( bank: [Int], size: Int ) -> [Int] {
 }
 
 
-func maxJoltage( bank: [Int] ) -> Int {
-    let joltages = bestJolts( bank: bank, size: 12 )
+func maxJoltage( bank: [Int], size: Int ) -> Int {
+    let joltages = bestJolts( bank: bank, size: size )
     let biggest = joltages.map { String( $0 ) }.joined()
     return Int( biggest )!
 }
@@ -60,14 +49,16 @@ func parse( input: AOCinput ) -> [[Int]] {
 
 func part1( input: AOCinput ) -> String {
     let banks = parse( input: input )
-    let totalJolts = banks.map { joltage( bank: $0 ) }.reduce( 0, + )
+    let totalJolts = banks
+        .map { maxJoltage( bank: $0, size: 2 ) }.reduce( 0, + )
     return "\(totalJolts)"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let banks = parse( input: input )
-    let totalJolts = banks.map { maxJoltage( bank: $0 ) }.reduce( 0, + )
+    let totalJolts = banks
+        .map { maxJoltage( bank: $0, size: 12 ) }.reduce( 0, + )
     return "\(totalJolts)"
 }
 
