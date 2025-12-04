@@ -34,11 +34,18 @@ func neighborCount( point: Point2D, in rolls: Set<Point2D> ) -> Int {
 }
 
 
+func removable( rolls: Set<Point2D> ) -> Set<Point2D> {
+    rolls.reduce( into: Set<Point2D>() ) { ( removable, roll ) in
+        if neighborCount( point: roll, in: rolls ) < 4 {
+            removable.insert( roll )
+        }
+    }
+}
+
+
 func part1( input: AOCinput ) -> String {
     let rolls = parse( input: input )
-    let total = rolls
-        .reduce( 0 ) { $0 + ( neighborCount( point: $1, in: rolls ) < 4 ? 1 : 0 ) }
-    return "\(total)"
+    return "\(removable( rolls: rolls ).count)"
 }
 
 
@@ -47,11 +54,7 @@ func part2( input: AOCinput ) -> String {
     let initialCount = rolls.count
     
     while true {
-        let removable = rolls.reduce( into: Set<Point2D>() ) { ( removable, roll ) in
-            if neighborCount( point: roll, in: rolls ) < 4 {
-                removable.insert( roll )
-            }
-        }
+        let removable = removable( rolls: rolls )
         if removable.isEmpty { break }
         rolls.subtract( removable )
     }
