@@ -29,6 +29,9 @@ extension [ClosedRange<Int>] {
         for range in sorted.dropFirst() {
             if let union = condensed.last!.union( other: range ) {
                 condensed[ condensed.count - 1 ] = union
+            } else if condensed.last!.upperBound + 1 == range.lowerBound {
+                let merged = condensed.last!.lowerBound ... range.upperBound
+                condensed[ condensed.count - 1 ] = merged
             } else {
                 condensed.append( range )
             }
