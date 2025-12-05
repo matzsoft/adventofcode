@@ -11,40 +11,6 @@
 import Foundation
 import Library
 
-extension ClosedRange where Bound: Strideable {
-    func union( other: ClosedRange<Bound> ) -> ClosedRange<Bound>? {
-        let lower = Swift.min( self.lowerBound, other.lowerBound )
-        let upper = Swift.max( self.upperBound, other.upperBound )
-        
-        if self.overlaps( other ) { return lower ... upper }
-        if self.upperBound.advanced( by: 1 ) == other.lowerBound {
-            return lower ... upper
-        }
-        if other.upperBound.advanced( by: 1 ) == self.lowerBound {
-            return lower ... upper
-        }
-        return nil
-    }
-}
-
-
-extension [ClosedRange<Int>] {
-    var condensed: [Element] {
-        let sorted = self.sorted { $0.lowerBound < $1.lowerBound }
-        var condensed = [ sorted[0] ]
-        
-        for range in sorted.dropFirst() {
-            if let union = condensed.last!.union( other: range ) {
-                condensed[ condensed.count - 1 ] = union
-            } else {
-                condensed.append( range )
-            }
-        }
-        return condensed
-    }
-}
-
-
 func parse( input: AOCinput ) -> ( [ ClosedRange<Int> ], [ Int ] ) {
     let ranges = input.paragraphs[0].map { line in
         let bounds = line.split( separator: "-" ).map { Int( $0 )! }
