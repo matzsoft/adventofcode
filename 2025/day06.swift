@@ -12,11 +12,6 @@ import Foundation
 import Library
 
 struct Problem {
-    internal init(operation: Problem.Operator, numbers: [Int]) {
-        self.operation = operation
-        self.numbers = numbers
-    }
-    
     enum Operator: String { case add = "+", multipy = "*" }
     
     let operation: Operator
@@ -29,85 +24,35 @@ struct Problem {
         }
     }
     
+    init( operation: Problem.Operator, numbers: [Int] ) {
+        self.operation = operation
+        self.numbers = numbers
+    }
+    
     init( operations: [Operator], rows: [[[Character]]], index: Int ) {
         let elements = rows.indices.map { rows[ $0 ][ index ] }
-        let numbers = elements[0].indices.reduce( into: [Int]() ) { result, i in
-            let number = rows.indices.reduce( into: [Character]() ) { result, j in
-                result.append( elements[ j ][ i ] )
+        let numbers = elements[0].indices.reduce( into: [Int]() ) { numbers, i in
+            let number = rows.indices.reduce( into: [Character]() ) { number, j in
+                number.append( elements[ j ][ i ] )
             }.filter { $0 != " " }
-            result.append( Int( String( number ) )! )
+            numbers.append( Int( String( number ) )! )
         }
         
         operation = operations[ index ]
         self.numbers = numbers
     }
-    
-    func add( number: Int ) -> Problem {
-        Problem( operation: operation, numbers: numbers + [number] )
-    }
-    
-    func changeOperator( to newOp: Operator ) -> Problem {
-        Problem( operation: newOp, numbers: numbers )
-    }
-}
-
-
-func allIndices( row: [Character] ) -> [Int] {
-    row.indices.filter { Problem.Operator( rawValue: String( row[ $0 ] ) ) != nil }
-}
-
-
-func parse( input: AOCinput ) -> [Problem] {
-    let operationRow = Array( input.lines.last! )
-    let operations = operationRow.compactMap { Problem.Operator( rawValue: String( $0 ) ) }
-    let columnIndices = allIndices( row: operationRow )
-    let rows = input.lines.dropLast().map {
-        let row = Array( $0 )
-        var chunks = [[Character]]()
-        
-        for index in columnIndices.indices.dropLast() {
-            chunks.append( Array( row[ columnIndices[ index ] ..< columnIndices[ index + 1 ] - 1 ] ) )
-        }
-        chunks.append( Array( row[ columnIndices.last!... ] ) )
-        return chunks
-    }
-    
-    var numbers = [[Int]]()
-    var problems = operations.indices.map { Problem(operations: operations, rows: rows, index: $0 ) }
-    
-//    for line in input.lines {
-//        let local = line.split( separator: " ")
-//        if Problem.Operator( rawValue: String( local[0] ) ) != nil {
-//            operations = local.map { Problem.Operator( rawValue: String( $0 ) )! }
-//        } else {
-//            numbers.append( local.compactMap{ Int( $0 )! } )
-//        }
-//    }
-    
-//    for opIndex in operations.indices {
-//        let problemNumbers = numbers.indices.map { numbers[ $0 ][ opIndex ] }
-//        problems.append( Problem( operation: operations[opIndex], numbers: problemNumbers ) )
-//    }
-    
-    return problems
 }
 
 
 func part1( input: AOCinput ) -> String {
-    var numbers = [[Int]]()
-    var operations = [Problem.Operator]()
-    var problems = [Problem]()
+    let operationRow = Array( input.lines.last! )
+    let operations = operationRow.compactMap { Problem.Operator( rawValue: String( $0 ) ) }
     
-    for line in input.lines {
-        let local = line.split( separator: " ")
-        if Problem.Operator( rawValue: String( local[0] ) ) != nil {
-            operations = local.map { Problem.Operator( rawValue: String( $0 ) )! }
-        } else {
-            numbers.append( local.compactMap{ Int( $0 )! } )
-        }
+    let numbers = input.lines.dropLast().reduce( into: [[Int]]() ) {
+        $0.append( $1.split( separator: " ").compactMap{ Int( $0 )! } )
     }
     
-    for opIndex in operations.indices {
+    let problems = operations.indices.reduce( into: [Problem]() ) { problems, opIndex in
         let problemNumbers = numbers.indices.map { numbers[ $0 ][ opIndex ] }
         problems.append( Problem( operation: operations[opIndex], numbers: problemNumbers ) )
     }
@@ -116,8 +61,31 @@ func part1( input: AOCinput ) -> String {
 }
 
 
+func allIndices( row: [Character] ) -> [Int] {
+    row.indices.filter { Problem.Operator( rawValue: String( row[ $0 ] ) ) != nil }
+}
+
+
 func part2( input: AOCinput ) -> String {
-    let problems = parse( input: input )
+    let operationRow = Array( input.lines.last! )
+    let operations = operationRow.compactMap { Problem.Operator( rawValue: String( $0 ) ) }
+    let columnIndices = allIndices( row: operationRow )
+    let rows = input.lines.dropLast().map {
+        let row = Array( $0 )
+        let chunks = columnIndices.indices.reduce( into: [[Character]]() ) { chunks, index in
+            if index < columnIndices.count - 1 {
+                chunks.append( Array( row[ columnIndices[ index ] ..< columnIndices[ index + 1 ] - 1 ] ) )
+            } else {
+                chunks.append( Array( row[columnIndices[ index ]...] ) )
+            }
+        }
+        return chunks
+    }
+    
+    let problems = operations.indices.map {
+        Problem( operations: operations, rows: rows, index: $0 )
+    }
+    
     return "\(problems.reduce( 0 ) { $0 + $1.value } )"
 }
 
