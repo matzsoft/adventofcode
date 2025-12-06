@@ -11,33 +11,6 @@
 import Foundation
 import Library
 
-extension Range where Bound: Comparable {
-    func union( other: Range<Bound> ) -> Range<Bound>? {
-        guard self.overlaps( other ) else { return nil }
-        let lower = Swift.min( self.lowerBound, other.lowerBound )
-        let upper = Swift.max( self.upperBound, other.upperBound )
-        return lower ..< upper
-    }
-}
-
-
-extension [Range<Int>] {
-    var condensed: [Range<Int>] {
-        let sorted = self.sorted { $0.lowerBound < $1.lowerBound }
-        var condensed = [ sorted[0] ]
-        
-        for range in sorted.dropFirst() {
-            if let union = condensed.last!.union( other: range ) {
-                condensed[ condensed.count - 1 ] = union
-            } else {
-                condensed.append( range )
-            }
-        }
-        return condensed
-    }
-}
-
-
 struct Sensor: CustomStringConvertible {
     let location: Point2D
     let beacon:   Point2D
