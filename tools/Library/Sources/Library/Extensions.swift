@@ -104,3 +104,15 @@ public struct CircularBuffer<T> {
 }
 
 
+extension Array where Element: RandomAccessCollection, Element.Element: Any {
+    public func transpose() -> [[Element.Element]] {
+        guard !isEmpty else { return [] }
+        guard self.allSatisfy( { $0.count == first!.count } ) else { fatalError() }
+        
+        return first!.indices.reversed().reduce( into: [[Element.Element]]() ) {
+            new, xIndex in
+            let row = indices.map { self[$0][xIndex] }
+            new.append( row )
+        }
+    }
+}

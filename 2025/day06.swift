@@ -28,15 +28,20 @@ struct Problem {
 
 func part1( input: AOCinput ) -> String {
     let operationRow = Array( input.lines.last! )
-    let operations = operationRow.compactMap { Problem.Operator( rawValue: String( $0 ) ) }
+    let operations = operationRow.compactMap {
+        Problem.Operator( rawValue: String( $0 ) )
+    }
     
     let numbers = input.lines.dropLast().reduce( into: [[Int]]() ) {
         $0.append( $1.split( separator: " ").compactMap{ Int( $0 )! } )
     }
     
-    let problems = operations.indices.reduce( into: [Problem]() ) { problems, opIndex in
+    let problems = operations.indices.reduce( into: [Problem]() ) {
+        problems, opIndex in
         let problemNumbers = numbers.indices.map { numbers[ $0 ][ opIndex ] }
-        problems.append( Problem( operation: operations[opIndex], numbers: problemNumbers ) )
+        problems.append(
+            Problem( operation: operations[opIndex], numbers: problemNumbers )
+        )
     }
     
     return "\(problems.reduce( 0 ) { $0 + $1.value } )"
@@ -45,36 +50,19 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let operationRow = Array( input.lines.last! )
-    let operations = operationRow.compactMap { Problem.Operator( rawValue: String( $0 ) ) }
-    let columnIndices = operationRow.indices.filter {
-        Problem.Operator( rawValue: String( operationRow[ $0 ] ) ) != nil
+    let operations = Array(
+        operationRow.compactMap { Problem.Operator( rawValue: String( $0 ) ) }
+            .reversed()
+    )
+    let transposed = input.lines.dropLast()
+        .map { Array( $0 ) }.transpose()
+        .map { String( $0.filter { $0 != " " } ) }
+        .split( whereSeparator: { $0.isEmpty } )
+        .map { $0.map { Int( $0 )! } }
+    let problems = operations.indices.reduce( into: [Problem]() ) {
+        $0.append( Problem( operation: operations[$1], numbers: transposed[ $1 ] ) )
     }
-    let rows = input.lines.dropLast().map {
-        let row = Array( $0 )
-        let chunks = columnIndices.indices.reduce( into: [[Character]]() ) { chunks, index in
-            if index < columnIndices.count - 1 {
-                chunks.append(
-                    Array( row[ columnIndices[ index ] ..< columnIndices[ index + 1 ] - 1 ] )
-                )
-            } else {
-                chunks.append( Array( row[columnIndices[ index ]...] ) )
-            }
-        }
-        return chunks
-    }
-    
-    let problems = operations.indices.map { index in
-        let elements = rows.indices.map { rows[ $0 ][ index ] }
-        let numbers = elements[0].indices.reduce( into: [Int]() ) { numbers, i in
-            let number = rows.indices.reduce( into: [Character]() ) { number, j in
-                number.append( elements[ j ][ i ] )
-            }.filter { $0 != " " }
-            numbers.append( Int( String( number ) )! )
-        }
-        
-        return Problem( operation: operations[ index ], numbers: numbers )
-    }
-    
+
     return "\(problems.reduce( 0 ) { $0 + $1.value } )"
 }
 
