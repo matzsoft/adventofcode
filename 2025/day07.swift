@@ -24,7 +24,7 @@ func parse( input: AOCinput ) -> ( [Set<Int>], [Set<Int>] ) {
 }
 
 
-func process( input: AOCinput ) -> ( Int, [[Int : Int]] ) {
+func process( input: AOCinput ) -> ( Int, Int ) {
     let ( initialBeams, splitters ) = parse( input: input )
     var paths = initialBeams.map {
         $0.reduce( into: [Int:Int]() ) { paths, beam in paths[beam] = 1 }
@@ -48,7 +48,7 @@ func process( input: AOCinput ) -> ( Int, [[Int : Int]] ) {
             paths.append( newPaths )
         }
     }
-    return ( splitCount, paths )
+    return ( splitCount, paths.last!.values.reduce( 0, + ) )
 }
 
 
@@ -58,8 +58,8 @@ func part1( input: AOCinput ) -> String {
 }
 
 func part2( input: AOCinput ) -> String {
-    let ( _, paths ) = process( input: input )
-    return "\(paths.last!.values.reduce( 0, + ))"
+    let ( _, timelines ) = process( input: input )
+    return "\(timelines)"
 }
 
 
