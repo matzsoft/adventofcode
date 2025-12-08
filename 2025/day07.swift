@@ -24,37 +24,13 @@ func parse( input: AOCinput ) -> ( [Set<Int>], [Set<Int>] ) {
 }
 
 
-func part1( input: AOCinput ) -> String {
-    let ( initialBeams, splitters ) = parse( input: input )
-    var beams = initialBeams
-    var splitCount = 0
-    
-    for index in 1 ..< splitters.count {
-        if splitters[index].isEmpty {
-            beams.append( beams[index-1] )
-        } else {
-            let newBeams = beams[index-1].reduce( into: Set<Int>() ) {
-                newBeams, beam in
-                if !splitters[index].contains( beam ) {
-                    newBeams.insert( beam )
-                } else {
-                    splitCount += 1
-                    newBeams.insert( beam - 1 )
-                    newBeams.insert( beam + 1 )
-                }
-            }
-            beams.append( newBeams )
-        }
-    }
-    return "\( splitCount )"
-}
-
-func part2( input: AOCinput ) -> String {
+func process( input: AOCinput ) -> ( Int, [[Int : Int]] ) {
     let ( initialBeams, splitters ) = parse( input: input )
     var paths = initialBeams.map {
         $0.reduce( into: [Int:Int]() ) { paths, beam in paths[beam] = 1 }
     }
-    
+    var splitCount = 0
+
     for index in 1 ..< splitters.count {
         if splitters[index].isEmpty {
             paths.append( paths[index-1] )
@@ -64,6 +40,7 @@ func part2( input: AOCinput ) -> String {
                 if !splitters[index].contains( beam.key ) {
                     newPaths[ beam.key, default: 0 ] += beam.value
                 } else {
+                    splitCount += 1
                     newPaths[ beam.key - 1, default: 0 ] += beam.value
                     newPaths[ beam.key + 1, default: 0 ] += beam.value
                 }
@@ -71,6 +48,17 @@ func part2( input: AOCinput ) -> String {
             paths.append( newPaths )
         }
     }
+    return ( splitCount, paths )
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let ( splitCount, _ ) = process( input: input )
+    return "\( splitCount )"
+}
+
+func part2( input: AOCinput ) -> String {
+    let ( _, paths ) = process( input: input )
     return "\(paths.last!.values.reduce( 0, + ))"
 }
 
