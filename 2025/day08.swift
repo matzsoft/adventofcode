@@ -31,6 +31,8 @@ struct Connector: Hashable {
 
 struct Circuits {
     var circuits: [Set<Point3D>]
+    var connectsCount = 0
+    let connections: [Connector]
     var count: Int { circuits.count }
     var big3: Int {
         guard count > 2 else { return 0 }
@@ -40,6 +42,16 @@ struct Circuits {
     
     init( junctions: [Point3D] ) {
         self.circuits = junctions.map( { Set( [ $0 ] ) } )
+        self.connections = ( 0 ..< junctions.count - 1 ).reduce( into: [ Connector ]() ) {
+            distances, index1 in
+            for index2 in ( index1 + 1 ) ..< junctions.count {
+                let distance = junctions[index1].euclidian( other: junctions[index2] )
+                let connector = Connector(
+                    junction1: junctions[index1], junction2: junctions[index2], distance: distance
+                )
+                distances.append( connector )
+            }
+        }.sorted( by: { $0.distance < $1.distance } )
     }
     
     mutating func connect( connector: Connector ) {
@@ -54,20 +66,24 @@ struct Circuits {
         circuits.remove( at: big )
         return
     }
-}
-
-
-func makeConnections( junctions: [Point3D] ) -> [Connector] {
-    ( 0 ..< junctions.count - 1 ).reduce( into: [ Connector ]() ) {
-        distances, index1 in
-        for index2 in ( index1 + 1 ) ..< junctions.count {
-            let distance = junctions[index1].euclidian( other: junctions[index2] )
-            let connector = Connector(
-                junction1: junctions[index1], junction2: junctions[index2], distance: distance
-            )
-            distances.append( connector )
+    
+    mutating func connect( until limit: Int ) {
+        for connector in connections {
+            connect( connector: connector )
+            connectsCount += 1
+            if connectsCount == limit { break }
         }
-    }.sorted( by: { $0.distance < $1.distance } )
+    }
+    
+    mutating func connectAll() -> Connector? {
+        for connector in connections {
+            connect( connector: connector )
+            if circuits.count == 1 {
+                return connector
+            }
+        }
+        return nil
+    }
 }
 
 
@@ -83,17 +99,8 @@ func part1( input: AOCinput ) -> String {
     let junctions = parse( input: input )
     let limit = Int( input.extras[0] )!
     var circuits = Circuits( junctions: junctions )
-    let connections = makeConnections( junctions: junctions )
     
-    var connectsCount = 0
-    for connector in connections {
-        circuits.connect( connector: connector )
-        connectsCount += 1
-        if connectsCount == limit {
-            break
-        }
-    }
-    
+    circuits.connect( until: limit )
     return "\(circuits.big3)"
 }
 
@@ -101,16 +108,9 @@ func part1( input: AOCinput ) -> String {
 func part2( input: AOCinput ) -> String {
     let junctions = parse( input: input )
     var circuits = Circuits( junctions: junctions )
-    let connections = makeConnections( junctions: junctions )
 
-    for connector in connections {
-        circuits.connect( connector: connector )
-        if circuits.count == 1 {
-            return "\(connector.junction1.x * connector.junction2.x)"
-        }
-    }
-    
-    return "No Solution"
+    guard let connector = circuits.connectAll() else { return "No Solution" }
+    return "\(connector.junction1.x * connector.junction2.x)"
 }
 
 
