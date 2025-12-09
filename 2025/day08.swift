@@ -28,34 +28,23 @@ struct Connector: Hashable {
     let distance: Int
 }
 
-func parse( input: AOCinput ) -> ( [Point3D], Int ) {
-    let boxes = input.lines.map {
-        let numbers = $0.split( separator: "," ).map { Int( $0 )! }
-        let junction = Point3D( x: numbers[0], y: numbers[1], z: numbers[2] )
-        return junction
+
+struct Circuits {
+    var circuits: [Set<Point3D>]
+    var count: Int { circuits.count }
+    var big3: Int {
+        guard count > 2 else { return 0 }
+        let sorted = circuits.sorted( by: { $0.count > $1.count } )
+        return sorted[0].count * sorted[1].count * sorted[2].count
     }
-    let connections = Int( input.extras[0] )!
-    return ( boxes, connections )
-}
-
-
-func part1( input: AOCinput ) -> String {
-    let ( junctions, limit ) = parse( input: input )
-    var circuits = junctions.map { Set( [ $0 ] ) }
-    let connections = ( 0 ..< junctions.count - 1 ).reduce( into: [ Connector ]() ) {
-        distances, index1 in
-        for index2 in ( index1 + 1 ) ..< junctions.count {
-            let distance = junctions[index1].euclidian( other: junctions[index2] )
-            let connector = Connector(
-                junction1: junctions[index1], junction2: junctions[index2], distance: distance
-            )
-            distances.append( connector )
-        }
-    }.sorted( by: { $0.distance < $1.distance } )
     
-    func connect( connector: Connector ) {
-        let index1 = circuits.firstIndex( where: { $0.contains( connector.junction1 ) } )!
-        let index2 = circuits.firstIndex( where: { $0.contains( connector.junction2 ) } )!
+    init( junctions: [Point3D] ) {
+        self.circuits = junctions.map( { Set( [ $0 ] ) } )
+    }
+    
+    mutating func connect( connector: Connector ) {
+        let index1 = circuits.firstIndex { $0.contains( connector.junction1 ) }!
+        let index2 = circuits.firstIndex { $0.contains( connector.junction2 ) }!
         
         if index1 == index2 { return }
         
@@ -65,51 +54,57 @@ func part1( input: AOCinput ) -> String {
         circuits.remove( at: big )
         return
     }
+}
+
+
+func makeConnections( junctions: [Point3D] ) -> [Connector] {
+    ( 0 ..< junctions.count - 1 ).reduce( into: [ Connector ]() ) {
+        distances, index1 in
+        for index2 in ( index1 + 1 ) ..< junctions.count {
+            let distance = junctions[index1].euclidian( other: junctions[index2] )
+            let connector = Connector(
+                junction1: junctions[index1], junction2: junctions[index2], distance: distance
+            )
+            distances.append( connector )
+        }
+    }.sorted( by: { $0.distance < $1.distance } )
+}
+
+
+func parse( input: AOCinput ) -> [Point3D] {
+    input.lines.map {
+        let numbers = $0.split( separator: "," ).map { Int( $0 )! }
+        return Point3D( x: numbers[0], y: numbers[1], z: numbers[2] )
+    }
+}
+
+
+func part1( input: AOCinput ) -> String {
+    let junctions = parse( input: input )
+    let limit = Int( input.extras[0] )!
+    var circuits = Circuits( junctions: junctions )
+    let connections = makeConnections( junctions: junctions )
     
     var connectsCount = 0
     for connector in connections {
-        connect( connector: connector )
+        circuits.connect( connector: connector )
         connectsCount += 1
         if connectsCount == limit {
             break
         }
     }
     
-    let sorted = circuits.sorted( by: { $0.count > $1.count } )
-    
-    return "\( sorted[0].count * sorted[1].count * sorted[2].count )"
+    return "\(circuits.big3)"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let ( junctions, _ ) = parse( input: input )
-    var circuits = junctions.map { Set( [ $0 ] ) }
-    let connections = ( 0 ..< junctions.count - 1 ).reduce( into: [ Connector ]() ) {
-        distances, index1 in
-        for index2 in ( index1 + 1 ) ..< junctions.count {
-            let distance = junctions[index1].euclidian( other: junctions[index2] )
-            let connector = Connector(
-                junction1: junctions[index1], junction2: junctions[index2], distance: distance
-            )
-            distances.append( connector )
-        }
-    }.sorted( by: { $0.distance < $1.distance } )
-    
-    func connect( connector: Connector ) {
-        let index1 = circuits.firstIndex( where: { $0.contains( connector.junction1 ) } )!
-        let index2 = circuits.firstIndex( where: { $0.contains( connector.junction2 ) } )!
-        
-        if index1 == index2 { return }
-        
-        let small = min( index1, index2 )
-        let big = max( index1, index2 )
-        circuits[small].formUnion( circuits[big] )
-        circuits.remove( at: big )
-        return
-    }
-    
+    let junctions = parse( input: input )
+    var circuits = Circuits( junctions: junctions )
+    let connections = makeConnections( junctions: junctions )
+
     for connector in connections {
-        connect( connector: connector )
+        circuits.connect( connector: connector )
         if circuits.count == 1 {
             return "\(connector.junction1.x * connector.junction2.x)"
         }
