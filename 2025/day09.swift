@@ -16,27 +16,26 @@ struct Line2D: Hashable {
     
     let start: Point2D
     let end: Point2D
+    let xRange: ClosedRange<Int>
+    let yRange: ClosedRange<Int>
     let direction: Direction
-    
-    var isHorizontal: Bool { start.y == end.y }
-    var isVertical: Bool { start.x == end.x }
-    
-    var xRange: ClosedRange<Int> {
-        return min( start.x, end.x ) ... max( start.x, end.x )
-    }
-    
-    var yRange: ClosedRange<Int> {
-        return min( start.y, end.y ) ... max( start.y, end.y )
-    }
+    let isHorizontal: Bool
+    let isVertical: Bool
     
     internal init( start: Point2D, end: Point2D ) {
         self.start = start
         self.end = end
+        self.xRange = min( start.x, end.x ) ... max( start.x, end.x )
+        self.yRange = min( start.y, end.y ) ... max( start.y, end.y )
         
         if start.x == end.x {
             direction = start.y < end.y ? .down : .up
+            isHorizontal = false
+            isVertical = true
         } else {
             direction = start.x < end.x ? .right : .left
+            isHorizontal = true
+            isVertical = false
         }
     }
 }
