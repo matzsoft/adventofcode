@@ -22,7 +22,7 @@ struct Line2D: Hashable {
     let isHorizontal: Bool
     let isVertical: Bool
     
-    internal init( start: Point2D, end: Point2D ) {
+    init( start: Point2D, end: Point2D ) {
         self.start = start
         self.end = end
         self.xRange = min( start.x, end.x ) ... max( start.x, end.x )
@@ -38,25 +38,20 @@ struct Line2D: Hashable {
             isVertical = false
         }
     }
-}
-
-
-extension Rect2D {
-    var lowerLeft: Point2D { .init( x: min.x, y: max.y ) }
-    var upperRight: Point2D { .init( x: max.x, y: min.y ) }
-    var lines: [Line2D] {
-        return [
-            Line2D( start: min,        end: upperRight ),
-            Line2D( start: upperRight, end: max ),
-            Line2D( start: lowerLeft,  end: max ),
-            Line2D( start: min,        end: lowerLeft ),
-        ]
+    
+    func normalized() -> Line2D {
+        switch direction {
+        case .right, .down:
+            return self
+        case .up, .left:
+            return Line2D( start: end, end: start )
+        }
     }
 }
 
+
 struct Shape {
     let lines: [Line2D]
-    let bounds: Rect2D
     let vertical: [Line2D]
     let horizontal: [Line2D]
 
@@ -67,21 +62,19 @@ struct Shape {
             $0.append( Line2D( start: this, end: next ) )
         }
         
-        bounds = Rect2D( points: points )
         vertical = lines.filter { $0.isVertical }
         horizontal = lines.filter { $0.isHorizontal }
     }
     
     func contains( _ point: Point2D ) -> Bool {
-        if lines.contains( where: {
+        let onLine = lines.contains( where: {
             $0.xRange.contains( point.x ) && $0.yRange.contains( point.y )
-        } ) {
-            return true
-        }
+        } )
+        if onLine { return true }
         
         let crosses = vertical.filter {
             $0.yRange.contains( point.y ) && $0.start.x > point.x
-        }.sorted( by: { $0.start.x < $1.start.x } )
+        }
         if crosses.isEmpty { return false }
 
         let firstCross = crosses.min( by: { $0.start.x < $1.start.x } )!
@@ -89,46 +82,40 @@ struct Shape {
     }
     
     func contains( right line: Line2D ) -> Bool {
-        if horizontal.contains( where: { $0.xRange.contains( line.xRange ) } ) {
-            return true
-        }
         let crosses = vertical.filter {
             $0.yRange.contains( line.start.y ) &&
             $0.start.x > line.start.x && $0.start.x < line.end.x
         }
         if crosses.isEmpty { return true }
-        let sorted = crosses
-            .filter( { $0.direction != .up } )
-            .sorted( by: { $0.start.x < $1.start.x } )
-        return sorted.allSatisfy { line.end.y == $0.end.y }
+        let downs = crosses.filter( { $0.direction == .down } )
+        return downs.allSatisfy { line.end.y == $0.end.y }
     }
     
     func contains( down line: Line2D ) -> Bool {
-        if vertical.contains( where: { $0.yRange.contains( line.yRange ) } ) {
-            return true
-        }
         let crosses = horizontal.filter {
             $0.xRange.contains( line.start.x ) &&
             $0.start.y > line.start.y && $0.start.y < line.end.y
         }
         if crosses.isEmpty { return true }
-        let sorted = crosses
-            .filter( { $0.direction != .left } )
-            .sorted( by: { $0.start.y < $1.start.y } )
-        return sorted.allSatisfy { line.end.x == $0.end.x }
+        let rights = crosses.filter( { $0.direction == .right } )
+        return rights.allSatisfy { line.end.x == $0.end.x }
     }
     
-    func contains( _ rect: Rect2D ) -> Bool {
-        guard contains( rect.min )        else { return false }
-        guard contains( rect.max )        else { return false }
-        guard contains( rect.lowerLeft )  else { return false }
-        guard contains( rect.upperRight ) else { return false }
+    func contains( corner1: Point2D, corner2: Point2D ) -> Bool {
+        let corner3 = Point2D( x: corner2.x, y: corner1.y )
+        let corner4 = Point2D( x: corner1.x, y: corner2.y )
+
+        guard contains( corner3 ) && contains( corner4 ) else { return false }
         
-        let rectLines = rect.lines
-        guard contains( right: rectLines[0] ) else { return false }
-        guard contains( down:  rectLines[1] ) else { return false }
-        guard contains( right: rectLines[2] ) else { return false }
-        guard contains( down:  rectLines[3] ) else { return false }
+        let line13 = Line2D( start: corner1, end: corner3 ).normalized()
+        let line14 = Line2D( start: corner1, end: corner4 ).normalized()
+        let line23 = Line2D( start: corner2, end: corner3 ).normalized()
+        let line24 = Line2D( start: corner2, end: corner4 ).normalized()
+        
+        guard contains( right: line13 ) else { return false }
+        guard contains( down:  line14 ) else { return false }
+        guard contains( right: line24 ) else { return false }
+        guard contains( down:  line23 ) else { return false }
         
         return true
     }
@@ -144,8 +131,7 @@ func parse( input: AOCinput ) -> [Point2D] {
 
 func part1( input: AOCinput ) -> String {
     let tiles = parse( input: input )
-    let areas = ( 0 ..< tiles.count - 1 ).reduce( into: [Int]() ) {
-        areas, index1 in
+    let areas = ( 0 ..< tiles.count - 1 ).reduce( into: [Int]() ) { areas, index1 in
         for index2 in ( index1 + 1 ) ..< tiles.count {
             let rect = Rect2D( min: tiles[index1], max: tiles[index2] )
             areas.append( rect.area )
@@ -158,12 +144,10 @@ func part2( input: AOCinput ) -> String {
     let tiles = parse( input: input )
     let shape = Shape( points: tiles )
         
-    let areas = ( 0 ..< tiles.count - 1 ).reduce( into: [Int]() ) {
-        areas, index1 in
+    let areas = ( 0 ..< tiles.count - 1 ).reduce( into: [Int]() ) { areas, index1 in
         for index2 in ( index1 + 1 ) ..< tiles.count {
-            let rect = Rect2D( min: tiles[index1], max: tiles[index2] )
-            
-            if shape.contains( rect ) {
+            if shape.contains( corner1: tiles[index1], corner2: tiles[index2] ) {
+                let rect = Rect2D( min: tiles[index1], max: tiles[index2] )
                 areas.append( rect.area )
             }
         }
