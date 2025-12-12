@@ -11,42 +11,12 @@
 import Foundation
 import Library
 
-struct Canvas: Hashable {
-    let bounds: Rect2D
-    var buffer: [[Character]]
-    
-    init( rect: Rect2D ) {
-        bounds = rect
-        buffer = Array(
-            repeating: Array( repeating: ".", count: rect.width ),
-            count: rect.height
-        )
-    }
-    
-    mutating func draw( line: Line2D, char: Character, ends: Character? = nil ) {
-        for x in line.xRange {
-            for y in line.yRange {
-                buffer[y - bounds.min.y][x - bounds.min.x] = char
-            }
-        }
-        if let ends = ends {
-            buffer[line.start.y - bounds.min.y][line.start.x - bounds.min.x] = ends
-            buffer[line.end.y - bounds.min.y][line.end.x - bounds.min.x] = ends
-        }
-    }
-    
-    func print() {
-        buffer.forEach { Swift.print( String( $0 ) ) }
-    }
-}
-
 struct Line2D: Hashable {
     enum Direction: Hashable { case up, down, left, right }
     
     let start: Point2D
     let end: Point2D
     let direction: Direction
-    let length: Int
     
     var isHorizontal: Bool { start.y == end.y }
     var isVertical: Bool { start.x == end.x }
@@ -65,10 +35,8 @@ struct Line2D: Hashable {
         
         if start.x == end.x {
             direction = start.y < end.y ? .down : .up
-            length = abs( start.y - end.y ) + 1
         } else {
             direction = start.x < end.x ? .right : .left
-            length = abs( start.x - end.x ) + 1
         }
     }
 }
@@ -121,7 +89,7 @@ struct Shape {
         return firstCross.direction == .down
     }
     
-    func contains( right line: Line2D, direction: Line2D.Direction ) -> Bool {
+    func contains( right line: Line2D ) -> Bool {
         if horizontal.contains( where: { $0.xRange.contains( line.xRange ) } ) {
             return true
         }
@@ -136,7 +104,7 @@ struct Shape {
         return sorted.allSatisfy { line.end.y == $0.end.y }
     }
     
-    func contains( down line: Line2D, direction: Line2D.Direction ) -> Bool {
+    func contains( down line: Line2D ) -> Bool {
         if vertical.contains( where: { $0.yRange.contains( line.yRange ) } ) {
             return true
         }
@@ -158,10 +126,10 @@ struct Shape {
         guard contains( rect.upperRight ) else { return false }
         
         let rectLines = rect.lines
-        guard contains( right: rectLines[0], direction: .up )    else { return false }
-        guard contains( down:  rectLines[1], direction: .right ) else { return false }
-        guard contains( right: rectLines[2], direction: .down )  else { return false }
-        guard contains( down:  rectLines[3], direction: .left )  else { return false }
+        guard contains( right: rectLines[0] ) else { return false }
+        guard contains( down:  rectLines[1] ) else { return false }
+        guard contains( right: rectLines[2] ) else { return false }
+        guard contains( down:  rectLines[3] ) else { return false }
         
         return true
     }
@@ -187,45 +155,22 @@ func part1( input: AOCinput ) -> String {
     return "\(areas.max()!)"
 }
 
-//                 1644094530
-//                 2553538104
-//                 4636745093
-// 114207960 < x < 4584599609
 func part2( input: AOCinput ) -> String {
     let tiles = parse( input: input )
     let shape = Shape( points: tiles )
         
-//    let outerRect = Rect2D( points: tiles )
-//    let boundingBox = outerRect.pad( byMinX: 2, byMaxX: 2, byMinY: 1, byMaxY: 1 )
-//    for y in boundingBox.min.y ... boundingBox.max.y {
-//        let line = ( boundingBox.min.x ... boundingBox.max.x )
-//            .reduce( into: "" ) {
-//                $0.append( shape.isOnLine( Point2D( x: $1, y: y ) ) ? "#" : "." )
-//        }
-//        print( line )
-//    }
-    
-    let areas = ( 0 ..< tiles.count - 1 ).reduce( into: [Rect2D]() ) {
+    let areas = ( 0 ..< tiles.count - 1 ).reduce( into: [Int]() ) {
         areas, index1 in
         for index2 in ( index1 + 1 ) ..< tiles.count {
             let rect = Rect2D( min: tiles[index1], max: tiles[index2] )
             
             if shape.contains( rect ) {
-                areas.append( rect )
+                areas.append( rect.area )
             }
         }
     }
     
-    let biggest = areas.max { $0.area < $1.area }!
-//    let bounds = shape.bounds.pad( byMinX: 2, byMaxX: 1, byMinY: 1, byMaxY: 2 )
-//    let danger = shape.lines.map { $0.length }.min()!
-//    var canvas = Canvas( rect: bounds )
-//    
-//    biggest.lines.forEach( { canvas.draw( line: $0, char: "O" ) } )
-//    shape.lines.forEach( { canvas.draw( line: $0, char: "X", ends: "#" ) } )
-//    canvas.print()
-//    
-    return "\(biggest.area)"
+    return "\(areas.max()!)"
 }
 
 
