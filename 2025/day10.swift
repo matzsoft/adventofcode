@@ -12,45 +12,55 @@ import Foundation
 import Library
 
 struct Results: Hashable {
-    let lights: [Bool]
     let joltages: [Int]
     let presses: Int
     
     init( count: Int ) {
-        lights = Array( repeating: false, count: count )
         joltages = Array( repeating: 0 , count: count )
         presses = 0
     }
     
-    init( lights: [Bool], joltages: [Int], presses: Int ) {
-        self.lights = lights
+    init( joltages: [Int], presses: Int ) {
         self.joltages = joltages
         self.presses = presses
     }
     
     func press( affected: [Int] ) -> Results {
-        var lights = self.lights
         var joltages = self.joltages
         
         for index in affected {
-            lights[index].toggle()
             joltages[index] += 1
         }
         
-        return Results( lights: lights, joltages: joltages, presses: presses + 1 )
+        return Results( joltages: joltages, presses: presses + 1 )
+    }
+}
+
+
+struct Path: Hashable {
+    let path: Set<Int>
+    let results: Results
+    
+    init( path: Set<Int>, results: Results ) {
+        self.path = path
+        self.results = results
+    }
+    
+    func advance( button: Int, result: Results ) -> Path {
+        Path( path: path.union( [ button ] ), results: result )
     }
 }
 
 
 struct Machine {
-    let lights: [Bool]
+    let lights: [Int]
     let joltages: [Int]
     let buttons: [[Int]]
     
     init( line: String ) {
         let fields = line.split( separator: " " )
         
-        lights = fields[0].dropFirst().dropLast().map { $0 == "#" }
+        lights = fields[0].dropFirst().dropLast().map { $0 == "#" ? 1 : 0 }
         joltages = fields.last!
             .split( whereSeparator: { "{},".contains( $0 ) } )
             .map { Int( String( $0 ) )! }
@@ -61,23 +71,26 @@ struct Machine {
         }
     }
     
-    func configureLights( to desired: [Bool], first: Bool = true ) -> [Results] {
-        var queue = [ Results( count: lights.count ) ]
-        var seen = Set( [ queue[0].lights ] )
-        var results: [Results] = []
+    func configureLights( to desired: [Int], first: Bool = true ) -> [Path] {
+        var queue = [ Path( path: [], results: Results( count: lights.count ) ) ]
+        var seen = Set<Set<Int>>()
+        var results: [Path] = []
         
         while !queue.isEmpty {
-            let buttonResults = queue.removeFirst()
+            let path = queue.removeFirst()
             
-            for button in buttons {
-                let nextResult = buttonResults.press( affected: button )
-
-                if nextResult.lights == desired {
-                    if first { return [nextResult] }
-                    results.append( nextResult )
-                }
-                if seen.insert( nextResult.lights ).inserted {
-                    queue.append( nextResult )
+            for ( index, button ) in buttons.enumerated() {
+                if !path.path.contains( index ) {
+                    let nextResult = path.results.press( affected: button )
+                    let newPath = path.advance( button: index, result: nextResult )
+                    
+                    if seen.insert( newPath.path ).inserted {
+                        queue.append( newPath )
+                        if nextResult.joltages.map( { $0 & 1 } ) == desired {
+                            if first { return [newPath] }
+                            results.append( newPath )
+                        }
+                    }
                 }
             }
         }
@@ -90,6 +103,12 @@ struct Machine {
     }
     
     func configureJoltage( to desired: [Int] ) -> Int {
+        let desiredLights = joltages.map { $0 & 1 }
+        let results = configureLights( to: desiredLights, first: false )
+        let reducedJoltages = joltages.indices.map {
+            joltages[$0] - results[0].results.joltages[$0]
+        }
+
         var queue = [ Results( count: lights.count ) ]
         var seen = Set( [ queue[0].joltages ] )
         
@@ -119,7 +138,7 @@ func part1( input: AOCinput ) -> String {
     let machines = parse( input: input )
     let presses = machines
         .flatMap { $0.configureLights( to: $0.lights ) }
-        .map { $0.presses }
+        .map { $0.results.presses }
         .reduce( 0, + )
 
     return "\(presses)"
