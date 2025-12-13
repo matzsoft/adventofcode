@@ -11,9 +11,34 @@
 import Foundation
 import Library
 
-struct ButtonResults: Hashable {
+struct Results: Hashable {
     let lights: [Bool]
+    let joltages: [Int]
     let presses: Int
+    
+    init( count: Int ) {
+        lights = Array( repeating: false, count: count )
+        joltages = Array( repeating: 0 , count: count )
+        presses = 0
+    }
+    
+    init( lights: [Bool], joltages: [Int], presses: Int ) {
+        self.lights = lights
+        self.joltages = joltages
+        self.presses = presses
+    }
+    
+    func press( affected: [Int] ) -> Results {
+        var lights = self.lights
+        var joltages = self.joltages
+        
+        for index in affected {
+            lights[index].toggle()
+            joltages[index] += 1
+        }
+        
+        return Results( lights: lights, joltages: joltages, presses: presses + 1 )
+    }
 }
 
 
@@ -36,23 +61,41 @@ struct Machine {
     }
     
     func configureLights() -> Int {
-        let lights = Array( repeating: false, count: self.lights.count )
-        var queue = [ ButtonResults( lights: lights, presses: 0 ) ]
-        var seen = Set( [ lights ] )
+        var queue = [ Results( count: lights.count ) ]
+        var seen = Set( [ queue[0].lights ] )
         
         while !queue.isEmpty {
             let buttonResults = queue.removeFirst()
             
             for button in buttons {
-                var lights = buttonResults.lights
-                for toggle in button {
-                    lights[toggle].toggle()
+                let nextResult = buttonResults.press( affected: button )
+
+                if nextResult.lights == self.lights { return nextResult.presses }
+                if seen.insert( nextResult.lights ).inserted {
+                    queue.append( nextResult )
                 }
-                if lights == self.lights { return buttonResults.presses + 1 }
-                if seen.insert( lights ).inserted {
-                    queue.append(
-                        ButtonResults( lights: lights, presses: buttonResults.presses + 1 )
-                    )
+            }
+        }
+        fatalError( "No solution found" )
+    }
+    
+    func isAcceptable( joltages: [Int] ) -> Bool {
+        self.joltages.indices.allSatisfy { joltages[$0] <= self.joltages[$0] }
+    }
+    
+    func configureJoltage() -> Int {
+        var queue = [ Results( count: lights.count ) ]
+        var seen = Set( [ queue[0].joltages ] )
+        
+        while !queue.isEmpty {
+            let buttonResults = queue.removeFirst()
+            
+            for button in buttons {
+                let nextResult = buttonResults.press( affected: button )
+
+                if nextResult.joltages == self.joltages { return nextResult.presses }
+                if seen.insert( nextResult.joltages ).inserted && isAcceptable( joltages: joltages ) {
+                    queue.append( nextResult )
                 }
             }
         }
@@ -73,8 +116,8 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let something = parse( input: input )
-    return ""
+    let machines = parse( input: input )
+    return "\(machines.map { $0.configureJoltage() }.reduce( 0, + ))"
 }
 
 
