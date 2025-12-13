@@ -52,17 +52,19 @@ struct Machine {
         
         lights = fields[0].dropFirst().dropLast().map { $0 == "#" }
         joltages = fields.last!
-            .split( whereSeparator: { "{},".contains($0) } )
+            .split( whereSeparator: { "{},".contains( $0 ) } )
             .map { Int( String( $0 ) )! }
-        let blarb = fields.dropFirst().dropLast()
-        buttons = blarb.map {
+        
+        let buttons = fields.dropFirst().dropLast()
+        self.buttons = buttons.map {
             $0.split( whereSeparator: { "(),".contains($0) } ).map { Int( String( $0 ) )! }
         }
     }
     
-    func configureLights() -> Int {
+    func configureLights( to desired: [Bool], first: Bool = true ) -> [Results] {
         var queue = [ Results( count: lights.count ) ]
         var seen = Set( [ queue[0].lights ] )
+        var results: [Results] = []
         
         while !queue.isEmpty {
             let buttonResults = queue.removeFirst()
@@ -70,20 +72,24 @@ struct Machine {
             for button in buttons {
                 let nextResult = buttonResults.press( affected: button )
 
-                if nextResult.lights == self.lights { return nextResult.presses }
+                if nextResult.lights == desired {
+                    if first { return [nextResult] }
+                    results.append( nextResult )
+                }
                 if seen.insert( nextResult.lights ).inserted {
                     queue.append( nextResult )
                 }
             }
         }
-        fatalError( "No solution found" )
+
+        return results
     }
     
     func isAcceptable( joltages: [Int] ) -> Bool {
         self.joltages.indices.allSatisfy { joltages[$0] <= self.joltages[$0] }
     }
     
-    func configureJoltage() -> Int {
+    func configureJoltage( to desired: [Int] ) -> Int {
         var queue = [ Results( count: lights.count ) ]
         var seen = Set( [ queue[0].joltages ] )
         
@@ -93,7 +99,7 @@ struct Machine {
             for button in buttons {
                 let nextResult = buttonResults.press( affected: button )
 
-                if nextResult.joltages == self.joltages { return nextResult.presses }
+                if nextResult.joltages == desired { return nextResult.presses }
                 if seen.insert( nextResult.joltages ).inserted && isAcceptable( joltages: joltages ) {
                     queue.append( nextResult )
                 }
@@ -111,13 +117,18 @@ func parse( input: AOCinput ) -> [Machine] {
 
 func part1( input: AOCinput ) -> String {
     let machines = parse( input: input )
-    return "\(machines.map { $0.configureLights() }.reduce( 0, + ))"
+    let presses = machines
+        .flatMap { $0.configureLights( to: $0.lights ) }
+        .map { $0.presses }
+        .reduce( 0, + )
+
+    return "\(presses)"
 }
 
 
 func part2( input: AOCinput ) -> String {
     let machines = parse( input: input )
-    return "\(machines.map { $0.configureJoltage() }.reduce( 0, + ))"
+    return "\(machines.map { $0.configureJoltage( to: $0.joltages ) }.reduce( 0, + ))"
 }
 
 
