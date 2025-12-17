@@ -17,61 +17,31 @@ func pow( base: Int, exponent: Int ) -> Int {
     return Int( pow( base, exponent ) )
 }
 
-struct Results: Hashable {
-    let joltages: [Int]
+struct Path: Hashable {
+    let path: Set<Int>
     let presses: Int
+    let joltages: [Int]
     
     init( count: Int ) {
-        joltages = Array( repeating: 0 , count: count )
-        presses = 0
+        self.path = []
+        self.presses = 0
+        self.joltages = Array( repeating: 0 , count: count )
     }
-    
-    init( joltages: [Int], presses: Int ) {
-        self.joltages = joltages
+
+    init( path: Set<Int>, presses: Int, joltages: [Int] ) {
+        self.path = path
         self.presses = presses
+        self.joltages = joltages
     }
     
-    func press( affected: [Int] ) -> Results {
+    func press( affected: [Int], index: Int ) -> Path {
         var joltages = self.joltages
         
         for index in affected {
             joltages[index] += 1
         }
         
-        return Results( joltages: joltages, presses: presses + 1 )
-    }
-}
-
-
-struct Path: Hashable {
-    let path: Set<Int>
-    let results: Results
-    
-    init( path: Set<Int>, results: Results ) {
-        self.path = path
-        self.results = results
-    }
-    
-    func advance( button: Int, result: Results ) -> Path {
-        Path( path: path.union( [ button ] ), results: result )
-    }
-}
-
-
-struct Merged: Hashable, Comparable {
-    let goal: [Int]
-    let presses: Int
-    
-    static func < ( lhs: Merged, rhs: Merged ) -> Bool { lhs.presses < rhs.presses }
-
-    init( goal: [Int], presses: Int ) {
-        self.goal = goal
-        self.presses = presses
-    }
-    
-    func advance( goal: [Int], buttons: Int, double: Bool ) -> Merged {
-        let multiplier = double ? 2 : 1
-        return Merged( goal: goal, presses: presses + multiplier * buttons )
+        return Path( path: path.union( [ index ] ), presses: presses + 1, joltages: joltages )
     }
 }
 
@@ -96,22 +66,21 @@ struct Machine {
     }
     
     func configureLights( to desired: [Int], first: Bool = true ) -> [Path] {
-        var queue = [ Path( path: [], results: Results( count: lights.count ) ) ]
+        var queue = [ Path( count: lights.count ) ]
         var seen = Set<Set<Int>>()
         var results: [Path] = []
         
         while !queue.isEmpty {
             let path = queue.removeFirst()
             
-            if path.results.joltages.map( { $0 & 1 } ) == desired {
+            if path.joltages.map( { $0 & 1 } ) == desired {
                 if first { return [path] }
                 results.append( path )
             }
 
             for ( index, button ) in buttons.enumerated() {
                 if !path.path.contains( index ) {
-                    let nextResult = path.results.press( affected: button )
-                    let newPath = path.advance( button: index, result: nextResult )
+                    let newPath = path.press( affected: button, index: index )
                     
                     if seen.insert( newPath.path ).inserted {
                         queue.append( newPath )
@@ -150,8 +119,8 @@ struct Machine {
             }
             
             let nextLevel = paths.reduce( into: [Int]() ) { nextLevel, path in
-                if zip( desired, path.results.joltages ).allSatisfy( { $0.0 >= $0.1 } ) {
-                    let newDesired = zip( desired, path.results.joltages ).map {
+                if zip( desired, path.joltages ).allSatisfy( { $0.0 >= $0.1 } ) {
+                    let newDesired = zip( desired, path.joltages ).map {
                         ( $0.0 - $0.1 ) / 2
                     }
                     let result = configure( to: newDesired )
@@ -180,7 +149,7 @@ func part1( input: AOCinput ) -> String {
     let machines = parse( input: input )
     let presses = machines
         .flatMap { $0.configureLights( to: $0.lights ) }
-        .map { $0.results.presses }
+        .map { $0.presses }
         .reduce( 0, + )
 
     return "\(presses)"
