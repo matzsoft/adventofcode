@@ -1,7 +1,9 @@
 //
 //         FILE: day10.swift
 //  DESCRIPTION: Advent of Code 2025 Day 10: Factory
-//        NOTES: ---
+//        NOTES: Part 2 made possible by the observations brilliantly
+//               described by reddit user tenthmascot at:
+//               https://www.reddit.com/r/adventofcode/comments/1pk87hl/2025_day_10_part_2_bifurcate_your_way_to_victory/
 //       AUTHOR: Mark T. Johnson, markj@matzsoft.com
 //    COPYRIGHT: © 2025 MATZ Software & Consulting. All rights reserved.
 //      VERSION: 1.0
