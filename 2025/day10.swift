@@ -141,7 +141,6 @@ struct Machine {
         let allPaths = allPaths()
         
         func configure( to desired: [Int] ) -> Int {
-//            print( "New goal: \(desired)" )
             if desired.allSatisfy( { $0 == 0 } ) { return 0 }
             if let cached = cache[desired] { return cached }
             
@@ -149,16 +148,13 @@ struct Machine {
             guard let paths = allPaths[desiredLights] else {
                 fatalError( "No paths for \(desiredLights)" )
             }
-//            print( "For goal: \(desired), desiredLights: \(desiredLights)" )
             
             let nextLevel = paths.reduce( into: [Int]() ) { nextLevel, path in
                 if zip( desired, path.results.joltages ).allSatisfy( { $0.0 >= $0.1 } ) {
-//                    print( "For goal: \(desired), pattern \(path.results.joltages), cost \(path.path.count)" )
                     let newDesired = zip( desired, path.results.joltages ).map {
                         ( $0.0 - $0.1 ) / 2
                     }
                     let result = configure( to: newDesired )
-//                    print( "For goal: \(newDesired), pattern: \(path.results.joltages), result: \(result)" )
                     nextLevel.append( path.path.count + 2 * result )
                 }
             }
@@ -169,7 +165,6 @@ struct Machine {
         }
 
         let result = configure( to: desired )
-//        print( "Result: \(result)" )
         return result
     }
 
@@ -194,14 +189,7 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let machines = parse( input: input )
-    var sum = 0
-    for ( index, machine ) in machines.enumerated() {
-        let presses = machine.configureJoltage( to: machine.joltages )
-        print("Line \(index + 1)/\(machines.count): answer \(presses)")
-        sum += presses
-    }
-    return "\(sum)"
-//    return "\(machines.map { $0.configureJoltage( to: $0.joltages ) }.reduce( 0, + ))"
+    return "\(machines.map { $0.configureJoltage( to: $0.joltages ) }.reduce( 0, + ))"
 }
 
 
