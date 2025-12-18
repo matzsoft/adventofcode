@@ -13,12 +13,6 @@
 import Foundation
 import Library
 
-func pow( base: Int, exponent: Int ) -> Int {
-    let base = Double( base )
-    let exponent = Double( exponent )
-    return Int( pow( base, exponent ) )
-}
-
 struct Path: Hashable {
     let path: Set<Int>
     let presses: Int
@@ -49,14 +43,18 @@ struct Path: Hashable {
 
 
 struct Machine {
-    let lights: [Int]
+    let lightsCount: Int
+    let lights: Int
     let joltages: [Int]
     let buttons: [[Int]]
     
     init( line: String ) {
         let fields = line.split( separator: " " )
         
-        lights = fields[0].dropFirst().dropLast().map { $0 == "#" ? 1 : 0 }
+        lightsCount = fields[0].count - 2
+        lights = fields[0].dropFirst().dropLast().reduce( 0 ) {
+            ( $0 << 1 ) | ( $1 == "#" ? 1 : 0 )
+        }
         joltages = fields.last!
             .split( whereSeparator: { "{},".contains( $0 ) } )
             .map { Int( String( $0 ) )! }
@@ -67,15 +65,15 @@ struct Machine {
         }
     }
     
-    func configureLights( to desired: [Int], first: Bool = true ) -> [Path] {
-        var queue = [ Path( count: lights.count ) ]
+    func configureLights( to desired: Int, first: Bool = true ) -> [Path] {
+        var queue = [ Path( count: lightsCount ) ]
         var seen = Set<Set<Int>>()
         var results: [Path] = []
         
         while !queue.isEmpty {
             let path = queue.removeFirst()
             
-            if path.joltages.map( { $0 & 1 } ) == desired {
+            if path.joltages.reduce( 0, { $0 << 1 | $1 & 1 } ) == desired {
                 if first { return [path] }
                 results.append( path )
             }
@@ -94,31 +92,23 @@ struct Machine {
         return results
     }
     
-    func allPaths() -> [ [Int] : [Path] ] {
-        let all = pow( base: 2, exponent: joltages.count )
-        let desireds = ( 0 ..< all )
-            .map { String( $0, radix: 2 ) }
-            .map { String( repeating: "0", count: joltages.count - $0.count ) + $0 }
-            .map { Array( $0 ).map { $0.wholeNumberValue! } }
+    func allPaths() -> [[Path]] {
+        let all = 1 << lightsCount
         
-        return desireds.reduce( into: [ [Int] : [Path] ]() ) { paths, desired in
-            paths[desired] = configureLights( to: desired, first: false )
+        return ( 0 ..< all ).reduce( into: [[Path]]() ) { paths, desired in
+            paths.append( configureLights( to: desired, first: false ) )
         }
     }
     
     func configureJoltage( to desired: [Int] ) -> Int {
-        var cache = [ [Int] : Int ]()
+        var cache = [ Array( repeating: 0, count: joltages.count ) : 0 ]
 
         let allPaths = allPaths()
         
         func configure( to desired: [Int] ) -> Int {
-            if desired.allSatisfy( { $0 == 0 } ) { return 0 }
             if let cached = cache[desired] { return cached }
-            
-            let desiredLights = desired.map( { $0 & 1 } )
-            guard let paths = allPaths[desiredLights] else {
-                fatalError( "No paths for \(desiredLights)" )
-            }
+            let desiredLights = desired.reduce( 0 ) { $0 << 1 | $1 & 1 }
+            let paths = allPaths[desiredLights]
             
             let nextLevel = paths.reduce( into: [Int]() ) { nextLevel, path in
                 if zip( desired, path.joltages ).allSatisfy( { $0.0 >= $0.1 } ) {
@@ -142,13 +132,8 @@ struct Machine {
 }
 
 
-func parse( input: AOCinput ) -> [Machine] {
-    return input.lines.map { Machine( line: $0 ) }
-}
-
-
 func part1( input: AOCinput ) -> String {
-    let machines = parse( input: input )
+    let machines = input.lines.map { Machine( line: $0 ) }
     let presses = machines
         .flatMap { $0.configureLights( to: $0.lights ) }
         .map { $0.presses }
@@ -159,7 +144,7 @@ func part1( input: AOCinput ) -> String {
 
 
 func part2( input: AOCinput ) -> String {
-    let machines = parse( input: input )
+    let machines = input.lines.map { Machine( line: $0 ) }
     return "\(machines.map { $0.configureJoltage( to: $0.joltages ) }.reduce( 0, + ))"
 }
 
