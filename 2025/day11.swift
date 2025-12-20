@@ -24,27 +24,6 @@ struct Device: Hashable {
 }
 
 
-struct Path: Hashable {
-    let current: String
-    let seen: Set<String>
-    
-    init( start: String ) {
-        current = start
-        seen = Set( [ start ] )
-    }
-    
-    init( current: String, seen: Set<String> ) {
-        self.current = current
-        self.seen = seen
-    }
-    
-    func adding( _ new: String ) -> Path? {
-        if seen.contains( new ) { return nil }
-        return Path( current: new, seen: seen.union( [ new ] ) )
-    }
-}
-
-
 func parse( input: AOCinput ) -> [ String: Device ] {
     return input.lines.reduce( into: [ String : Device ]() ) {
         let names = $1.split( whereSeparator: { ": ".contains( $0 ) } )
@@ -55,41 +34,17 @@ func parse( input: AOCinput ) -> [ String: Device ] {
 
 
 func findPaths( devices: [ String : Device ], start: String, end: String ) -> Int {
-    func doit( _ start: String, _ end: String ) -> Int {
-        if let cached = cache[ Key( start: start, end: end ) ] { return cached }
-        if start == end { return 1 }
-        guard let device = devices[ start ] else { return 0 }
-        let endCount = device.connections
-            .map { findPaths( devices: devices, start: $0, end: end ) }
-            .reduce( 0, + )
-        
-        cache[ Key( start: start, end: end ) ] = endCount
-        return endCount
-    }
+    if let cached = cache[ Key( start: start, end: end ) ] { return cached }
+    if start == end { return 1 }
+    guard let device = devices[ start ] else { return 0 }
+    let endCount = device.connections
+        .map { findPaths( devices: devices, start: $0, end: end ) }
+        .reduce( 0, + )
     
-    return doit( start, end )
-//    var endCount = 0
-//    
-//    var queue = [ Path( start: start ) ]
-//    
-//    while !queue.isEmpty {
-//        let path = queue.removeFirst()
-//        if path.current == end {
-//            endCount += 1
-//        } else if let device = devices[ path.current ] {
-//            for connection in device.connections {
-//                if connection == end {
-//                    endCount += 1
-//                } else {
-//                    if let newPath = path.adding( connection ) {
-//                        queue.append( newPath )
-//                    }
-//                }
-//            }
-//        }
-//    }
-//    return endCount
+    cache[ Key( start: start, end: end ) ] = endCount
+    return endCount
 }
+
 
 
 func part1( input: AOCinput ) -> String {
@@ -116,13 +71,6 @@ func part2( input: AOCinput ) -> String {
     let fft2dacCount = svr2fft * fft2dac * dac2out
     let endCount = dac2fftCount + fft2dacCount
 
-    print( "svr2dac = \(svr2dac)" )
-    print( "dac2fft = \(dac2fft)" )
-    print( "fft2out = \(fft2out)" )
-    print( "svr2fft = \(svr2fft)" )
-    print( "fft2dac = \(fft2dac)" )
-    print( "dac2out = \(dac2out)" )
-    
     return "\(endCount)"
 }
 
