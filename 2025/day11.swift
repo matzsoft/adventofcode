@@ -18,26 +18,20 @@ struct Key: Hashable {
 var cache = [ Key : Int ]()
 
 
-struct Device: Hashable {
-    let name: String
-    let connections: [String]
-}
-
-
-func parse( input: AOCinput ) -> [ String: Device ] {
-    return input.lines.reduce( into: [ String : Device ]() ) {
+func parse( input: AOCinput ) -> [ String : [String] ] {
+    return input.lines.reduce( into: [ String : [String] ]() ) {
         let names = $1.split( whereSeparator: { ": ".contains( $0 ) } )
-        $0[ String( names[0] ) ] = Device( name: String( names[0] ), connections: names.dropFirst().map { String( $0 ) } )
+        $0[ String( names[0] ) ] = names.dropFirst().map { String( $0 ) }
         
     }
 }
 
 
-func findPaths( devices: [ String : Device ], start: String, end: String ) -> Int {
+func findPaths( devices: [ String : [String] ], start: String, end: String ) -> Int {
     if let cached = cache[ Key( start: start, end: end ) ] { return cached }
     if start == end { return 1 }
-    guard let device = devices[ start ] else { return 0 }
-    let endCount = device.connections
+    guard let connections = devices[ start ] else { return 0 }
+    let endCount = connections
         .map { findPaths( devices: devices, start: $0, end: end ) }
         .reduce( 0, + )
     
