@@ -11,6 +11,13 @@
 import Foundation
 import Library
 
+struct Key: Hashable {
+    let start: String
+    let end: String
+}
+var cache = [ Key : Int ]()
+
+
 struct Device: Hashable {
     let name: String
     let connections: [String]
@@ -47,104 +54,74 @@ func parse( input: AOCinput ) -> [ String: Device ] {
 }
 
 
-func findPaths(
-    devices: [ String : Device ], start: Path,
-    end: String, exceptions: [String] )
--> [Path] {
-    var paths = [Path]()
-    var queue = [ start ]
-    
-    while !queue.isEmpty {
-        let path = queue.removeFirst()
-        if path.current == end {
-            paths.append( path )
-        } else if !exceptions.contains( path.current ) {
-            for connection in devices[ path.current ]!.connections {
-                if connection == end {
-                    paths.append( path.adding( connection )! )
-                } else {
-                    if let newPath = path.adding( connection ) {
-                        queue.append( newPath )
-                    }
-                }
-            }
-        }
+func findPaths( devices: [ String : Device ], start: String, end: String ) -> Int {
+    func doit( _ start: String, _ end: String ) -> Int {
+        if let cached = cache[ Key( start: start, end: end ) ] { return cached }
+        if start == end { return 1 }
+        guard let device = devices[ start ] else { return 0 }
+        let endCount = device.connections
+            .map { findPaths( devices: devices, start: $0, end: end ) }
+            .reduce( 0, + )
+        
+        cache[ Key( start: start, end: end ) ] = endCount
+        return endCount
     }
-    return paths
+    
+    return doit( start, end )
+//    var endCount = 0
+//    
+//    var queue = [ Path( start: start ) ]
+//    
+//    while !queue.isEmpty {
+//        let path = queue.removeFirst()
+//        if path.current == end {
+//            endCount += 1
+//        } else if let device = devices[ path.current ] {
+//            for connection in device.connections {
+//                if connection == end {
+//                    endCount += 1
+//                } else {
+//                    if let newPath = path.adding( connection ) {
+//                        queue.append( newPath )
+//                    }
+//                }
+//            }
+//        }
+//    }
+//    return endCount
 }
 
 
 func part1( input: AOCinput ) -> String {
+    cache = [:]
+    
     let devices = parse( input: input )
-    let paths = findPaths(
-        devices: devices, start: Path( start: "you" ),
-        end: "out", exceptions: []
-    )
+    let endCount = findPaths( devices: devices, start: "you", end: "out" )
 
-    return "\(paths.count)"
+    return "\(endCount)"
 }
 
 
 func part2( input: AOCinput ) -> String {
+    cache = [:]
+    
     let devices = parse( input: input )
-    let svr2dac = findPaths(
-        devices: devices, start: Path( start: "svr" ), end: "dac",
-        exceptions: [ "fft", "out" ]
-    )
-    let dac2fft = svr2dac.flatMap {
-        findPaths(
-            devices: devices, start: $0, end: "fft",
-            exceptions: [ "svr", "out" ]
-        )
-    }
-//    let dac2fft = findPaths(
-//        devices: devices, start: Path( start: "dac" ), end: "fft",
-//        exceptions: [ "svr", "out" ]
-//    )
-//    let dac2out = dac2fft.flatMap {
-//        findPaths(
-//            devices: devices, start: $0, end: "out",
-//            exceptions: [ "svr", "fft" ]
-//        )
-//    }
-    let dac2out = findPaths(
-        devices: devices, start: Path( start: "dac" ), end: "out",
-        exceptions: [ "svr", "fft" ]
-    )
-    let svr2fft = findPaths(
-        devices: devices, start: Path( start: "svr" ), end: "fft",
-        exceptions: [ "dac", "out" ]
-    )
-    let fft2dac = svr2fft.flatMap {
-        findPaths(
-            devices: devices, start: $0, end: "dac",
-            exceptions: [ "svr", "out" ]
-        )
-    }
-//    let fft2dac = findPaths(
-//        devices: devices, start: Path( start: "fft" ), end: "dac",
-//        exceptions: [ "svr", "out" ]
-//    )
-//    let fft2out = fft2dac.flatMap {
-//        findPaths(
-//            devices: devices, start: $0, end: "out",
-//            exceptions: [ "svr", "dac" ]
-//        )
-//    }
-    let fft2out = findPaths(
-        devices: devices, start: Path( start: "fft" ), end: "out",
-        exceptions: [ "svr", "dac" ]
-    )
-    let dac2fftCount = svr2dac.count * dac2fft.count * fft2out.count
-    let fft2dacCount = svr2fft.count * fft2dac.count * dac2out.count
+    let svr2dac = findPaths( devices: devices, start: "svr", end: "dac" )
+    let dac2fft = findPaths( devices: devices, start: "dac", end: "fft" )
+    let dac2out = findPaths( devices: devices, start: "dac", end: "out" )
+    let svr2fft = findPaths( devices: devices, start: "svr", end: "fft" )
+    let fft2dac = findPaths( devices: devices, start: "fft", end: "dac" )
+    let fft2out = findPaths( devices: devices, start: "fft", end: "out" )
+    let dac2fftCount = svr2dac * dac2fft * fft2out
+    let fft2dacCount = svr2fft * fft2dac * dac2out
     let endCount = dac2fftCount + fft2dacCount
 
-    print( "svr2dac = \(svr2dac.count)" )
-    print( "dac2fft = \(dac2fft.count)" )
-    print( "fft2out = \(fft2out.count)" )
-    print( "svr2fft = \(svr2fft.count)" )
-    print( "fft2dac = \(fft2dac.count)" )
-    print( "dac2out = \(dac2out.count)" )
+    print( "svr2dac = \(svr2dac)" )
+    print( "dac2fft = \(dac2fft)" )
+    print( "fft2out = \(fft2out)" )
+    print( "svr2fft = \(svr2fft)" )
+    print( "fft2dac = \(fft2dac)" )
+    print( "dac2out = \(dac2out)" )
     
     return "\(endCount)"
 }
