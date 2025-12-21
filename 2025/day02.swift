@@ -11,6 +11,19 @@
 import Foundation
 import Library
 
+func digitsCount( of number: Int ) -> Int {
+    Int( floor( log10( Double( number ) ) ) + 1 )
+}
+
+func maxWithDigits( of number: Int ) -> Int {
+    Int( pow( 10.0, floor( log10( Double( number ) ) ) + 1 ) ) - 1
+}
+
+func maxWith( digits: Int ) -> Int {
+    Int( pow( 10.0, Double( digits ) ) ) - 1
+}
+
+
 func parse( input: AOCinput ) -> [ClosedRange<Int>] {
     let ranges = input.line.split( separator: "," ).map { String( $0 ) }
     let bounds = ranges.map { $0.split( separator: "-" ).map { Int( $0 )! } }
@@ -19,22 +32,32 @@ func parse( input: AOCinput ) -> [ClosedRange<Int>] {
 }
 
 
-func findMatches( input: AOCinput, regex: Regex<AnyRegexOutput> ) -> Int {
-    parse( input: input ).reduce( 0 ) {
-        $0 + $1.reduce( 0 ) {
-            $0 + ( try! regex.wholeMatch( in: String( $1 ) ) != nil ? $1 : 0 )
-        }
-    }
-}
-
-
 func part1( input: AOCinput ) -> String {
-    return "\(findMatches( input: input, regex: try! Regex( #"^(.+)\1$"# ) ))"
+    let ranges = parse( input: input )
+    let all = ranges.flatMap { $0.filter {
+        let numDigits = digitsCount( of: $0 )
+        guard numDigits.isMultiple( of: 2 ) else { return false }
+        let divisor = maxWithDigits( of: $0 ) / maxWith( digits: numDigits / 2 )
+        return $0.isMultiple( of: divisor )
+    } }
+    
+    return "\(all.reduce( 0, + ))"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    return "\(findMatches( input: input, regex: try! Regex( #"^(.+)\1+$"# ) ))"
+    let ranges = parse( input: input )
+    let all = ranges.flatMap { $0.filter {
+        let numDigits = digitsCount( of: $0 )
+        guard numDigits > 1 else { return false }
+        for subDigits in 1 ... numDigits / 2 where numDigits.isMultiple( of: subDigits ) {
+            let divisor = maxWithDigits( of: $0 ) / maxWith( digits: subDigits )
+            if $0.isMultiple( of: divisor ) { return true }
+        }
+        return false
+    } }
+    
+    return "\(all.reduce( 0, + ))"
 }
 
 
