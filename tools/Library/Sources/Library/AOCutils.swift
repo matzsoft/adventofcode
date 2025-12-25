@@ -150,18 +150,42 @@ public func findDirectory( name: String, base: String = #file ) throws -> String
 
 /// Nicely formats the time elapsed from a given start time.
 /// - Parameter startTime: The start time of the interval to format.
-/// - Returns: A string giving seconds and milliseconds, e.g. 12s348ms.
+/// - Returns: A string formated e.g. 14ms, or 3.034s, etc.
 func formatElapsed( startTime: CFAbsoluteTime ) -> String {
-    let timeElapsed = CFAbsoluteTimeGetCurrent() - startTime
+    formatElapsed( time: CFAbsoluteTimeGetCurrent() - startTime )
+}
+public func formatElapsed( time timeElapsed: CFAbsoluteTime ) -> String {
+    let seconds = Int( timeElapsed )
     
-    if timeElapsed < 1 {
-        return String( Int( timeElapsed * 1000 ) ) + "ms"
+    return switch timeElapsed {
+    case let timeElapsed where timeElapsed < 1:
+        String( Int( timeElapsed * 1000 ) ) + "ms"
+    case let timeElapsed where timeElapsed < 10:
+        String( format: "\(seconds).%03d", Int( 1000 * timeElapsed ) % 1000 ) + "s"
+    case let timeElapsed where timeElapsed < 60:
+        "\(seconds)s"
+    case let timeElapsed where timeElapsed < 3600:
+        {
+            let minutes = seconds / 60
+            let newSeconds = seconds % 60
+            return String( format: "\(minutes):%02d", newSeconds ) + "m"
+        }()
+    case let timeElapsed where timeElapsed < 86400:
+        {
+            let hours = seconds / 3600
+            let minutes = seconds % 3600 / 60
+            let newSeconds = seconds % 60
+            return String( format: "\(hours):%02d:%02d", minutes, newSeconds ) + "h"
+        }()
+    default:
+        {
+            let days = seconds / 86400
+            let hours = (seconds % 86400) / 3600
+            let minutes = (seconds % 3600) / 60
+            let newSeconds = seconds % 60
+            return String( format: "\(days):%02d:%02d:%02d", hours, minutes, newSeconds ) + "d"
+        }()
     }
-    
-    let seconds = String( Int( timeElapsed ) ) + "s"
-    let milliSeconds = String( Int( 1000 * ( timeElapsed - CFAbsoluteTime( Int( timeElapsed ) ) ) ) ) + "ms"
-    
-    return seconds + milliSeconds
 }
 
 
