@@ -12,7 +12,8 @@ let package = Package(
             targets: ["Library"]),
     ],
     dependencies: [
-        .package( path: "/Users/markj/Development/Swift/MATZMiscSwiftLibrary" )
+//        .package( path: "/Users/markj/Development/Swift/MATZMiscSwiftLibrary" )
+        .package( url: "https://github.com/matzsoft/MATZMiscSwiftLibrary.git", from: "1.0.0" )
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
