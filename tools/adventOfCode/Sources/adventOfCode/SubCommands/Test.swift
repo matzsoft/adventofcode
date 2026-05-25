@@ -9,6 +9,7 @@
 import Foundation
 import ArgumentParser
 import Library
+import MATZMiscSwiftLibrary
 
 extension AdventOfCode {
     struct Test: ParsableCommand {
@@ -28,7 +29,7 @@ extension AdventOfCode {
                 return
             }
 
-            throw reportFailure( "Cannot determine package from \(package)" )
+            throw RuntimeError( "Cannot determine package from \(package)" )
         }
         
         func run() throws -> Void {
@@ -36,7 +37,7 @@ extension AdventOfCode {
             let testfile = "testfiles/\(package)\( suffix == "" ? "" : "-\(suffix)").txt"
             
             if fileManager.fileExists( atPath: testfile ) {
-                throw reportFailure( "Test file '\(testfile)' already exists." )
+                throw RuntimeError( "Test file '\(testfile)' already exists." )
             }
             
             let part1 = getString( prompt: "Enter part1 solution", preferred: "" )

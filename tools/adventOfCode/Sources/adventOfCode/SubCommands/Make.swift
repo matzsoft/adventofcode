@@ -10,6 +10,7 @@ import Foundation
 import ArgumentParser
 import Mustache
 import Library
+import MATZMiscSwiftLibrary
 
 extension AdventOfCode {
     struct Make: ParsableCommand {
@@ -29,7 +30,7 @@ extension AdventOfCode {
                 return
             }
 
-            throw reportFailure( "Cannot determine package from \(package)" )
+            throw RuntimeError( "Cannot determine package from \(package)" )
         }
         
         func run() throws -> Void {
@@ -51,7 +52,7 @@ extension AdventOfCode {
             try performOpen( package: package )
             
             guard fileManager.changeCurrentDirectoryPath( currentDirectory ) else {
-                throw reportFailure( "Can't change back to initial directory." )
+                throw RuntimeError( "Can't change back to initial directory." )
             }
             
             if fileManager.fileExists( atPath: oldFile ) {
@@ -83,7 +84,7 @@ extension AdventOfCode {
             let title = try getTitleCurl()
             let bundleURL = Bundle.module.url( forResource: "mainswift", withExtension: "mustache" )
             guard let templateURL = bundleURL else {
-                throw reportFailure( "Can't find template for \(swiftFile)" )
+                throw RuntimeError( "Can't find template for \(swiftFile)" )
             }
             let template = try Template( URL: templateURL )
             let dateFormatterFull = DateFormatter()
@@ -121,8 +122,11 @@ extension AdventOfCode {
             let day = Int( package.prefix( 5 ).dropFirst( 3 ) )!
             let session = try String( contentsOfFile: sessionFile )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
-            let status = shell(
-                "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", htmlFile, "https://adventofcode.com/\(year)/day/\(day)"
+            guard let curlURL = which(programName: "curl") else {
+                throw RuntimeError( "Can't find curl" )
+            }
+            let status = shell( programURL: curlURL, stdout: nil,
+                "--silent", "--fail", "--cookie", "session=\(session)", "-o", htmlFile, "https://adventofcode.com/\(year)/day/\(day)"
                 )
             defer {
                 do {
@@ -203,9 +207,12 @@ extension AdventOfCode {
             let day = Int( package.prefix( 5 ).dropFirst( 3 ) )!
             let session = try String( contentsOfFile: sessionFile )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
-            let status = shell(
+            guard let curlURL = which(programName: "curl") else {
+                throw RuntimeError( "Can't find curl" )
+            }
+            let status = shell( programURL: curlURL, stdout: nil,
                 "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", inputFile, "https://adventofcode.com/\(year)/day/\(day)/input"
-                )
+            )
             
             guard status == 0 else {
                 print( "Can't retrieve data from adventofcode.com." )

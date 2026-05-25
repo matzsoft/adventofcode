@@ -10,6 +10,7 @@ import Foundation
 import Library
 import ArgumentParser
 import Mustache
+import MATZMiscSwiftLibrary
 
 extension AdventOfCode {
     struct Open: ParsableCommand {
@@ -26,7 +27,7 @@ extension AdventOfCode {
                 return
             }
 
-            throw reportFailure( "Cannot determine package from \(package)" )
+            throw RuntimeError( "Cannot determine package from \(package)" )
         }
 
         func run() throws -> Void {
@@ -43,37 +44,43 @@ func performOpen( package: String ) throws -> Void {
     let mainSwift = "\(sourcesFolder)/main.swift"
 
     guard fileManager.fileExists( atPath: swiftFile ) else {
-        throw reportFailure( "\(swiftFile) does not exist" )
+        throw RuntimeError( "\(swiftFile) does not exist" )
     }
     
     if fileManager.fileExists( atPath: package ) {
         guard fileManager.changeCurrentDirectoryPath( package ) else {
-            throw reportFailure( "Can't change directory to \(package)." )
+            throw RuntimeError( "Can't change directory to \(package)." )
         }
     } else {
         try fileManager.createDirectory(
             atPath: package, withIntermediateDirectories: false, attributes: nil )
         guard fileManager.changeCurrentDirectoryPath( package ) else {
-            throw reportFailure( "Can't change directory to \(package)." )
+            throw RuntimeError( "Can't change directory to \(package)." )
         }
         
-        guard shell( "swift", "package", "init", "--type", "executable" ) == 0 else {
-            throw reportFailure( "Can't create swift package." )
+        guard let swiftURL = which( programName: "swift" ) else {
+            throw RuntimeError( "Can't find swift." )
+        }
+        guard shell( programURL: swiftURL, "package", "init", "--type", "executable" ) == 0 else {
+            throw RuntimeError( "Can't create swift package." )
         }
         
         try createMainSwift( swiftFile: "../\(swiftFile)", mainSwift: mainSwift )
         try fixPackageSwift( package: package )
         try removeNewStyleMain( package: package, sourcesFolder: sourcesFolder )
     }
-        
-    guard shell( "open", "Package.swift" ) == 0 else {
-        throw reportFailure( "Can't open Package.swift." )
+
+    guard let openURL = which( programName: "open" ) else {
+        throw RuntimeError( "Can't find open." )
+    }
+    guard shell( programURL: openURL, "Package.swift" ) == 0 else {
+        throw RuntimeError( "Can't open Package.swift." )
     }
     print( "Waiting for 5 seconds..." )
     sleep( 5 )
     
-    guard shell( "open", mainSwift ) == 0 else {
-        throw reportFailure( "Can't open \(mainSwift)." )
+    guard shell( programURL: openURL, mainSwift ) == 0 else {
+        throw RuntimeError( "Can't open \(mainSwift)." )
     }
 }
 
@@ -112,12 +119,12 @@ func fixPackageSwift( package: String ) throws -> Void {
 func createPackageSwift( directory: String, package: String ) throws -> String {
     let libraryURL = URL( filePath: try findDirectory( name: "Library" ) )
     guard let libraryPath = libraryURL.relativePath( from: URL( filePath: directory ) ) else {
-        throw reportFailure( "Unable to find relative path to Library." )
+        throw RuntimeError( "Unable to find relative path to Library." )
     }
 
     let bundleURL = Bundle.module.url( forResource: "PackageSwift", withExtension: "mustache" )
     guard let templateURL = bundleURL else {
-        throw reportFailure( "Can't find template for Package.swift" )
+        throw RuntimeError( "Can't find template for Package.swift" )
     }
     let template = try Template( URL: templateURL )
     let templateData: [String: Any] = [

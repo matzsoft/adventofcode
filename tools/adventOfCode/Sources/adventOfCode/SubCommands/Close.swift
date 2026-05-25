@@ -9,6 +9,7 @@
 import Foundation
 import Library
 import ArgumentParser
+import MATZMiscSwiftLibrary
 
 extension AdventOfCode {
     struct Close: ParsableCommand {
@@ -25,7 +26,7 @@ extension AdventOfCode {
                 return
             }
 
-            throw reportFailure( "Cannot determine package from \(package)" )
+            throw RuntimeError( "Cannot determine package from \(package)" )
         }
 
         func run() throws -> Void {
@@ -39,15 +40,15 @@ extension AdventOfCode {
             var isDir: ObjCBool = false
 
             guard fileManager.fileExists( atPath: package, isDirectory: &isDir ) else {
-                throw reportFailure( "File \(package) doesn't exist" )
+                throw RuntimeError( "File \(package) doesn't exist" )
             }
             
             guard isDir.boolValue else {
-                throw reportFailure( "File \(package) is not a directory" )
+                throw RuntimeError( "File \(package) is not a directory" )
             }
             
             guard fileManager.fileExists( atPath: mainSwift ) else {
-                throw reportFailure( "Can't find main.swift in the \(package) directory" )
+                throw RuntimeError( "Can't find main.swift in the \(package) directory" )
             }
 
             if !fileManager.fileExists( atPath: swiftFile ) {
@@ -70,7 +71,7 @@ extension AdventOfCode {
                     try copyFile( atPath: packageSwift, toPath: customPackage )
                 } else {
                     guard isDir.boolValue else {
-                        throw reportFailure( "File \(customFolder) is not a directory" )
+                        throw RuntimeError( "File \(customFolder) is not a directory" )
                     }
                     
                     if !fileManager.fileExists( atPath: customPackage ) {
