@@ -11,11 +11,16 @@ let package = Package(
             name: "Library",
             targets: ["Library"]),
     ],
+    dependencies: [
+        .package( path: "/Users/markj/Development/Swift/MATZMiscSwiftLibrary" )
+    ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
-            name: "Library"),
+            name: "Library",
+            dependencies: [ "MATZMiscSwiftLibrary" ]
+        ),
         .testTarget(
             name: "LibraryTests",
             dependencies: ["Library"]),

@@ -6,24 +6,9 @@
 //
 
 import Foundation
+import MATZMiscSwiftLibrary
 
 public enum AOCPart { case part1, part2 }
-
-/// Used for throwing generalized exceptions.
-///
-/// The init takes one parameter, message: any string describing the error condition.
-public struct RuntimeError: Error {
-    let message: String
-
-    public init( _ message: String ) {
-        self.message = message
-    }
-
-    public var localizedDescription: String {
-        return message
-    }
-}
-
 
 /// Parses an AOC input or test file for easy access.
 ///

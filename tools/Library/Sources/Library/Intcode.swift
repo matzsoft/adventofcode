@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MATZMiscSwiftLibrary
 
 /// Implements the Intcode computer used by many problems in 2019.
 ///

@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import MATZMiscSwiftLibrary
 
 /// The definition of a single block letter.
 ///

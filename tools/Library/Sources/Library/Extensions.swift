@@ -6,62 +6,7 @@
 //  Contains useful extensions to standard types.
 
 import Foundation
-
-extension Collection {
-    /// Behaves like split(where:) except the delimiting elements are retained in the output array.
-    /// - Parameter isSplit: A function that returns true when an element should cause a split.
-    /// - Returns: An array of SubSequence that reflects the original collection split according to
-    ///  the predicate isSplit.
-    func splitAt( isSplit: ( Iterator.Element ) throws -> Bool ) rethrows -> [SubSequence] {
-        let delimiterIndicees = try indices.filter( { try isSplit( self[$0] ) } )
-        var lastStartIndex = self.startIndex
-        let result = delimiterIndicees.reduce( into: [SubSequence]() ) { result, index in
-            if index > lastStartIndex {
-                result.append( self[lastStartIndex..<index] )
-            }
-            result.append( self[index...index] )
-            lastStartIndex = self.index( after: index )
-        }
-        
-        guard lastStartIndex < endIndex else { return result }
-        return result + [ self[lastStartIndex..<endIndex] ]
-    }
-}
-
-extension String {
-    /// Splits a string with multiple delimiters, but keeps the delimiters in the result.
-    ///
-    /// For example these 2 lines produce similar results.
-    ///
-    ///     let withoutDelimiters = string.split( whereSeparator: { delimiters.contains( $0 ) } )
-    ///     let withDelimiters = string.tokenize( delimiters: delimiters )
-    ///
-    /// - Parameter delimiters: A string of characters, any one of which splits the input string.
-    /// - Returns: An array of Substring that keeps the delimiters interspersed with the other parts.
-    public func tokenize( delimiters: String ) -> [Substring] {
-        return self.splitAt( isSplit: { delimiters.contains( $0 ) } )
-    }
-}
-
-/// Returns the Greatest Common Divisor of two Int values.
-public func gcd( _ m: Int, _ n: Int ) -> Int {
-    var a = 0
-    var b = max( m, n )
-    var r = min( m, n )
-    
-    while r != 0 {
-        a = b
-        b = r
-        r = a % b
-    }
-    return b
-}
-
-/// Returns the Least Common Multiple of two Int values.
-public func lcm( _ m: Int, _ n: Int ) -> Int {
-    return m / gcd (m, n ) * n
-}
-
+import MATZMiscSwiftLibrary
 
 public struct CircularBuffer<T> {
     var buffer: [T]
@@ -99,20 +44,6 @@ public struct CircularBuffer<T> {
         } else {
             buffer[0] = value
             inPtr = 1
-        }
-    }
-}
-
-
-extension Array where Element: RandomAccessCollection, Element.Element: Any {
-    public func transpose() -> [[Element.Element]] {
-        guard !isEmpty else { return [] }
-        guard self.allSatisfy( { $0.count == first!.count } ) else { fatalError() }
-        
-        return first!.indices.reversed().reduce( into: [[Element.Element]]() ) {
-            new, xIndex in
-            let row = indices.map { self[$0][xIndex] }
-            new.append( row )
         }
     }
 }
