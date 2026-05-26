@@ -122,11 +122,8 @@ extension AdventOfCode {
             let day = Int( package.prefix( 5 ).dropFirst( 3 ) )!
             let session = try String( contentsOfFile: sessionFile )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
-            guard let curlURL = which(programName: "curl") else {
-                throw RuntimeError( "Can't find curl" )
-            }
-            let status = shell( programURL: curlURL, stdout: nil,
-                "--silent", "--fail", "--cookie", "session=\(session)", "-o", htmlFile, "https://adventofcode.com/\(year)/day/\(day)"
+            let status = try shell( stdout: nil,
+                "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", htmlFile, "https://adventofcode.com/\(year)/day/\(day)"
                 )
             defer {
                 do {
@@ -207,10 +204,7 @@ extension AdventOfCode {
             let day = Int( package.prefix( 5 ).dropFirst( 3 ) )!
             let session = try String( contentsOfFile: sessionFile )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
-            guard let curlURL = which(programName: "curl") else {
-                throw RuntimeError( "Can't find curl" )
-            }
-            let status = shell( programURL: curlURL, stdout: nil,
+            let status = try shell( stdout: nil,
                 "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", inputFile, "https://adventofcode.com/\(year)/day/\(day)/input"
             )
             

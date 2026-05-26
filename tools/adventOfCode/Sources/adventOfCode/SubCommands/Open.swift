@@ -58,10 +58,7 @@ func performOpen( package: String ) throws -> Void {
             throw RuntimeError( "Can't change directory to \(package)." )
         }
         
-        guard let swiftURL = which( programName: "swift" ) else {
-            throw RuntimeError( "Can't find swift." )
-        }
-        guard shell( programURL: swiftURL, "package", "init", "--type", "executable" ) == 0 else {
+        guard try shell( stdout: nil, "swift", "package", "init", "--type", "executable" ) == 0 else {
             throw RuntimeError( "Can't create swift package." )
         }
         
@@ -70,16 +67,13 @@ func performOpen( package: String ) throws -> Void {
         try removeNewStyleMain( package: package, sourcesFolder: sourcesFolder )
     }
 
-    guard let openURL = which( programName: "open" ) else {
-        throw RuntimeError( "Can't find open." )
-    }
-    guard shell( programURL: openURL, "Package.swift" ) == 0 else {
+    guard try shell( stdout: nil, "open", "Package.swift" ) == 0 else {
         throw RuntimeError( "Can't open Package.swift." )
     }
     print( "Waiting for 5 seconds..." )
     sleep( 5 )
     
-    guard shell( programURL: openURL, mainSwift ) == 0 else {
+    guard try shell( stdout: nil, "open", mainSwift ) == 0 else {
         throw RuntimeError( "Can't open \(mainSwift)." )
     }
 }
