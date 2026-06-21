@@ -21,12 +21,8 @@ extension AdventOfCode {
         var package: String
         
         mutating func validate() throws {
-            if let determined = determinePackage( package: package ) {
-                package = determined
-                return
-            }
-
-            throw RuntimeError( "Cannot determine package from \(package)" )
+            let ( _, _, package ) = try determinePackage( package: package )
+            self.package = package
         }
 
         func run() throws -> Void {

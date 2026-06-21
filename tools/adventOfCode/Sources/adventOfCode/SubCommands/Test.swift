@@ -14,22 +14,18 @@ import MATZMiscSwiftLibrary
 extension AdventOfCode {
     struct Test: ParsableCommand {
         static var configuration = CommandConfiguration(
-            abstract: "Create a new problem solution."
+            abstract: "Create a test file for a problem solution."
         )
         
-        @Argument( help: "Name of the solution package to create." )
+        @Argument( help: "Name of the solution package that requires a test file." )
         var package: String
 
         @Argument( help: "Test file suffix." )
         var suffix: String = ""
         
         mutating func validate() throws {
-            if let determined = determinePackage( package: package ) {
-                package = determined
-                return
-            }
-
-            throw RuntimeError( "Cannot determine package from \(package)" )
+            let ( _, _, package ) = try determinePackage( package: package )
+            self.package = package
         }
         
         func run() throws -> Void {

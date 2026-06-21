@@ -8,22 +8,34 @@
 
 import Foundation
 import ArgumentParser
+import MATZMiscSwiftLibrary
 
-func determinePackage( package: String ) -> String? {
-    guard let url = URL( string: package ) else { return nil }
-    var package = url.deletingPathExtension().lastPathComponent
+func determinePackage( package: String ) throws -> ( Int, Int, String ) {
+    let fileManager = FileManager.default
+    let currentDirectory = fileManager.currentDirectoryPath
+    let year = URL( fileURLWithPath: currentDirectory ).lastPathComponent
+    guard let year = Int( year ) else { throw RuntimeError( "Invalid year: \(year)" ) }
 
-    if package.hasPrefix( "day" ) { package = String( package.dropFirst( 3 ) ) }
-    if package.hasPrefix( "-" ) { return nil }
-    if package.hasSuffix( "-" ) { return nil }
-
-    let splits = package.split( separator: "-" )
-    if splits.isEmpty { return nil }
+    let currentYear = Calendar.current.component( .year, from: Date() )
+    guard 2015 <= year && year <= currentYear else { throw RuntimeError( "Invalid year: \(year)" ) }
     
-    guard let value = Int( splits[0] ) else { return nil }
-    guard value < 26 else { return nil }
+    guard let url = URL( string: package ) else { throw RuntimeError( "Invalid package: \(package)" ) }
+    var newPackage = url.deletingPathExtension().lastPathComponent
+
+    if newPackage.hasPrefix( "day" ) { newPackage = String( newPackage.dropFirst( 3 ) ) }
+    if newPackage.hasPrefix( "-" ) { throw RuntimeError( "Invalid package: \(package)" ) }
+    if newPackage.hasSuffix( "-" ) { throw RuntimeError( "Invalid package: \(package)" ) }
+
+    let splits = newPackage.split( separator: "-" )
+    if splits.isEmpty { throw RuntimeError( "Invalid package: \(package)" ) }
     
-    let base = [ String( format: "day%02d", value ) ]
+    guard let day = Int( splits[0] ) else { throw RuntimeError( "Invalid package: \(package)" ) }
+    let maxDay = year < 2025 ? 25 : 12
+    guard 0 < day && day <= maxDay else { throw RuntimeError( "Invalid day: \(day)" ) }
+    
+    let base = [ String( format: "day%02d", day ) ]
     let suffix = splits.dropFirst().map { String( $0 ) }
-    return ( base + suffix ).joined( separator: "-" )
+    newPackage = ( base + suffix ).joined( separator: "-" )
+    
+    return ( year, day, newPackage )
 }

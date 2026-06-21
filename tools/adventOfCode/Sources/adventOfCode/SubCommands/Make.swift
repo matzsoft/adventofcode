@@ -24,24 +24,25 @@ extension AdventOfCode {
         @Flag( name: .shortAndLong, help: "When specified, prompts for input file header values." )
         var answers = false
         
+        var year = 0
+        var day = 0
+        
         mutating func validate() throws {
-            if let determined = determinePackage( package: package ) {
-                package = determined
-                return
-            }
-
-            throw RuntimeError( "Cannot determine package from \(package)" )
+            let ( year, day, package ) = try determinePackage( package: package )
+            
+            self.year = year
+            self.day = day
+            self.package = package
         }
         
         func run() throws -> Void {
             let fileManager = FileManager.default
             let currentDirectory = fileManager.currentDirectoryPath
-            let year = URL( fileURLWithPath: currentDirectory ).lastPathComponent
             let swiftFile = "\(package).swift"
             let oldFile = "old-\(swiftFile)"
             let inputFile = try setupInput()
             
-            try waitUntilAvailable( year: year )
+            try waitUntilAvailable()
             
             if fileManager.fileExists( atPath: swiftFile ) {
                 print( "\(swiftFile) already exists, moving it to \(oldFile)" )
@@ -65,12 +66,7 @@ extension AdventOfCode {
             }
         }
 
-        func waitUntilAvailable( year: String ) throws -> Void {
-            guard let year = Int( year ) else { throw RuntimeError( "Invalid year: \(year)" ) }
-            guard let day = Int( package.suffix( 2 ) ) else {
-                throw RuntimeError( "Invalid day: \(package)" )
-            }
-
+        func waitUntilAvailable() throws -> Void {
             let targetTimeZone = TimeZone( identifier: "America/New_York" )
             var components = DateComponents()
             components.timeZone = targetTimeZone
@@ -169,20 +165,13 @@ extension AdventOfCode {
         func getTitleCurl() throws -> String {
             let fileManager = FileManager.default
             let htmlFile = "\(package).html"
-            let year = URL( fileURLWithPath: fileManager.currentDirectoryPath ).lastPathComponent
             let sessionFile = ".session"
-            
-            guard package.hasPrefix( "day" ) else {
-                print( "Can't get day number from '\(package)'" )
-                return getTitleUser()
-            }
             
             guard fileManager.fileExists( atPath: sessionFile ) else {
                 print( "\(sessionFile) doesn't exist." )
                 return getTitleUser()
             }
             
-            let day = Int( package.prefix( 5 ).dropFirst( 3 ) )!
             let session = try String( contentsOfFile: sessionFile )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
             let status = try shell( stdout: nil,
@@ -251,20 +240,13 @@ extension AdventOfCode {
 
         func getDataCurl( inputFile: String ) throws -> Bool {
             let fileManager = FileManager.default
-            let year = URL( fileURLWithPath: fileManager.currentDirectoryPath ).lastPathComponent
             let sessionFile = ".session"
-            
-            guard package.hasPrefix( "day" ) else {
-                print( "Can't get day number from '\(package)'" )
-                return false
-            }
             
             guard fileManager.fileExists( atPath: sessionFile ) else {
                 print( "\(sessionFile) doesn't exist." )
                 return false
             }
             
-            let day = Int( package.prefix( 5 ).dropFirst( 3 ) )!
             let session = try String( contentsOfFile: sessionFile )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
             let status = try shell( stdout: nil,
