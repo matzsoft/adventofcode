@@ -24,6 +24,7 @@ extension AdventOfCode {
         @Flag( name: .shortAndLong, help: "When specified, prompts for input file header values." )
         var answers = false
         
+        var baseURL: String { "https://adventofcode.com" }
         var year = 0
         var day = 0
         
@@ -43,7 +44,12 @@ extension AdventOfCode {
             let inputFile = try setupInput()
             
             try waitUntilAvailable()
-            
+            try findTab( urlPrefix: baseURL )
+            let jsLink = "location.href='\(baseURL)/\(year)/day/\(day)'"
+            if let error = try doJavaScript( javascript: jsLink ) {
+                throw AppleScriptError.cantLinkToURL( error.description )
+            }
+
             if fileManager.fileExists( atPath: swiftFile ) {
                 print( "\(swiftFile) already exists, moving it to \(oldFile)" )
                 try fileManager.moveItem( atPath: swiftFile, toPath: oldFile )
@@ -175,7 +181,7 @@ extension AdventOfCode {
             let session = try String( contentsOfFile: sessionFile )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
             let status = try shell( stdout: nil,
-                "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", htmlFile, "https://adventofcode.com/\(year)/day/\(day)"
+                "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", htmlFile, "\(baseURL)/\(year)/day/\(day)"
                 )
             defer {
                 do {
@@ -250,7 +256,7 @@ extension AdventOfCode {
             let session = try String( contentsOfFile: sessionFile )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
             let status = try shell( stdout: nil,
-                "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", inputFile, "https://adventofcode.com/\(year)/day/\(day)/input"
+                "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", inputFile, "\(baseURL)/\(year)/day/\(day)/input"
             )
             
             guard status == 0 else {

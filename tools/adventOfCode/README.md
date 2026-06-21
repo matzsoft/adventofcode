@@ -56,6 +56,8 @@ For all the subcommands except test, that is the only argument.
 
 The make subcommand is used to create a new problem solution skeleton.  It takes a single argument, the name of the solution.  The command `adventOfCode make day12` performs the following actions:
 
+1. If the problem is not yet released, wait until it is, presenting a count down.
+1. Display the problem's webpage in Safari.
 1. Creates the day12.swift file.
 1. Creates the input/day12.txt file.
 1. Simulates an `adventOfCode open day12` command.
