@@ -36,9 +36,12 @@ extension AdventOfCode {
         func run() throws -> Void {
             let fileManager = FileManager.default
             let currentDirectory = fileManager.currentDirectoryPath
+            let year = URL( fileURLWithPath: currentDirectory ).lastPathComponent
             let swiftFile = "\(package).swift"
             let oldFile = "old-\(swiftFile)"
             let inputFile = try setupInput()
+            
+            try waitUntilAvailable( year: year )
             
             if fileManager.fileExists( atPath: swiftFile ) {
                 print( "\(swiftFile) already exists, moving it to \(oldFile)" )
@@ -62,6 +65,66 @@ extension AdventOfCode {
             }
         }
 
+        func waitUntilAvailable( year: String ) throws -> Void {
+            guard let year = Int( year ) else { throw RuntimeError( "Invalid year: \(year)" ) }
+            guard let day = Int( package.suffix( 2 ) ) else {
+                throw RuntimeError( "Invalid day: \(package)" )
+            }
+
+            let targetTimeZone = TimeZone( identifier: "America/New_York" )
+            var components = DateComponents()
+            components.timeZone = targetTimeZone
+            components.year = year
+            components.month = 12
+            components.day = day
+            components.hour = 0
+            components.minute = 0
+            components.second = 1
+
+            var calendar = Calendar( identifier: .gregorian )
+            calendar.timeZone = targetTimeZone ?? .current
+
+            guard let availableDate = calendar.date( from: components ) else {
+                throw RuntimeError( "Failed to create date for \(year) and \(package)" )
+            }
+            
+            if Date() < availableDate {
+                print( "Waiting for input file to be available..." )
+                while Date() < availableDate {
+                    let ( label, sleepTime ) = formatAndWait( availableDate: availableDate )
+                    print( "\r\(label)", terminator: "\u{001B}[K" )
+                    fflush( stdout )
+                    sleep( UInt32( sleepTime ) )
+                }
+                print( "\r", terminator: "\u{001B}[K" )
+                fflush( stdout )
+            }
+        }
+        
+        func formatAndWait( availableDate: Date ) -> ( String, Int ) {
+            let timeDiff = availableDate.timeIntervalSince( Date() )
+            let days = Int( timeDiff / 86400 )
+            if days > 0 {
+                let hours = Int( timeDiff ) % 86400 / 3600
+                return ( "\(days) days, \(hours) hours", 1800 )
+            }
+            
+            let hours = Int( timeDiff / 3600 )
+            if hours > 0 {
+                let minutes = Int( timeDiff ) % 3600 / 60
+                return ( "\(hours) hours, \(minutes) minutes", 30 )
+            }
+            
+            let minutes = Int( timeDiff / 60 )
+            if minutes > 0 {
+                let seconds = Int( timeDiff ) % 60
+                return ( "\(minutes) minutes, \(seconds) seconds", 10 )
+            }
+            
+            let seconds = Int( timeDiff )
+            return ( "\(seconds) seconds", seconds > 10 ? 5 : 1 )
+        }
+        
         func setupInput() throws -> String {
             let fileManager = FileManager.default
             let inputFolder = "input"
