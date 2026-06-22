@@ -92,41 +92,10 @@ extension AdventOfCode {
             
             if Date() < availableDate {
                 print( "Waiting for input file to be available..." )
-                while Date() < availableDate {
-                    let ( label, sleepTime ) = formatAndWait( availableDate: availableDate )
-                    print( "\r\(label)", terminator: "\u{001B}[K" )
-                    fflush( stdout )
-                    sleep( UInt32( sleepTime ) )
-                }
-                print( "\r", terminator: "\u{001B}[K" )
-                fflush( stdout )
+                waitUntil( availableDate )
             }
         }
-        
-        func formatAndWait( availableDate: Date ) -> ( String, Int ) {
-            let timeDiff = availableDate.timeIntervalSince( Date() )
-            let days = Int( timeDiff / 86400 )
-            if days > 0 {
-                let hours = Int( timeDiff ) % 86400 / 3600
-                return ( "\(days) days, \(hours) hours", 1800 )
-            }
-            
-            let hours = Int( timeDiff / 3600 )
-            if hours > 0 {
-                let minutes = Int( timeDiff ) % 3600 / 60
-                return ( "\(hours) hours, \(minutes) minutes", 30 )
-            }
-            
-            let minutes = Int( timeDiff / 60 )
-            if minutes > 0 {
-                let seconds = Int( timeDiff ) % 60
-                return ( "\(minutes) minutes, \(seconds) seconds", 10 )
-            }
-            
-            let seconds = Int( timeDiff )
-            return ( "\(seconds) seconds", seconds > 10 ? 5 : 1 )
-        }
-        
+                
         func setupInput() throws -> String {
             let fileManager = FileManager.default
             let inputFolder = "input"
@@ -267,4 +236,48 @@ extension AdventOfCode {
             return true
         }
     }
+}
+
+
+func waitUntil( _ targetDate: Date ) -> Void {
+    while Date() < targetDate {
+        let timeDiff = targetDate.timeIntervalSince( Date() )
+        print( "\r\(countDownFormat( timeDiff ))", terminator: "\u{001B}[K" )
+        fflush( stdout )
+        sleep( UInt32( sleepTime( timeDiff ) ) )
+    }
+    print( "\r", terminator: "\u{001B}[K" )
+    fflush( stdout )
+}
+
+
+func countDownFormat( _ interval: TimeInterval ) -> String {
+    let start = Date()
+    let end = start.addingTimeInterval( interval )
+    let components = Calendar.current.dateComponents(
+        [ .day, .hour, .minute, .second ], from: start, to: end
+    )
+    let days = components.day ?? 0
+    let hours = components.hour ?? 0
+    let minutes = components.minute ?? 0
+    let seconds = components.second ?? 0
+    
+    if days > 0 { return "\(days.string( unit: "day" )), \(hours.string( unit: "hour" ))" }
+    if hours > 0 { return "\(hours.string( unit: "hour" )), \(minutes.string( unit: "minute" ))" }
+    if minutes > 0 { return "\(minutes.string( unit: "minute" )), \(seconds.string( unit: "second" ))" }
+    return "\(seconds.string( unit: "second" ))"
+}
+
+
+func sleepTime( _ interval: TimeInterval ) -> Int {
+    let start = Date()
+    let end = start.addingTimeInterval( interval )
+    let components = Calendar.current.dateComponents(
+        [ .day, .hour, .minute, .second ], from: start, to: end
+    )
+    
+    if let days = components.day, days > 0 { return 1800 }
+    if let hours = components.hour, hours > 0 { return 30 }
+    if let minutes = components.minute, minutes > 0 { return 10 }
+    return ( components.second ?? 0 ) > 10 ? 5 : 1
 }
