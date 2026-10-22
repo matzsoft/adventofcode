@@ -46,7 +46,7 @@ public struct BlockLetterDictionary {
     public init( from file: String ) throws {
         let inputDirectory = try findDirectory( name: "tools" )
         let path           = "\(inputDirectory)/figlet/\(file)"
-        let contents       = try String( contentsOfFile: path )
+        let contents       = try String( contentsOfFile: path, encoding: .utf8 )
         let paragraphs     = contents.components( separatedBy: "\n\n" )
         let headerLines    = paragraphs[0].split( separator: "\n" )
         let words          = headerLines[0].split( whereSeparator: { "  x+".contains( $0 ) } )

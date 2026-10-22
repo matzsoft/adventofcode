@@ -14,7 +14,7 @@ import MATZMiscSwiftLibrary
 
 extension AdventOfCode {
     struct Make: ParsableCommand {
-        static var configuration = CommandConfiguration(
+        static let configuration = CommandConfiguration(
             abstract: "Create a new problem solution."
         )
         
@@ -147,7 +147,7 @@ extension AdventOfCode {
                 return getTitleUser()
             }
             
-            let session = try String( contentsOfFile: sessionFile )
+            let session = try String( contentsOfFile: sessionFile, encoding: .utf8 )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
             let status = try shell( stdout: nil,
                 "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", htmlFile, "\(baseURL)/\(year)/day/\(day)"
@@ -165,7 +165,7 @@ extension AdventOfCode {
                 return getTitleUser()
             }
             
-            let html = try String( contentsOfFile: htmlFile )
+            let html = try String( contentsOfFile: htmlFile, encoding: .utf8 )
             let titleRegex = try Regex( "<title>Day \\d+ - (.+)</title>", as: ( Substring, Substring ).self )
             guard let titleMatch = try titleRegex.firstMatch( in: html ) else {
                 print( "testMatch fail" )
@@ -202,7 +202,7 @@ extension AdventOfCode {
             let extras = !answers ? [] : getLines( prompt: "Enter extra header lines", blanksOK: true )
             let dataLines = try {
                 if try getDataCurl( inputFile: inputFile ) {
-                    return try String( contentsOfFile: inputFile ).components( separatedBy: "\n" )
+                    return try String( contentsOfFile: inputFile, encoding: .utf8 ).components( separatedBy: "\n" )
                 } else {
                     return getLines( prompt: "Enter the input data" )
                 }
@@ -222,7 +222,7 @@ extension AdventOfCode {
                 return false
             }
             
-            let session = try String( contentsOfFile: sessionFile )
+            let session = try String( contentsOfFile: sessionFile, encoding: .utf8 )
                 .trimmingCharacters( in: CharacterSet( charactersIn: " \n" ) )
             let status = try shell( stdout: nil,
                 "curl", "--silent", "--fail", "--cookie", "session=\(session)", "-o", inputFile, "\(baseURL)/\(year)/day/\(day)/input"

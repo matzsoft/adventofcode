@@ -13,7 +13,7 @@ import MATZMiscSwiftLibrary
 
 extension AdventOfCode {
     struct Close: ParsableCommand {
-        static var configuration = CommandConfiguration(
+        static let configuration = CommandConfiguration(
             abstract: "Closes a problem solution package to prepare for git commit."
         )
         
@@ -55,7 +55,7 @@ extension AdventOfCode {
             }
             
             let stock = try createPackageSwift( directory: "./\(package)", package: package )
-            let actual = try String( contentsOfFile: packageSwift )
+            let actual = try String( contentsOfFile: packageSwift, encoding: .utf8 )
             
             if stock != actual {
                 var isDir: ObjCBool = false

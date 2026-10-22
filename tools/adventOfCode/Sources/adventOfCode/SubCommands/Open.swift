@@ -14,7 +14,7 @@ import MATZMiscSwiftLibrary
 
 extension AdventOfCode {
     struct Open: ParsableCommand {
-        static var configuration = CommandConfiguration(
+        static let configuration = CommandConfiguration(
             abstract: "Create the Swift Package Manager structure for a solution."
         )
         
@@ -34,6 +34,11 @@ extension AdventOfCode {
 
 
 func performOpen( package: String ) throws -> Void {
+    let mainSwift = try openCreateFiles( package: package )
+    try openXcode( mainSwift: mainSwift )
+}
+
+func openCreateFiles( package: String ) throws -> String {
     let fileManager = FileManager.default
     let swiftFile = package + ".swift"
     let sourcesFolder = "Sources"
@@ -62,7 +67,11 @@ func performOpen( package: String ) throws -> Void {
         try fixPackageSwift( package: package )
         try removeNewStyleMain( package: package, sourcesFolder: sourcesFolder )
     }
+    
+    return mainSwift
+}
 
+func openXcode( mainSwift: String ) throws -> Void {
     guard try shell( stdout: nil, "open", "Package.swift" ) == 0 else {
         throw RuntimeError( "Can't open Package.swift." )
     }
@@ -75,7 +84,7 @@ func performOpen( package: String ) throws -> Void {
 }
 
 func createMainSwift( swiftFile: String, mainSwift: String ) throws -> Void {
-    var code = try String( contentsOfFile: swiftFile )
+    var code = try String( contentsOfFile: swiftFile, encoding: .utf8 )
     let importStatement      = "import Library"
     let projectInfoStatement = "try print( projectInfo() )"
     

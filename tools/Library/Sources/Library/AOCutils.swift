@@ -39,7 +39,7 @@ public struct AOCinput {
     /// Initializes an AOCinput structure from the given filename.
     /// - Parameter filename: The pathname of the file containing the input or test data.
     public init( filename: String ) throws {
-        let contents = try String( contentsOfFile: filename )
+        let contents = try String( contentsOfFile: filename, encoding: .utf8 )
         
         // The following is to accomodate Visual Studio Code.  It treats the LF character as a line
         // separator unlike most programs which treat LF as a line terminator.

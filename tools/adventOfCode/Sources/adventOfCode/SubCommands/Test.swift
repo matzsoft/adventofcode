@@ -13,7 +13,7 @@ import MATZMiscSwiftLibrary
 
 extension AdventOfCode {
     struct Test: ParsableCommand {
-        static var configuration = CommandConfiguration(
+        static let configuration = CommandConfiguration(
             abstract: "Create a test file for a problem solution."
         )
         
