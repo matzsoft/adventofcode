@@ -81,7 +81,7 @@ public struct AOCinput {
 /// Finds the name of the project by navigating up the directory tree from main.swift.
 /// - Parameter base: The pathname of where to start looking.  Defaults to source file of the caller.
 /// - Returns: The name of the current project, e.g. day07.
-func getProjectName( base: String = #file ) -> String {
+func getProjectName( base: String = #filePath ) -> String {
     URL( fileURLWithPath: base ).deletingLastPathComponent().deletingLastPathComponent().lastPathComponent
 }
 
@@ -91,7 +91,7 @@ func getProjectName( base: String = #file ) -> String {
 /// - Throws: Only when a URL can't be created from sourceFile.
 /// - Returns: A string with "Advent of Code", the year, the day name, and whether we have a debug
 ///  or release build.
-public func projectInfo( sourceFile: String = #file ) throws -> String {
+public func projectInfo( sourceFile: String = #filePath ) throws -> String {
     let input = try URL( fileURLWithPath: findDirectory( name: "input", base: sourceFile ) )
     let year = input.deletingLastPathComponent().lastPathComponent
     let project = getProjectName( base: sourceFile )
@@ -113,7 +113,7 @@ public func projectInfo( sourceFile: String = #file ) throws -> String {
 ///   - base: The path of the place to start the search.
 /// - Throws: A RuntimeError if the named directory cannot be found.
 /// - Returns: The full path to the desired directory.
-public func findDirectory( name: String, base: String = #file ) throws -> String {
+public func findDirectory( name: String, base: String = #filePath ) throws -> String {
     let fileManager = FileManager.default
     var directory = URL( fileURLWithPath: base ).deletingLastPathComponent().path
     
@@ -180,7 +180,7 @@ public func formatElapsed( time timeElapsed: CFAbsoluteTime ) -> String {
 /// - Parameter base: The path to the source file for main.swift.  Defaults to the source file of the caller.
 /// - Throws: A RuntimeError if the input directory can't be found.
 /// - Returns: An AOCinput structure containing the input data.
-public func getAOCinput( base: String = #file ) throws -> AOCinput {
+public func getAOCinput( base: String = #filePath ) throws -> AOCinput {
     let inputDirectory = try findDirectory( name: "input", base: base )
     let project = getProjectName( base: base )
     let filename = "\(inputDirectory)/\(project.prefix( 5 )).txt"
@@ -193,7 +193,7 @@ public func getAOCinput( base: String = #file ) throws -> AOCinput {
 /// - Parameter base: The path to the source file for main.swift.  Defaults to the source file of the caller.
 /// - Throws: A RuntimeError if the testfiles directory can't be found.
 /// - Returns: An array of AOCinput structures containing the data for all the test files.
-func getTests( base: String = #file ) throws -> [AOCinput] {
+func getTests( base: String = #filePath ) throws -> [AOCinput] {
     let inputDirectory = try findDirectory( name: "testfiles", base: base )
     let project = getProjectName( base: base )
     let pattern = "\(inputDirectory)/\(project.prefix( 5 ))*.txt"
@@ -209,7 +209,7 @@ func getTests( base: String = #file ) throws -> [AOCinput] {
 ///   - label: An optional label to be added to the summary output.
 ///   - base: The path to the source file for main.swift.  Defaults to the source file of the caller.
 /// - Throws: A RuntimeError if the input directory can't be found.
-public func solve( part1: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
+public func solve( part1: ( ( AOCinput ) -> String ), label: String = "", base: String = #filePath ) throws {
     let input = try getAOCinput( base: base )
     let label = label == "" ? "Part1" : "Part1 \(label)"
     
@@ -223,7 +223,7 @@ public func solve( part1: ( ( AOCinput ) -> String ), label: String = "", base: 
 ///   - label: An optional label to be added to the summary output.
 ///   - base: The path to the source file for main.swift.  Defaults to the source file of the caller.
 /// - Throws: A RuntimeError if the input directory can't be found.
-public func solve( part2: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
+public func solve( part2: ( ( AOCinput ) -> String ), label: String = "", base: String = #filePath ) throws {
     let input = try getAOCinput( base: base )
     let label = label == "" ? "Part2" : "Part2 \(label)"
     
@@ -268,7 +268,7 @@ func runSolution( label: String, function: ( AOCinput ) -> String, input: AOCinp
 ///   - label: An optional label to be added to the summary output.
 ///   - base: The path to the source file for main.swift.  Defaults to the source file of the caller.
 /// - Throws: A RuntimeError if the input directory can't be found.
-public func runTests( part1: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
+public func runTests( part1: ( ( AOCinput ) -> String ), label: String = "", base: String = #filePath ) throws {
     let tests = try getTests( base: base ).filter { $0.part1 != nil }.map { ( $0, $0.part1! ) }
     let label = label == "" ? "Part1" : "Part1 \(label)"
     
@@ -282,7 +282,7 @@ public func runTests( part1: ( ( AOCinput ) -> String ), label: String = "", bas
 ///   - label: An optional label to be added to the summary output.
 ///   - base: The path to the source file for main.swift.  Defaults to the source file of the caller.
 /// - Throws: A RuntimeError if the input directory can't be found.
-public func runTests( part2: ( ( AOCinput ) -> String ), label: String = "", base: String = #file ) throws {
+public func runTests( part2: ( ( AOCinput ) -> String ), label: String = "", base: String = #filePath ) throws {
     let tests = try getTests( base: base ).filter { $0.part2 != nil }.map { ( $0, $0.part2! ) }
     let label = label == "" ? "Part2" : "Part2 \(label)"
     

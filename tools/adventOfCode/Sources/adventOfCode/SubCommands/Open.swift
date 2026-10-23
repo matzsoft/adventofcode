@@ -85,12 +85,16 @@ func openXcode( mainSwift: String ) throws -> Void {
 
 func createMainSwift( swiftFile: String, mainSwift: String ) throws -> Void {
     var code = try String( contentsOfFile: swiftFile, encoding: .utf8 )
-    let importStatement      = "import Library"
+    let importLibrary        = "import Library"
+    let importMATZLibrary    = "import MATZMiscSwiftLibrary"
     let projectInfoStatement = "try print( projectInfo() )"
     
-    if !code.contains( importStatement ) {
+    if !code.contains( importLibrary ) {
         let target = "import Foundation"
-        code = code.replacingOccurrences( of: target, with: "\(target)\n\(importStatement)" )
+        code = code.replacingOccurrences( of: target, with: "\(target)\n\(importLibrary)" )
+    }
+    if !code.contains( importMATZLibrary ) {
+        code = code.replacingOccurrences( of: importLibrary, with: "\(importLibrary)\n\(importMATZLibrary)" )
     }
     if !code.contains( projectInfoStatement ) {
         let target = "try runTests( part1:"
