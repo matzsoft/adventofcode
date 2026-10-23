@@ -38,7 +38,7 @@ func performOpen( package: String ) throws -> Void {
     try openXcode( mainSwift: mainSwift )
 }
 
-func openCreateFiles( package: String ) throws -> String {
+func openCreateFiles( package: String, display: Bool = true ) throws -> String {
     let fileManager = FileManager.default
     let swiftFile = package + ".swift"
     let sourcesFolder = "Sources"
@@ -59,8 +59,15 @@ func openCreateFiles( package: String ) throws -> String {
             throw RuntimeError( "Can't change directory to \(package)." )
         }
         
-        guard try shell( stdout: nil, "swift", "package", "init", "--type", "executable" ) == 0 else {
-            throw RuntimeError( "Can't create swift package." )
+        if display {
+            guard try shell( "swift", "package", "init", "--type", "executable" ) == 0 else {
+                throw RuntimeError( "Can't create swift package." )
+            }
+        } else {
+            let null = FileHandle.nullDevice
+            guard try shell( stdout: null, stderr: null, "swift", "package", "init", "--type", "executable" ) == 0 else {
+                throw RuntimeError( "Can't create swift package." )
+            }
         }
         
         try createMainSwift( swiftFile: "../\(swiftFile)", mainSwift: mainSwift )
