@@ -92,21 +92,33 @@ func gitChanges( swiftCount: Int ) throws -> Void {
             add: [ "git", "add", "\(package)/Package.swift" ]
         )
     }
-    
+    let commitMove = [ "git", "commit", "-a", "-m", "Moved all \(contents[0].year) *.swift files." ]
+    let commitFinal = [ "git", "commit", "-a", "-m", "Conversion of \(contents[0].year)." ]
+    let removePackages = [ "git", "rm", "-r", "\(packages)/" ]
+
     for package in contents {
-        print( package.move.joined( separator: " " ) )
+        displayGit( args: package.move )
     }
     
-    print( "git commit -a -m 'Moved all \(contents[0].year) *.swift files." )
+    displayGit( args: commitMove )
+    
+    for package in contents {
+        try package.content.write( toFile: "\(package.name)/Sources/main.swift", atomically: true, encoding: .utf8 )
+    }
 
     if fileManager.fileExists( atPath: packages ) {
-        print( "gir rm \(packages)/*.swift" )
+        displayGit( args: removePackages )
 //        try? fileManager.removeItem( atPath: packages )
     }
     
     for package in contents {
-        print( package.add.joined( separator: " " ) )
+        displayGit( args: package.add )
     }
     
-    print( "git commit -a -m 'Conversion of \(contents[0].year).'" )
+    displayGit( args: commitFinal )
+}
+
+
+func displayGit( args: [String] ) -> Void {
+    print( args.map { $0.contains( " " ) ? "'\($0)'" : $0 }.joined( separator: " " ) )
 }
