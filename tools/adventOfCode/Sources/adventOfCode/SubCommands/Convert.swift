@@ -18,23 +18,25 @@ extension AdventOfCode {
         
         func run() throws -> Void {
             let fileManager = FileManager.default
-            let swiftFiles = glob( pattern: "*.swift" )
-            guard swiftFiles.count == 12 || swiftFiles.count == 25 else {
+            let swiftCount = glob( pattern: "*.swift" ).count
+            guard swiftCount == 12 || swiftCount == 25 else {
                 throw RuntimeError( "Directory must contain 12 or 25 *.swift files." )
             }
-            for number in 1 ... swiftFiles.count {
+            for number in 1 ... swiftCount {
                 let ( _, _, package ) = try determinePackage( package: String( number ) )
                 
-                try fileManager.removeItem( atPath: package )
+                if fileManager.fileExists( atPath: package ) {
+                    try fileManager.removeItem( atPath: package )
+                }
                 _ = try openCreateFiles( package: package, display: false )
                 try testSolution( package: package )
                 
                 guard fileManager.changeCurrentDirectoryPath( ".." ) else {
                     throw RuntimeError( "Can't change directory to .." )
                 }
-                
-                print( "Converted \(package)" )
             }
+            
+            try gitChanges( swiftCount: swiftCount )
         }
     }
 }
@@ -64,6 +66,47 @@ func testSolution( package: String ) throws -> Void {
         throw RuntimeError( "Failed to run solution for \(package)." )
     }
 
-    if askYN( prompt: "Did the solution succeed", expected: true ) { return }
+    if askYN( prompt: "Did \(package) succeed", expected: true ) { return }
     throw RuntimeError( "Solution for \(package) failed." )
+}
+
+
+struct Content {
+    let name: String
+    let year: Int
+    let content: String
+    let move: [String]
+    let add: [String]
+}
+
+
+func gitChanges( swiftCount: Int ) throws -> Void {
+    let fileManager = FileManager.default
+    let packages = "packages"
+    let contents = try ( 1 ... swiftCount ).map { number in
+        let ( year, _, package ) = try determinePackage( package: String( number ) )
+        let result = try String( contentsOfFile: "\(package)/Sources/main.swift", encoding: .utf8 )
+        return Content(
+            name: package, year: year, content: result,
+            move: [ "git", "mv", "-f", "\(package).swift", "\(package)/Sources/main.swift" ],
+            add: [ "git", "add", "\(package)/Package.swift" ]
+        )
+    }
+    
+    for package in contents {
+        print( package.move.joined( separator: " " ) )
+    }
+    
+    print( "git commit -a -m 'Moved all \(contents[0].year) *.swift files." )
+
+    if fileManager.fileExists( atPath: packages ) {
+        print( "gir rm \(packages)/*.swift" )
+//        try? fileManager.removeItem( atPath: packages )
+    }
+    
+    for package in contents {
+        print( package.add.joined( separator: " " ) )
+    }
+    
+    print( "git commit -a -m 'Conversion of \(contents[0].year).'" )
 }

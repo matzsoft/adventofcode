@@ -113,16 +113,43 @@ func createMainSwift( swiftFile: String, mainSwift: String ) throws -> Void {
 
 func fixPackageSwift( package: String ) throws -> Void {
     let fileManager = FileManager.default
+    let stock = try createPackageSwift( directory: ".", package: package )
     let customPackage = "../packages/\(package).swift"
     
-    if fileManager.fileExists( atPath: customPackage ) {
-        try fileManager.removeItem( atPath: "Package.swift" )
-        try copyFile( atPath: customPackage, toPath: "Package.swift" )
+    guard fileManager.fileExists( atPath: customPackage ) else {
+        try stock.write( toFile: "Package.swift", atomically: true, encoding: .utf8 )
         return
     }
+ 
+    let custom = try String( contentsOfFile: customPackage, encoding: .utf8 )
+    let stockLines = stock.split( separator: "\n", omittingEmptySubsequences: false )
+    var customLines = custom.split( separator: "\n", omittingEmptySubsequences: false )
     
-    let stock = try createPackageSwift( directory: ".", package: package )
-    try stock.write( toFile: "Package.swift", atomically: true, encoding: .utf8 )
+    guard let stockVersion = stockLines.first( where: { $0.contains( "swift-tools-version:" ) } ) else {
+        throw RuntimeError( "Can't find 'swift-tools-version:' in stock Package.swift." )
+    }
+    
+    guard let customVersionIndex = customLines.firstIndex( where: { $0.contains( "swift-tools-version:" ) } ) else {
+        throw RuntimeError( "Can't find 'swift-tools-version:' in custom Package.swift." )
+    }
+    
+    customLines[customVersionIndex] = stockVersion
+    
+    guard let stockPlatforms = stockLines.first( where: { $0.contains( "platforms:" ) } ) else {
+        throw RuntimeError( "Can't find 'platforms:' in stock Package.swift." )
+    }
+
+    if let customPlatformsIndex = customLines.firstIndex( where: { $0.contains( "platforms:" ) } ) {
+        customLines[customPlatformsIndex] = stockPlatforms
+    } else {
+        guard let customNameIndex = customLines.firstIndex( where: { $0.contains( "name:" ) } ) else {
+            throw RuntimeError( "Can't find 'name:' in custom Package.swift." )
+        }
+        customLines.insert( stockPlatforms, at: customNameIndex + 1 )
+    }
+    
+    let result = customLines.joined( separator: "\n" )
+    try result.write( toFile: "Package.swift", atomically: true, encoding: .utf8 )
 }
 
 
