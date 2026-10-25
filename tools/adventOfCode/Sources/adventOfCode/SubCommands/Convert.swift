@@ -18,16 +18,13 @@ extension AdventOfCode {
         
         func run() throws -> Void {
             let fileManager = FileManager.default
-            let swiftCount = glob( pattern: "*.swift" ).count
-            guard swiftCount == 12 || swiftCount == 25 else {
-                throw RuntimeError( "Directory must contain 12 or 25 *.swift files." )
-            }
-            for number in 1 ... swiftCount {
-                let ( _, _, package ) = try determinePackage( package: String( number ) )
-                
+            let packages = glob( pattern: "day*.swift" ).map { String( $0.dropLast( 6 ) ) }
+            for package in packages {
                 if fileManager.fileExists( atPath: package ) {
                     try fileManager.removeItem( atPath: package )
                 }
+                
+                // openCreateFiles does a cd to the package directory and testSolution requires it
                 _ = try openCreateFiles( package: package, display: false )
                 try testSolution( package: package )
                 
@@ -36,7 +33,7 @@ extension AdventOfCode {
                 }
             }
             
-            try gitChanges( swiftCount: swiftCount )
+            try gitChanges( packages: packages )
         }
     }
 }
@@ -80,11 +77,11 @@ struct Content {
 }
 
 
-func gitChanges( swiftCount: Int ) throws -> Void {
+func gitChanges( packages: [String] ) throws -> Void {
     let fileManager = FileManager.default
-    let packages = "packages"
-    let contents = try ( 1 ... swiftCount ).map { number in
-        let ( year, _, package ) = try determinePackage( package: String( number ) )
+    let packagesFolder = "packages"
+    let contents = try packages.map { package in
+        let ( year, _, _ ) = try determinePackage( package: package )
         let result = try String( contentsOfFile: "\(package)/Sources/main.swift", encoding: .utf8 )
         return Content(
             name: package, year: year, content: result,
@@ -94,31 +91,38 @@ func gitChanges( swiftCount: Int ) throws -> Void {
     }
     let commitMove = [ "git", "commit", "-a", "-m", "Moved all \(contents[0].year) *.swift files." ]
     let commitFinal = [ "git", "commit", "-a", "-m", "Conversion of \(contents[0].year)." ]
-    let removePackages = [ "git", "rm", "-r", "\(packages)/" ]
+    let removePackages = [ "git", "rm", "-r", "\(packagesFolder)/" ]
 
     for package in contents {
-        displayGit( args: package.move )
+        try performGit( args: package.move )
     }
     
-    displayGit( args: commitMove )
+    try performGit( args: commitMove )
     
     for package in contents {
         try package.content.write( toFile: "\(package.name)/Sources/main.swift", atomically: true, encoding: .utf8 )
     }
 
-    if fileManager.fileExists( atPath: packages ) {
-        displayGit( args: removePackages )
+    if fileManager.fileExists( atPath: packagesFolder ) {
+        try performGit( args: removePackages )
 //        try? fileManager.removeItem( atPath: packages )
     }
     
     for package in contents {
-        displayGit( args: package.add )
+        try performGit( args: package.add )
     }
     
-    displayGit( args: commitFinal )
+    try performGit( args: commitFinal )
 }
 
 
-func displayGit( args: [String] ) -> Void {
-    print( args.map { $0.contains( " " ) ? "'\($0)'" : $0 }.joined( separator: " " ) )
+func performGit( args: [String] ) throws -> Void {
+    if try shell( args ) != 0 {
+        throw RuntimeError( "Faild git command - \(displayGit(args: args))")
+    }
+}
+
+
+func displayGit( args: [String] ) -> String {
+    return args.map { $0.contains( " " ) ? "'\($0)'" : $0 }.joined( separator: " " )
 }
