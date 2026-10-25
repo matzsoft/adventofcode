@@ -18,6 +18,7 @@ extension AdventOfCode {
         
         func run() throws -> Void {
             let fileManager = FileManager.default
+            let testSolutions = askYN( prompt: "Run the solution tests", expected: true )
             let packages = glob( pattern: "day*.swift" ).map { String( $0.dropLast( 6 ) ) }
             for package in packages {
                 if fileManager.fileExists( atPath: package ) {
@@ -26,14 +27,14 @@ extension AdventOfCode {
                 
                 // openCreateFiles does a cd to the package directory and testSolution requires it
                 _ = try openCreateFiles( package: package, display: false )
-                try testSolution( package: package )
+                if testSolutions { try testSolution( package: package ) }
                 
                 guard fileManager.changeCurrentDirectoryPath( ".." ) else {
                     throw RuntimeError( "Can't change directory to .." )
                 }
             }
             
-            try gitChanges( packages: packages )
+            if askYN( prompt: "Run the git commands", expected: true ) { try gitChanges( packages: packages ) }
         }
     }
 }
@@ -89,14 +90,17 @@ func gitChanges( packages: [String] ) throws -> Void {
             add: [ "git", "add", "\(package)/Package.swift" ]
         )
     }
-    let commitMove = [ "git", "commit", "-a", "-m", "Moved all \(contents[0].year) *.swift files." ]
-    let commitFinal = [ "git", "commit", "-a", "-m", "Conversion of \(contents[0].year)." ]
+    let commitMove = [ "git", "commit", "-a", "-e", "-m", "Moved all \(contents[0].year) *.swift files." ]
+    let commitFinal = [ "git", "commit", "-a", "-e", "-m", "Conversion of \(contents[0].year)." ]
     let removePackages = [ "git", "rm", "-r", "\(packagesFolder)/" ]
 
     for package in contents {
         try performGit( args: package.move )
     }
     
+    guard askYN( prompt: "Commit the moves to main.swift", expected: true ) else {
+        throw RuntimeError( "Commiting the moves aborted." )
+    }
     try performGit( args: commitMove )
     
     for package in contents {
@@ -112,6 +116,9 @@ func gitChanges( packages: [String] ) throws -> Void {
         try performGit( args: package.add )
     }
     
+    guard askYN( prompt: "Perform the final commit", expected: true ) else {
+        throw RuntimeError( "Final commit aborted." )
+    }
     try performGit( args: commitFinal )
 }
 
