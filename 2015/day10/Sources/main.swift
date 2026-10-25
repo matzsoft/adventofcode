@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func rounds( initial: String, rounds: Int ) -> String {
     var current = initial

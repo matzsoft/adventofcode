@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 let alphabet = ( UnicodeScalar( "a" ).value ... UnicodeScalar( "z" ).value ).map {
     Character( UnicodeScalar( $0 )! )

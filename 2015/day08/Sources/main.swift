@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func decode( line: String ) throws -> String {
     enum State { case initial, normal, backslash, backslashX, backslashXn, final }

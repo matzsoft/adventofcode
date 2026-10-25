@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 // I realized that the number of presents in house n is just sigma(n).  (sigma(n) is the sum of the
 // factors of n).  It turns out that using this fact and putting a lower bound on the search reduces the

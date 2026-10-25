@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 extension Sequence {
     func pairs() -> AnyIterator<(Element, Element?)> {

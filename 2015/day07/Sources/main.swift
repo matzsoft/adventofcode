@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 struct Instruction {
     enum Operator { case load, and, or, not, rshift, lshift }

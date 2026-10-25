@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func findSolutions( used: Int, amount: Int, available: [Int] ) -> [Int] {
     let first = available.first!
