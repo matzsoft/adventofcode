@@ -90,8 +90,8 @@ func gitChanges( packages: [String] ) throws -> Void {
             add: [ "git", "add", "\(package)/Package.swift" ]
         )
     }
-    let commitMove = [ "git", "commit", "-a", "-e", "-m", "Moved all \(contents[0].year) *.swift files." ]
-    let commitFinal = [ "git", "commit", "-a", "-e", "-m", "Conversion of \(contents[0].year)." ]
+    let commitMove = [ "git", "commit", "-a", "-m", "Moved all \(contents[0].year) *.swift files." ]
+    let commitFinal = [ "git", "commit", "-a", "-m", "Conversion of \(contents[0].year)." ]
     let removePackages = [ "git", "rm", "-r", "\(packagesFolder)/" ]
 
     for package in contents {
