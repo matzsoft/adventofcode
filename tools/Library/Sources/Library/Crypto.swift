@@ -30,10 +30,10 @@ public func md5Hash( str: String ) -> String {
 ///
 /// - Parameter str: The string to be hashed.
 /// - Returns: The hexadecimal string of the resulting hash.
-//public func md5Fast( str: String ) -> [UInt8] {
-//    guard let string = str.data( using: .utf8 ) else { return [] }
-//    
-//    var digest = Insecure.MD5.hash( data: string )
-//    
-//    return digest
-//}
+public func md5Fast( str: String ) -> [UInt8] {
+    guard let string = str.data( using: .utf8 ) else { return [] }
+    
+    let digest = Insecure.MD5.hash( data: string )
+    
+    return digest.map { UInt8( $0 ) }
+}
