@@ -58,7 +58,8 @@ func testSolution( package: String ) throws -> Void {
     let buildStatus = try shell( stdout: fileHandle, stderr: fileHandle, buildAargs )
     try? fileHandle.close()
     if buildStatus != 0 {
-        _ = try shell( "cat", buildLog )
+        let log = try String( contentsOfFile: buildLog, encoding: .utf8 )
+        print( log )
         throw RuntimeError( "Failed to build solution for \(package)." )
     }
     
