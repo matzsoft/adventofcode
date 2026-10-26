@@ -11,6 +11,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 let ( factorA, maskA ) = ( 16807, 3 )
 let ( factorB, maskB ) = ( 48271, 7 )

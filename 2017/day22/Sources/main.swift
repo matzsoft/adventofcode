@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 class Grid {
     enum State: String { case clean = ".", weakened = "W", infected = "#", flagged = "F" }

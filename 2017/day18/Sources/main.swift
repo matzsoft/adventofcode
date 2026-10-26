@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func bubbleSort( numbers: [Int] ) -> Int {
     var results = numbers

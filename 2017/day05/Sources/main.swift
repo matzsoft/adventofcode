@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func countSteps( input: AOCinput, modifier: ( Int ) -> Int ) -> Int {
     var ip = 0

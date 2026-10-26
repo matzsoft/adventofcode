@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func captcha( input: [Int], offset: Int = 1 ) -> Int {
     return zip( input, input[offset...] + input[..<offset] ).reduce( 0 ) {
