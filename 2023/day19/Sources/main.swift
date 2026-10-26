@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 let ratingRange = 1 ..< 4001
 let ratingSet = Set( ratingRange )
@@ -61,7 +62,7 @@ struct Rule {
             condition = nil
             destination = String( words[0] )
         } else {
-            condition = Condition( string: words[0] )
+            condition = Condition( string: String( words[0] ) )
             destination = String( words[1] )
         }
     }
