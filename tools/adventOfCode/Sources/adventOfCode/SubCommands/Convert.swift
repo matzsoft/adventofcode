@@ -18,7 +18,8 @@ extension AdventOfCode {
         
         func run() throws -> Void {
             let fileManager = FileManager.default
-            let packages = glob( pattern: "day*.swift" ).map { String( $0.dropLast( 6 ) ) }
+            let tracked = try shell( "git", "ls-files", "." )
+            let packages = glob( pattern: "day*.swift" ).filter { tracked.contains( $0 ) }.map { String( $0.dropLast( 6 ) ) }
             let startPackage = getString( prompt: "Start package for solution tests", preferred: "day01" )
             var testSolutions = false
             for package in packages {
