@@ -92,7 +92,7 @@ func parse( input: AOCinput ) -> [Cuboid] {
 }
 
 
-func part1( input: AOCinput ) -> String {
+@MainActor func part1( input: AOCinput ) -> String {
     let steps = parse( input: input ).filter {
         validZone.contains( point: $0.cube.min ) && validZone.contains( point: $0.cube.max )
     }
