@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 // Note - in order to use existing Direction8, treat gravity as pulling the sand North.
 let directions: [Direction8] = [ .N, .NW, .NE ]
@@ -40,7 +41,7 @@ func line( from: Point2D, to: Point2D ) -> Set<Point2D> {
 }
 
 
-func sandCount( blocks: Set<Point2D>, bounds: Rect2D, limit: Int? ) -> Int {
+@MainActor func sandCount( blocks: Set<Point2D>, bounds: Rect2D, limit: Int? ) -> Int {
     var sand = Set<Point2D>()
     
     while true {
@@ -80,7 +81,7 @@ func parse( input: AOCinput ) -> Set<Point2D> {
 }
 
 
-func part1( input: AOCinput ) -> String {
+@MainActor func part1( input: AOCinput ) -> String {
     let blocks = parse( input: input )
     let bounds = Rect2D( points: Array( blocks ) ).expand( with: drip )
 
@@ -88,7 +89,7 @@ func part1( input: AOCinput ) -> String {
 }
 
 
-func part2( input: AOCinput ) -> String {
+@MainActor func part2( input: AOCinput ) -> String {
     let blocks = parse( input: input )
     let bounds = Rect2D( points: Array( blocks ) ).expand( with: drip )
 
