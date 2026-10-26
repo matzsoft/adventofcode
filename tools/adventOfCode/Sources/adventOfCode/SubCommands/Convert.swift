@@ -18,9 +18,11 @@ extension AdventOfCode {
         
         func run() throws -> Void {
             let fileManager = FileManager.default
-            let testSolutions = askYN( prompt: "Run the solution tests", expected: true )
             let packages = glob( pattern: "day*.swift" ).map { String( $0.dropLast( 6 ) ) }
+            let startPackage = getString( prompt: "Start package for solution tests", preferred: "day01" )
+            var testSolutions = false
             for package in packages {
+                if package == startPackage { testSolutions = true }
                 if fileManager.fileExists( atPath: package ) {
                     try fileManager.removeItem( atPath: package )
                 }
