@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 struct SeatLayout: CustomStringConvertible {
     enum State: String { case floor = ".", occupied = "#", empty = "L" }

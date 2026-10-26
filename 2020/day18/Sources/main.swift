@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 enum Operation: Character { case add = "+", multiply = "*", leftParen = "(", rightParen = ")" }
 

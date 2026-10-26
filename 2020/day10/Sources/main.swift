@@ -12,6 +12,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func getFactor( count: Int ) -> Int {
     guard count > 1 else { return 1 }

@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func seatID<T>( input: T ) -> Int where T: StringProtocol {
     let binary = input

@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 // Implemented as a singly linked, circular list with the head pointer stored in element zero of the array.
 struct Circle {

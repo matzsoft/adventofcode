@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 extension Collection {
     var pairs: [ ( Element, Element ) ] {
