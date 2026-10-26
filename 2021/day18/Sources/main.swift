@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 enum RunType: String { case parse, explode, reduce, add, magnitude, homework }
 

@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 struct Image: CustomStringConvertible {
     let lit: Set<Point2D>

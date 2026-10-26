@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 protocol RiskMap {
     var bounds: Rect2D { get }

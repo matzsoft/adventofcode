@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 let modelNumberLength = 14
 let inputIndices = 0 ..< modelNumberLength

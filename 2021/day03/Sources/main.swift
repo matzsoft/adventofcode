@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func mostCommon( report: [String], index: String.Index ) -> Character {
     let count = report.filter { $0[index] == "1" }.count

@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 let correct = [
     Set( "abcefg" ), Set( "cf" ), Set( "acdeg" ), Set( "acdfg" ), Set( "bcdf" ),

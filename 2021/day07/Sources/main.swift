@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func parse( input: AOCinput ) -> [Int] {
     return input.line.split( separator: "," ).map { Int( $0 )! }
