@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 let quintToInt: [ Character : Int ] = [ "=" : -2, "-" : -1, "0" : 0, "1" : 1, "2" : 2 ]
 let intToQuint                      = [ -2 : "=", -1 : "-", 0 : "0", 1 : "1", 2 : "2" ]

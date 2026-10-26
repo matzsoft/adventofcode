@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 extension Rect2D {
     func contains( other: Rect2D ) -> Bool {

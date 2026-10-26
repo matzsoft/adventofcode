@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func solution( input: AOCinput, length: Int ) -> String {
     let characters = Array( input.line )

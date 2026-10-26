@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 extension [String] {
     func find( first character: Character ) -> Point2D? {

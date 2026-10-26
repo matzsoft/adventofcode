@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 struct Sensor: CustomStringConvertible {
     let location: Point2D
