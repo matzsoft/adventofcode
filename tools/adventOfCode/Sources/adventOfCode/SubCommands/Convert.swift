@@ -125,7 +125,7 @@ func gitChanges( packages: [String] ) throws -> Void {
 
 func performGit( args: [String] ) throws -> Void {
     if try shell( args ) != 0 {
-        throw RuntimeError( "Faild git command - \(displayGit(args: args))")
+        throw RuntimeError( "Failed git command - \(displayGit(args: args))")
     }
 }
 

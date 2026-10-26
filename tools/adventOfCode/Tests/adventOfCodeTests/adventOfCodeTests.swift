@@ -41,7 +41,7 @@ final class adventOfCodeTests: XCTestCase {
       #endif
     }
 
-    static var allTests = [
+    static let allTests = [
         ("testExample", testExample),
     ]
 }
