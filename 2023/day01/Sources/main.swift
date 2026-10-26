@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 extension String {
     // This is a replacement for a function natively available in macOS 13 and later.

@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func find( input: AOCinput, update: ( Int, [Int] ) -> Int ) -> Int {
     input.lines

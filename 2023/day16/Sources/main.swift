@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 enum Tile: Character {
     case empty = ".", vsplit = "|", hsplit = "-", fmirror = "/", bmirror = "\\"

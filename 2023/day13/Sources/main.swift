@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func mirrors( lines: [String] ) -> [Int] {
     return ( 1 ..< lines.count )

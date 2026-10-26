@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 enum SpringStatus: Character { case operational = ".", damaged = "#", unknown = "?" }
 
