@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func fibonacci( _ n: Int ) -> Int {
     return Int( pow( ( 1 + sqrt( 5 ) ) / 2, Double( n ) ) / sqrt( 5 ) + 0.5 )

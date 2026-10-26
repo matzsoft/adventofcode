@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 class Location: Hashable {
     enum LocationType: String, CaseIterable { case open = ".", wall = "#" }

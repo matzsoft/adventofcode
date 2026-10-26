@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 typealias Move        = [Int]
 typealias Position    = [Int]

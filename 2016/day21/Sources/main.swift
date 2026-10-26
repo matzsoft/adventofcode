@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 protocol Operation {
     func forward( unscrambled: String ) -> String
