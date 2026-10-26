@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func fuel( mass: Int ) -> Int {
     var total = 0

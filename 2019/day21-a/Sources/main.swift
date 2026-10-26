@@ -9,6 +9,8 @@
 //
 
 import Foundation
+import Library
+import MATZMiscSwiftLibrary
 
 // MARK: - Useful for handling and displaying bits
 
@@ -415,6 +417,7 @@ func part2( input: AOCinput ) -> String {
 }
 
 
+try print( projectInfo() )
 try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )

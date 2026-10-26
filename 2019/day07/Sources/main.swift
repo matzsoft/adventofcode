@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func permutations( set: Set<Int> ) -> [[Int]] {
     var result: [[Int]] = []

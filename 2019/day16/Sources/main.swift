@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 let basePattern = [ 0, 1, 0, -1 ]
 

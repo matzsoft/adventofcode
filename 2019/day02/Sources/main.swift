@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func grind( initialMemory: [Int], noun: Int, verb: Int ) throws -> Int {
     let computer = Intcode( name: "Ship", memory: initialMemory )

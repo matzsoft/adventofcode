@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func walkOrJump( scan: String ) -> String {
     func trial( hull: [Int], position: Int ) -> Bool {
