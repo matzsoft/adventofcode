@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func parse( input: AOCinput ) -> [Int] {
     var current = Point2D( x: 0, y: 0 )

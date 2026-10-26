@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func sumFactors( target: Int ) -> Int {
     let limit = Int( sqrt( Double( target ) ) )

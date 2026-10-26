@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func printScoreboard( scoreboard: [Int], elf1: Int, elf2: Int ) -> Void {
     var unpacked = Array( scoreboard.map { String(format: "%3d", $0) }.joined() + " " )

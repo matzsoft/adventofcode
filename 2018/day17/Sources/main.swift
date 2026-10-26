@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 class Map {
     enum Cell: String { case drySand = ".", wetSand = "|", clay = "#", water = "~" }

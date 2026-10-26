@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 extension Rect2D {
     var setOfPoints: Set<Point2D> {

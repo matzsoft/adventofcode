@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 extension Point2D {
     static func inReadingOrder( left: Point2D, right: Point2D ) -> Bool {

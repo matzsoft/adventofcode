@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 let upperCaseA = Character("A").unicodeScalars.first!.value
 let baseDuration = 60
