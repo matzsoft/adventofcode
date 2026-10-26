@@ -168,7 +168,7 @@ func parse( input: AOCinput ) -> Int {
 
 let startPoint = Point2D( x: 1, y: 1 )
 
-func part1( input: AOCinput ) -> String {
+@MainActor func part1( input: AOCinput ) -> String {
     let favorite = parse( input: input )
     let floor = Floor( width: 70, height: 70, favorite: favorite )
     
@@ -176,7 +176,7 @@ func part1( input: AOCinput ) -> String {
 }
 
 
-func part2( input: AOCinput ) -> String {
+@MainActor func part2( input: AOCinput ) -> String {
     let favorite = parse( input: input )
     let floor = Floor( width: 70, height: 70, favorite: favorite )
     

@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 let start = Point2D( x: 0, y: 0 )
 let vault = Point2D( x: 3, y: 3 )
@@ -40,7 +41,7 @@ func isOpen( direction: DirectionUDLR, hash: String ) -> Bool {
     }
 }
 
-func possibleMoves( key: String, point: Point2D, path: String ) -> [Position] {
+@MainActor func possibleMoves( key: String, point: Point2D, path: String ) -> [Position] {
     let hash = md5Hash( str: "\(key)\(path)" )
     var results: [Position] = []
     
@@ -55,7 +56,7 @@ func possibleMoves( key: String, point: Point2D, path: String ) -> [Position] {
     return results
 }
 
-func findDistance( key: String, start: Point2D, end: Point2D ) -> String? {
+@MainActor func findDistance( key: String, start: Point2D, end: Point2D ) -> String? {
     var queue: [Position] = [ Position( point: start, path: "" ) ]
     
     while let next = queue.first {
@@ -74,7 +75,7 @@ func findDistance( key: String, start: Point2D, end: Point2D ) -> String? {
     return nil
 }
 
-func findLongest( key: String, start: Point2D, end: Point2D ) -> String? {
+@MainActor func findLongest( key: String, start: Point2D, end: Point2D ) -> String? {
     var queue: [Position] = [ Position( point: start, path: "" ) ]
     var last: String?
     
@@ -102,7 +103,7 @@ func parse( input: AOCinput ) -> String {
 }
 
 
-func part1( input: AOCinput ) -> String {
+@MainActor func part1( input: AOCinput ) -> String {
     guard let result = findDistance( key: input.line, start: start, end: vault ) else {
         return "Failed!"
     }
@@ -111,7 +112,7 @@ func part1( input: AOCinput ) -> String {
 }
 
 
-func part2( input: AOCinput ) -> String {
+@MainActor func part2( input: AOCinput ) -> String {
     guard let result = findLongest( key: input.line, start: start, end: vault ) else {
         return "Failed!"
     }
