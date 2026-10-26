@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 struct Pair {
     let key: String
@@ -66,7 +67,7 @@ let requiredFields = [
 ]
 let optionalFields = [ "cid" ]
 
-struct Batch {
+@MainActor struct Batch {
     let present: Bool
     let valid: Bool
     
@@ -91,18 +92,18 @@ struct Batch {
 }
 
 
-func parse( input: AOCinput ) -> [Batch] {
+@MainActor func parse( input: AOCinput ) -> [Batch] {
     return input.paragraphs.map { Batch( lines: $0 ) }
 }
 
 
-func part1( input: AOCinput ) -> String {
+@MainActor func part1( input: AOCinput ) -> String {
     let batches = parse( input: input )
     return "\( batches.filter { $0.present }.count )"
 }
 
 
-func part2( input: AOCinput ) -> String {
+@MainActor func part2( input: AOCinput ) -> String {
     let batches = parse( input: input )
     return "\( batches.filter { $0.present && $0.valid }.count )"
 }
