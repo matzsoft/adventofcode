@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 
 func parse( input: AOCinput ) -> ( Set<String>, [String] ) {
@@ -38,7 +39,7 @@ func isPossible( design: String, towels: Set<String> ) -> Bool {
 
 var cache = [ "" : 1 ]
 
-func possibleCount2( design: String, towels: Set<String> ) -> Int {
+@MainActor func possibleCount2( design: String, towels: Set<String> ) -> Int {
     if let possibles = cache[ design ] { return possibles }
     
     let starts = towels.filter { design.hasPrefix( $0 ) }
@@ -59,7 +60,7 @@ func part1( input: AOCinput ) -> String {
 }
 
 
-func part2( input: AOCinput ) -> String {
+@MainActor func part2( input: AOCinput ) -> String {
     cache = [ "" : 1 ]
 
     let ( towels, designs ) = parse( input: input )
