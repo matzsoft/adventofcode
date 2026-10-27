@@ -26,22 +26,26 @@ extension AdventOfCode {
         
         var baseURL: String { "https://adventofcode.com" }
         var year = 0
-        var day = 0
+        var day  = 0
         
         mutating func validate() throws {
             let ( year, day, package ) = try determinePackage( package: package )
             
-            self.year = year
-            self.day = day
+            self.year    = year
+            self.day     = day
             self.package = package
         }
         
         func run() throws -> Void {
             let fileManager = FileManager.default
-            let currentDirectory = fileManager.currentDirectoryPath
-            let swiftFile = "\(package).swift"
-            let oldFile = "old-\(swiftFile)"
-            let inputFile = try setupInput()
+            let packageFile = "\(package)/Package.swift"
+            let swiftFile   = "\(package)/Sources/main.swift"
+            let inputFile   = try createDirectories()
+            
+            if !fileManager.fileExists(atPath: packageFile ) {
+                let packageContents = try createPackageSwift( directory: package, package: package )
+                try packageContents.write( toFile: packageFile, atomically: true, encoding: .utf8 )
+            }
             
             try waitUntilAvailable()
             try findTab( urlPrefix: baseURL )
@@ -50,38 +54,27 @@ extension AdventOfCode {
                 throw AppleScriptError.cantLinkToURL( error.description )
             }
 
-            if fileManager.fileExists( atPath: swiftFile ) {
-                print( "\(swiftFile) already exists, moving it to \(oldFile)" )
-                try fileManager.moveItem( atPath: swiftFile, toPath: oldFile )
+            if !fileManager.fileExists( atPath: swiftFile ) {
+                let swiftFileSource = try createSwiftSource( swiftFile: swiftFile )
+                try swiftFileSource.write( toFile: swiftFile, atomically: true, encoding: .utf8 )
             }
 
-            let swiftFileSource = try createSwiftSource( swiftFile: swiftFile )
-
-            try createInput( inputFile: inputFile )
-            try swiftFileSource.write( toFile: swiftFile, atomically: true, encoding: .utf8 )
-            try performOpen( package: package )
-            
-            guard fileManager.changeCurrentDirectoryPath( currentDirectory ) else {
-                throw RuntimeError( "Can't change back to initial directory." )
+            if !fileManager.fileExists( atPath: inputFile ) {
+                try createInput( inputFile: inputFile )
             }
-            
-            if fileManager.fileExists( atPath: oldFile ) {
-                print( "Moving \(oldFile) back to \(swiftFile)" )
-                try fileManager.removeItem( atPath: swiftFile )
-                try fileManager.moveItem( atPath: oldFile, toPath: swiftFile )
-            }
+            try openXcode( mainSwift: swiftFile )
         }
 
         func waitUntilAvailable() throws -> Void {
-            let targetTimeZone = TimeZone( identifier: "America/New_York" )
-            var components = DateComponents()
+            let targetTimeZone  = TimeZone( identifier: "America/New_York" )
+            var components      = DateComponents()
             components.timeZone = targetTimeZone
-            components.year = year
-            components.month = 12
-            components.day = day
-            components.hour = 0
-            components.minute = 0
-            components.second = 1
+            components.year     = year
+            components.month    = 12
+            components.day      = day
+            components.hour     = 0
+            components.minute   = 0
+            components.second   = 1
 
             var calendar = Calendar( identifier: .gregorian )
             calendar.timeZone = targetTimeZone ?? .current
@@ -96,12 +89,15 @@ extension AdventOfCode {
             }
         }
                 
-        func setupInput() throws -> String {
-            let fileManager = FileManager.default
-            let inputFolder = "input"
-            let testsFolder = "testfiles"
-            let base        = package.prefix( 5 )
-            let inputFile = "\(inputFolder)/\(base).txt"
+        func createDirectories() throws -> String {
+            let fileManager   = FileManager.default
+            let sourcesFolder = "\(package)/Sources"
+            let inputFolder   = "input"
+            let testsFolder   = "testfiles"
+            
+            if !fileManager.fileExists( atPath: sourcesFolder ) {
+                try fileManager.createDirectory( atPath: sourcesFolder, withIntermediateDirectories: true, attributes: nil )
+            }
             
             if !fileManager.fileExists( atPath: inputFolder ) {
                 try fileManager.createDirectory( atPath: inputFolder, withIntermediateDirectories: false, attributes: nil )
@@ -111,16 +107,16 @@ extension AdventOfCode {
                 try fileManager.createDirectory( atPath: testsFolder, withIntermediateDirectories: false, attributes: nil )
             }
             
-            return inputFile
+            return "\(inputFolder)/\(package.prefix( 5 )).txt"
         }
         
         func createSwiftSource( swiftFile: String ) throws -> String {
-            let title = try getTitleCurl()
+            let title     = try getTitleCurl()
             let bundleURL = Bundle.module.url( forResource: "mainswift", withExtension: "mustache" )
             guard let templateURL = bundleURL else {
                 throw RuntimeError( "Can't find template for \(swiftFile)" )
             }
-            let template = try Template( URL: templateURL )
+            let template          = try Template( URL: templateURL )
             let dateFormatterFull = DateFormatter()
             let dateFormatterYear = DateFormatter()
             
@@ -129,9 +125,9 @@ extension AdventOfCode {
 
             let templateData: [String: Any] = [
                 "package": package,
-                "title": title,
-                "date": dateFormatterFull.string( from: Date() ),
-                "year": dateFormatterYear.string( from: Date() )
+                "title":   title,
+                "date":    dateFormatterFull.string( from: Date() ),
+                "year":    dateFormatterYear.string( from: Date() )
             ]
             
             return try template.render( templateData )
@@ -139,7 +135,7 @@ extension AdventOfCode {
 
         func getTitleCurl() throws -> String {
             let fileManager = FileManager.default
-            let htmlFile = "\(package).html"
+            let htmlFile    = "\(package).html"
             let sessionFile = ".session"
             
             guard fileManager.fileExists( atPath: sessionFile ) else {
@@ -165,7 +161,7 @@ extension AdventOfCode {
                 return getTitleUser()
             }
             
-            let html = try String( contentsOfFile: htmlFile, encoding: .utf8 )
+            let html       = try String( contentsOfFile: htmlFile, encoding: .utf8 )
             let titleRegex = try Regex( "<title>Day \\d+ - (.+)</title>", as: ( Substring, Substring ).self )
             guard let titleMatch = try titleRegex.firstMatch( in: html ) else {
                 print( "testMatch fail" )
@@ -187,28 +183,17 @@ extension AdventOfCode {
         
         func createInput( inputFile: String ) throws -> Void {
             let fileManager = FileManager.default
-
-            if fileManager.fileExists( atPath: inputFile ) {
-                let prompt = "\(inputFile) already exist, do you want to recreate"
-                if !askYN( prompt: prompt, expected: false ) { return }
-                
-                let oldFile = "old-\(inputFile)"
-                print( "Moving \(inputFile) to \(oldFile)" )
-                try fileManager.moveItem( atPath: inputFile, toPath: oldFile )
-            }
-            
-            let part1 = !answers  ? "" : getString( prompt: "Enter part1 solution", preferred: "" )
-            let part2 = !answers  ? "" : getString( prompt: "Enter part2 solution", preferred: "" )
-            let extras = !answers ? [] : getLines( prompt: "Enter extra header lines", blanksOK: true )
-            let dataLines = try {
+            let part1       = !answers  ? "" : getString( prompt: "Enter part1 solution", preferred: "" )
+            let part2       = !answers  ? "" : getString( prompt: "Enter part2 solution", preferred: "" )
+            let extras      = !answers ? [] : getLines( prompt: "Enter extra header lines", blanksOK: true )
+            let dataLines   = try {
                 if try getDataCurl( inputFile: inputFile ) {
                     return try String( contentsOfFile: inputFile, encoding: .utf8 ).components( separatedBy: "\n" )
                 } else {
                     return getLines( prompt: "Enter the input data" )
                 }
             }()
-            let input = AOCinput(
-                part1: part1, part2: part2, extras: extras, lines: dataLines, filename: inputFile )
+            let input = AOCinput( part1: part1, part2: part2, extras: extras, lines: dataLines, filename: inputFile )
             
             try input.write()
         }
@@ -252,13 +237,13 @@ func waitUntil( _ targetDate: Date ) -> Void {
 
 
 func countDownFormat( _ interval: TimeInterval ) -> String {
-    let start = Date()
-    let end = start.addingTimeInterval( interval )
+    let start      = Date()
+    let end        = start.addingTimeInterval( interval )
     let components = Calendar.current.dateComponents(
         [ .day, .hour, .minute, .second ], from: start, to: end
     )
-    let days = components.day ?? 0
-    let hours = components.hour ?? 0
+    let days    = components.day ?? 0
+    let hours   = components.hour ?? 0
     let minutes = components.minute ?? 0
     let seconds = components.second ?? 0
     
@@ -270,14 +255,12 @@ func countDownFormat( _ interval: TimeInterval ) -> String {
 
 
 func sleepTime( _ interval: TimeInterval ) -> Int {
-    let start = Date()
-    let end = start.addingTimeInterval( interval )
-    let components = Calendar.current.dateComponents(
-        [ .day, .hour, .minute, .second ], from: start, to: end
-    )
-    
-    if let days = components.day, days > 0 { return 1800 }
-    if let hours = components.hour, hours > 0 { return 30 }
+    let start      = Date()
+    let end        = start.addingTimeInterval( interval )
+    let components = Calendar.current.dateComponents( [ .day, .hour, .minute, .second ], from: start, to: end )
+    if let days    = components.day, days > 0 { return 1800 }
+    if let hours   = components.hour, hours > 0 { return 30 }
     if let minutes = components.minute, minutes > 0 { return 10 }
+
     return ( components.second ?? 0 ) > 10 ? 5 : 1
 }
