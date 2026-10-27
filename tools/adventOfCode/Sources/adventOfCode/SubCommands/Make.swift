@@ -185,11 +185,10 @@ extension AdventOfCode {
         }
         
         func createInput( inputFile: String ) throws -> Void {
-            let fileManager = FileManager.default
-            let part1       = !answers  ? "" : getString( prompt: "Enter part1 solution", preferred: "" )
-            let part2       = !answers  ? "" : getString( prompt: "Enter part2 solution", preferred: "" )
-            let extras      = !answers ? [] : getLines( prompt: "Enter extra header lines", blanksOK: true )
-            let dataLines   = try {
+            let part1     = !answers  ? "" : getString( prompt: "Enter part1 solution", preferred: "" )
+            let part2     = !answers  ? "" : getString( prompt: "Enter part2 solution", preferred: "" )
+            let extras    = !answers ? [] : getLines( prompt: "Enter extra header lines", blanksOK: true )
+            let dataLines = try {
                 if try getDataCurl( inputFile: inputFile ) {
                     return try String( contentsOfFile: inputFile, encoding: .utf8 ).components( separatedBy: "\n" )
                 } else {
