@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 struct Line2D: Hashable {
     enum Direction: Hashable { case up, down, left, right }

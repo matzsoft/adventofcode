@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 struct Shape: Hashable, CustomStringConvertible {
     let map: [Set<Point2D>]

@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func digitsCount( of number: Int ) -> Int {
     Int( floor( log10( Double( number ) ) ) + 1 )

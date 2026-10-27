@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 struct Problem {
     enum Operator: String { case add = "+", multipy = "*" }
