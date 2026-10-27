@@ -71,12 +71,12 @@ func openXcode( mainSwift: String ) throws -> Void {
     guard try shell( stdout: nil, "open", "Package.swift" ) == 0 else {
         throw RuntimeError( "Can't open Package.swift." )
     }
-//    print( "Waiting for 5 seconds..." )
-//    sleep( 5 )
-//    
-//    guard try shell( stdout: nil, "open", mainSwift ) == 0 else {
-//        throw RuntimeError( "Can't open \(mainSwift)." )
-//    }
+    print( "Waiting for 5 seconds..." )
+    sleep( 5 )
+    
+    guard try shell( stdout: nil, "open", mainSwift ) == 0 else {
+        throw RuntimeError( "Can't open \(mainSwift)." )
+    }
 }
 
 func createMainSwift( swiftFile: String, mainSwift: String ) throws -> Void {

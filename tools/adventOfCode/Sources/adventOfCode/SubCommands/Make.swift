@@ -62,7 +62,10 @@ extension AdventOfCode {
             if !fileManager.fileExists( atPath: inputFile ) {
                 try createInput( inputFile: inputFile )
             }
-            try openXcode( mainSwift: swiftFile )
+            
+            guard try shell( stdout: nil, "open", packageFile ) == 0 else {
+                throw RuntimeError( "Can't open \(packageFile)." )
+            }
         }
 
         func waitUntilAvailable() throws -> Void {
