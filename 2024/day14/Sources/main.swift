@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 extension Rect2D {
     var mid: Point2D { min + Point2D( x: width / 2, y: height / 2 ) }

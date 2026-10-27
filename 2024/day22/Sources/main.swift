@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func nextSecret( secret: Int ) -> Int {
     let step1 = ( ( secret << 6 ) ^ secret ) % 16777216

@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func rotate90<T>( array: [[T]] ) -> [[T]] {
     return array[0].indices.reversed().reduce( into: [[T]]() ) {

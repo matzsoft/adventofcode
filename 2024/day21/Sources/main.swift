@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 func point( _ x: Int, _ y: Int ) -> Point2D {
     Point2D( x: x, y: y )
