@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 struct Key: Hashable {
     let start: String
@@ -27,7 +28,7 @@ func parse( input: AOCinput ) -> [ String : [String] ] {
 }
 
 
-func findPaths( devices: [ String : [String] ], start: String, end: String ) -> Int {
+@MainActor func findPaths( devices: [ String : [String] ], start: String, end: String ) -> Int {
     if let cached = cache[ Key( start: start, end: end ) ] { return cached }
     if start == end { return 1 }
     guard let connections = devices[ start ] else { return 0 }
@@ -41,7 +42,7 @@ func findPaths( devices: [ String : [String] ], start: String, end: String ) -> 
 
 
 
-func part1( input: AOCinput ) -> String {
+@MainActor func part1( input: AOCinput ) -> String {
     cache = [:]
     
     let devices = parse( input: input )
@@ -51,7 +52,7 @@ func part1( input: AOCinput ) -> String {
 }
 
 
-func part2( input: AOCinput ) -> String {
+@MainActor func part2( input: AOCinput ) -> String {
     cache = [:]
     
     let devices = parse( input: input )

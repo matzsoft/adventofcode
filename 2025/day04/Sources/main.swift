@@ -10,6 +10,7 @@
 
 import Foundation
 import Library
+import MATZMiscSwiftLibrary
 
 let vectors = [
     Point2D( x: -1,  y: -1 ), Point2D( x:  0,  y: -1 ), Point2D( x:  1,  y: -1 ),
@@ -29,12 +30,12 @@ func parse( input: AOCinput ) -> Set<Point2D> {
 }
 
 
-func neighborCount( point: Point2D, in rolls: Set<Point2D> ) -> Int {
+@MainActor func neighborCount( point: Point2D, in rolls: Set<Point2D> ) -> Int {
     vectors.reduce( 0 ) { $0 + ( rolls.contains( $1 + point ) ? 1 : 0 ) }
 }
 
 
-func removable( rolls: Set<Point2D> ) -> Set<Point2D> {
+@MainActor func removable( rolls: Set<Point2D> ) -> Set<Point2D> {
     rolls.reduce( into: Set<Point2D>() ) { ( removable, roll ) in
         if neighborCount( point: roll, in: rolls ) < 4 {
             removable.insert( roll )
@@ -43,13 +44,13 @@ func removable( rolls: Set<Point2D> ) -> Set<Point2D> {
 }
 
 
-func part1( input: AOCinput ) -> String {
+@MainActor func part1( input: AOCinput ) -> String {
     let rolls = parse( input: input )
     return "\(removable( rolls: rolls ).count)"
 }
 
 
-func part2( input: AOCinput ) -> String {
+@MainActor func part2( input: AOCinput ) -> String {
     var rolls = parse( input: input )
     let initialCount = rolls.count
     
