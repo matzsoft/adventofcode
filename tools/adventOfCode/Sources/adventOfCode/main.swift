@@ -22,7 +22,7 @@ struct AdventOfCode: ParsableCommand {
         // Pass an array to `subcommands` to set up a nested tree of subcommands.
         // With language support for type-level introspection, this could be
         // provided by automatically finding nested `ParsableCommand` types.
-        subcommands: [ Make.self, Test.self ]
+        subcommands: [ Make.self, Test.self, Run.self ]
         
         // A default subcommand, when provided, is automatically selected if a
         // subcommand is not given on the command line.
