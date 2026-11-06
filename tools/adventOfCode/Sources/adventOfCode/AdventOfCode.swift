@@ -9,7 +9,7 @@
 import Foundation
 import ArgumentParser
 
-struct AdventOfCode: ParsableCommand {
+@main struct AdventOfCode: AsyncParsableCommand {
     // Customize your command's help and subcommands by implementing the
     // `configuration` property.
     static let configuration = CommandConfiguration(
@@ -22,11 +22,9 @@ struct AdventOfCode: ParsableCommand {
         // Pass an array to `subcommands` to set up a nested tree of subcommands.
         // With language support for type-level introspection, this could be
         // provided by automatically finding nested `ParsableCommand` types.
-        subcommands: [ Make.self, Test.self, Run.self ]
+        subcommands: [ Make.self, Test.self, Run.self, Gather.self, Display.self ]
         
         // A default subcommand, when provided, is automatically selected if a
         // subcommand is not given on the command line.
     )
 }
-
-AdventOfCode.main()

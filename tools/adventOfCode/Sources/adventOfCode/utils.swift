@@ -39,3 +39,45 @@ func determinePackage( package: String ) throws -> ( Int, Int, String ) {
     
     return ( year, day, newPackage )
 }
+
+
+func getModificationDate( atPath path: String ) throws -> Date {
+    let attributes = try FileManager.default.attributesOfItem( atPath: path )
+    guard let date = attributes[.modificationDate] as? Date else { throw RuntimeError( "Error getting file attributes" ) }
+    return date
+}
+
+
+struct Result: Codable {
+    let name:   String
+    let part1:  String?
+    let part2:  String?
+    let tests1: Bool
+    let tests2: Bool
+    
+    init( solution: String ) {
+        let lines = solution.split( separator: "\n" ).map { String( $0 ) }
+        
+        func part( n: Int ) -> String? {
+            guard let line = lines.first( where: { $0.hasPrefix( "Part\(n): " ) } ) else { return nil }
+            guard line.contains( "Correct!" ) else { return nil }
+            let words = line.split( separator: /[ ()]+/ )
+            guard let time = words.last else { return nil }
+            return String( time )
+        }
+        
+        func test( n: Int ) -> Bool {
+            guard let line = lines.first( where: { $0.contains( "Part\(n) tests ran successfully " ) } ) else { return false }
+            let words = line.split( separator: " " )
+            return words[0] == words[2]
+        }
+        
+        name   = {
+            return String( lines[0].split( separator: /[ ,]+/ )[4] )
+        }()
+        part1  = part( n: 1 )
+        part2  = part( n: 2 )
+        tests1 = test( n: 1 )
+        tests2 = test( n: 2 )
+     }
+}
