@@ -41,7 +41,7 @@ struct ResultsView: View {
     var body: some View {
         Table( solutions, sortOrder: $sortOrder ) {
             TableColumn( "Solution Name", value: \.name ) { Text( $0.name ) }
-            .width( min: 150, ideal: 240, max: 350 ) // Ideal size increased slightly for readability
+            .width( min: 100, ideal: 100, max: 150 ) // Ideal size increased slightly for readability
             
             TableColumn( "Part 1" ) { Text( $0.part1 ) }
             .width( 80 )
@@ -57,8 +57,8 @@ struct ResultsView: View {
         }
         .padding()
         .frame(
-            minWidth: 800,
-            idealWidth: 800,
+            minWidth: 600,
+            idealWidth: 600,
             maxWidth: 800,
             minHeight: 300,
             idealHeight: 400,

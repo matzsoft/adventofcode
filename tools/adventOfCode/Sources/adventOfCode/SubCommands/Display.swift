@@ -27,7 +27,7 @@ extension AdventOfCode {
             
             let json = try Data( contentsOf: resultsURL )
             let results = try JSONDecoder().decode( [Result].self, from: json )
-            let year = URL( fileURLWithPath: fileManager.currentDirectoryPath ).deletingLastPathComponent().lastPathComponent
+            let year = URL( fileURLWithPath: fileManager.currentDirectoryPath ).lastPathComponent
             let displayResults = SolutionDisplayResults( year: year, results: results )
             
             await MainActor.run {
