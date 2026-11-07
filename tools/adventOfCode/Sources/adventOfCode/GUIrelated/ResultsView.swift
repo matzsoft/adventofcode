@@ -41,15 +41,25 @@ struct SolutionItem: Identifiable {
     let name:   String
     let part1:  Part
     let part2:  Part
-    let tests1: Bool
-    let tests2: Bool
+    let tests1: String
+    let tests2: String
     
     init( result: Result ) {
+        func test( status: Result.Test ) -> String {
+            switch status {
+            case .none:
+                return "⚠️"
+            case .good:
+                return "✅"
+            case .bad:
+                return "❌"
+            }
+        }
         self.name   = result.name
         self.part1  = Part( value: result.part1 )
         self.part2  = Part( value: result.part2 )
-        self.tests1 = result.tests1
-        self.tests2 = result.tests2
+        self.tests1 = test( status: result.tests1 )
+        self.tests2 = test( status: result.tests2 )
     }
 }
 
@@ -76,10 +86,10 @@ struct ResultsView: View {
                 TableColumn( "Part 2" ) { Text( $0.part2.value ).background( $0.part2.color.opacity( 0.3 ) ) }
                     .width( 80 )
                 
-                TableColumn( "Part 1 Tests" ) { Text( $0.tests1 ? "✅" : "❌" ) }
+                TableColumn( "Part 1 Tests" ) { Text( $0.tests1 ) }
                     .width( 80 )
                 
-                TableColumn( "Part 2 Tests" ) { Text( $0.tests2 ? "✅" : "❌" ) }
+                TableColumn( "Part 2 Tests" ) { Text( $0.tests2 ) }
                     .width( 80 )
             }
             HStack {

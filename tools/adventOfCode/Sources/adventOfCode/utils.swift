@@ -49,11 +49,13 @@ func getModificationDate( atPath path: String ) throws -> Date {
 
 
 struct Result: Codable {
+    enum Test: Int, Codable { case none, good, bad }
+    
     let name:   String
     let part1:  String?
     let part2:  String?
-    let tests1: Bool
-    let tests2: Bool
+    let tests1: Test
+    let tests2: Test
     
     init( solution: String ) {
         let lines = solution.split( separator: "\n" ).map { String( $0 ) }
@@ -66,10 +68,12 @@ struct Result: Codable {
             return String( time )
         }
         
-        func test( n: Int ) -> Bool {
-            guard let line = lines.first( where: { $0.contains( "Part\(n) tests ran successfully " ) } ) else { return false }
+        func test( n: Int ) -> Test {
+            guard let line = lines.first( where: { $0.contains( "Part\(n) tests ran successfully " ) } ) else { return .bad }
             let words = line.split( separator: " " )
-            return words[0] == words[2]
+            if words[0] != words[2] { return .bad }
+            else if words[0] == "0" { return .none }
+            return .good
         }
         
         name   = {
