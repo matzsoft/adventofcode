@@ -27,11 +27,11 @@ struct SolutionItem: Identifiable {
                 self.value = value
                 
                 if milliseconds < 1000 {
-                    self.color = Color.green
+                    self.color = Color.green.opacity( 0.3 )
                 } else if milliseconds < 10000 {
-                    self.color = Color.yellow
+                    self.color = Color.yellow.opacity( 0.4 )
                 } else {
-                    self.color = Color.red
+                    self.color = Color.red.opacity( 0.3 )
                 }
             }
         }
@@ -76,35 +76,53 @@ struct ResultsView: View {
 
     var body: some View {
         VStack( spacing: 20 ) {
-            Table( solutions, sortOrder: $sortOrder ) {
-                TableColumn( "Solution Name", value: \.name ) { Text( $0.name ) }
-                    .width( min: 100, ideal: 100, max: 150 ) // Ideal size increased slightly for readability
-                
-                TableColumn( "Part 1" ) { Text( $0.part1.value ).background( $0.part1.color.opacity( 0.3 ) ) }
-                    .width( 80 )
-                
-                TableColumn( "Part 2" ) { Text( $0.part2.value ).background( $0.part2.color.opacity( 0.3 ) ) }
-                    .width( 80 )
-                
-                TableColumn( "Part 1 Tests" ) { Text( $0.tests1 ) }
-                    .width( 80 )
-                
-                TableColumn( "Part 2 Tests" ) { Text( $0.tests2 ) }
-                    .width( 80 )
+            Grid( alignment: .leading, horizontalSpacing: 0, verticalSpacing: 0 ) {
+                GridRow {
+                    cell( "Solution Name" )
+                    cell( "Part 1" )
+                    cell( "Part 2" )
+                    cell( "Part 1 Tests" )
+                    cell( "Part 2 Tests" )
+                }
+                .fontWeight( .semibold )
+
+                Divider()
+                    .gridCellUnsizedAxes( .horizontal )
+
+                ForEach( Array( solutions.enumerated() ), id: \.element.id ) { index, solution in
+                    GridRow {
+                        cell( solution.name )
+                        cell( solution.part1.value )
+                            .background( solution.part1.color )
+                        cell( solution.part2.value )
+                            .background( solution.part2.color )
+                        cell( solution.tests1, alignment: .center )
+                        cell( solution.tests2, alignment: .center )
+                    }
+                    .background( rowBackground( for: index ) )
+                }
             }
+            .fixedSize()
             HStack {
                 Spacer()
                 Button( "Close" ) { NSApp.terminate( nil ) }
                 .keyboardShortcut( .defaultAction )
             }
         }
-        .padding()
-        .frame(
-            minWidth: 600,
-            idealWidth: 600,
-            maxWidth: 800,
-            minHeight: 300,
-            idealHeight: 400,
-        )
+        .padding( 20 )
+        .fixedSize()
+    }
+
+    private func cell( _ text: String, alignment: Alignment = .leading ) -> some View {
+        Text( text )
+            .fixedSize( horizontal: true, vertical: false )
+            .padding( .horizontal, 12 )
+            .padding( .vertical, 4 )
+            .frame( maxWidth: .infinity, alignment: alignment )
+    }
+
+    private func rowBackground( for index: Int ) -> Color {
+        let colors = NSColor.alternatingContentBackgroundColors
+        return Color( nsColor: colors[ index % colors.count ] )
     }
 }
