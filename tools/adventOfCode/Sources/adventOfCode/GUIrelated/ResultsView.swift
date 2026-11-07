@@ -39,21 +39,28 @@ struct ResultsView: View {
     }
 
     var body: some View {
-        Table( solutions, sortOrder: $sortOrder ) {
-            TableColumn( "Solution Name", value: \.name ) { Text( $0.name ) }
-            .width( min: 100, ideal: 100, max: 150 ) // Ideal size increased slightly for readability
-            
-            TableColumn( "Part 1" ) { Text( $0.part1 ) }
-            .width( 80 )
-            
-            TableColumn( "Part 2" ) { Text( $0.part2 ) }
-            .width( 80 )
-
-            TableColumn( "Part 1 Tests" ) { Text( $0.tests1 ? "✅" : "❌" ) }
-            .width( 80 )
-            
-            TableColumn( "Part 2 Tests" ) { Text( $0.tests2 ? "✅" : "❌" ) }
-            .width( 80 )
+        VStack( spacing: 20 ) {
+            Table( solutions, sortOrder: $sortOrder ) {
+                TableColumn( "Solution Name", value: \.name ) { Text( $0.name ) }
+                    .width( min: 100, ideal: 100, max: 150 ) // Ideal size increased slightly for readability
+                
+                TableColumn( "Part 1" ) { Text( $0.part1 ) }
+                    .width( 80 )
+                
+                TableColumn( "Part 2" ) { Text( $0.part2 ) }
+                    .width( 80 )
+                
+                TableColumn( "Part 1 Tests" ) { Text( $0.tests1 ? "✅" : "❌" ) }
+                    .width( 80 )
+                
+                TableColumn( "Part 2 Tests" ) { Text( $0.tests2 ? "✅" : "❌" ) }
+                    .width( 80 )
+            }
+            HStack {
+                Spacer()
+                Button( "Close" ) { NSApp.terminate( nil ) }
+                .keyboardShortcut( .defaultAction )
+            }
         }
         .padding()
         .frame(
