@@ -7,21 +7,47 @@
 //      CREATED: 7/15/26 2:08 PM
 
 import Foundation
+import Library
 import AppKit
 import SwiftUI
 
 struct SolutionItem: Identifiable {
+    struct Part {
+        let value: String
+        let color: Color
+        
+        init( value: String? ) {
+            if value == nil {
+                self.value = ""
+                self.color = Color.white
+            } else {
+                let value = value!
+                let milliseconds = decodeElapsed( formatted: value )
+                
+                self.value = value
+                
+                if milliseconds < 1000 {
+                    self.color = Color.green
+                } else if milliseconds < 10000 {
+                    self.color = Color.yellow
+                } else {
+                    self.color = Color.red
+                }
+            }
+        }
+    }
+    
     let id =    UUID()
     let name:   String
-    let part1:  String
-    let part2:  String
+    let part1:  Part
+    let part2:  Part
     let tests1: Bool
     let tests2: Bool
     
     init( result: Result ) {
         self.name   = result.name
-        self.part1  = result.part1 ?? ""
-        self.part2  = result.part2 ?? ""
+        self.part1  = Part( value: result.part1 )
+        self.part2  = Part( value: result.part2 )
         self.tests1 = result.tests1
         self.tests2 = result.tests2
     }
@@ -44,10 +70,10 @@ struct ResultsView: View {
                 TableColumn( "Solution Name", value: \.name ) { Text( $0.name ) }
                     .width( min: 100, ideal: 100, max: 150 ) // Ideal size increased slightly for readability
                 
-                TableColumn( "Part 1" ) { Text( $0.part1 ) }
+                TableColumn( "Part 1" ) { Text( $0.part1.value ).background( $0.part1.color.opacity( 0.3 ) ) }
                     .width( 80 )
                 
-                TableColumn( "Part 2" ) { Text( $0.part2 ) }
+                TableColumn( "Part 2" ) { Text( $0.part2.value ).background( $0.part2.color.opacity( 0.3 ) ) }
                     .width( 80 )
                 
                 TableColumn( "Part 1 Tests" ) { Text( $0.tests1 ? "✅" : "❌" ) }

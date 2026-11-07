@@ -174,6 +174,35 @@ public func formatElapsed( time timeElapsed: CFAbsoluteTime ) -> String {
 }
 
 
+/// Decodes a formatted elapsed time created by formatElapsed back into an aproximate number of milliseconds.
+///  - Parameter formatted: The string to convert back to milliseconds.
+///  - Returns: An Int giving the rounded number of millisecons represented by the formatted parameter.
+public func decodeElapsed( formatted: String ) -> Int {
+    guard let unitsIndex = formatted.firstIndex( where: { $0.isLetter } ) else { return 0 }
+    let value = formatted[ ..<unitsIndex ]
+
+    switch formatted[ unitsIndex... ] {
+    case "ms":
+        return Int( value )!
+    case "s":
+        let parts = value.split( separator: "." )
+        if parts.count == 1 { return Int( parts[0] )! * 1000 }
+        else                { return Int( parts[0] )! * 1000  + Int( parts[1] )! }
+    case "m":
+        let parts = value.split( separator: ":" )
+        return Int( parts[0] )! * 60000 + Int( parts[1] )! * 1000
+    case "h":
+        let parts = value.split( separator: ":" )
+        return Int( parts[0] )! * 3600000 + Int( parts[1] )! * 60000 + Int( parts[2] )! * 1000
+    case "d":
+        let parts = value.split( separator: ":" )
+        return Int( parts[0] )! * 86400000 + Int( parts[1] )! * 3600000 + Int( parts[2] )! * 60000 + Int( parts[3] )! * 1000
+    default:
+        return 0
+    }
+}
+
+
 // MARK: - functions for getting puzzle and test input.
 
 /// Gets the AOCinput structure of the input file for the current project.
