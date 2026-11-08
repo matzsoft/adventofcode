@@ -1,3 +1,5 @@
+![Alt Text](status.png)
+
 # Todo
 
 ## Day 8

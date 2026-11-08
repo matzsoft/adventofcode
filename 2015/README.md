@@ -1,3 +1,5 @@
+![Alt Text](status.png)
+
 ## Day 15 - Science for Hungry People
 In this one the goal is to optimize a cookie recipe.  My naive approach is too slow. This problem seems suited to a linear programming approach.
 ## Day 19 - Medicine for Rudolph
