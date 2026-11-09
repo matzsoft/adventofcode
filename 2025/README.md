@@ -1,4 +1,4 @@
-<img src="status.png" alt="Status Screenshot" width="75%">
+<img src="status.png" alt="Status Screenshot" width="50%">
 
 # Todo
 
