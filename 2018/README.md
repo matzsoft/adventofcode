@@ -1,3 +1,7 @@
+<div style="text-align: center">
+<img src="status.png" alt="Status Screenshot" width="50%">
+</div>
+
 ## Day03 - No Matter How You Slice It
 This is the one in which the Elves are trying to fix Santa's suit.  They each make a claim on part of the available fabric. I think there should be a nice recursive solution for part1 but I can't figure out the proper way to end the recursion.
 ## Day11 - Chronal Charge

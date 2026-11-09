@@ -1,3 +1,7 @@
+<div style="text-align: center">
+<img src="status.png" alt="Status Screenshot" width="50%">
+</div>
+
 ## day15 - Chiton
 This is the one where you must navigate a 2D matrix of risk levels from upper left to lower right while minimizing the total risk.  Can part2 be sped up even more?
 ## day23 - Amphipod

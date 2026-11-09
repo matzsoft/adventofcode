@@ -1,3 +1,7 @@
+<div style="text-align: center">
+<img src="status.png" alt="Status Screenshot" width="50%">
+</div>
+
 ## Day 05 - How About a Nice Game of Chess?
 In this one you must find a password by repeated application of MD5.  My brute force solution is too slow.  I should investigate ways to speed it up.
 ## Day 13 - A Maze of Twisty Little Cubicles

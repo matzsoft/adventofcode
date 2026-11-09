@@ -1,4 +1,6 @@
-<img src="status.png" alt="Status Screenshot" width="75%">
+<div style="text-align: center">
+<img src="status.png" alt="Status Screenshot" width="50%">
+</div>
 
 ## Day 15 - Science for Hungry People
 In this one the goal is to optimize a cookie recipe.  My naive approach is too slow. This problem seems suited to a linear programming approach.

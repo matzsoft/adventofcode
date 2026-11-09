@@ -1,3 +1,7 @@
+<div style="text-align: center">
+<img src="status.png" alt="Status Screenshot" width="50%">
+</div>
+
 ## TODO
 
 ### Day 6

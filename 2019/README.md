@@ -1,3 +1,7 @@
+<div style="text-align: center">
+<img src="status.png" alt="Status Screenshot" width="50%">
+</div>
+
 ## Day 13 - Care Package
 This is the Breakout game implemented in Intcode.  My solution provides animation of part2, if run in a terminal that supports VT100 emulation.  It would be nice to produce an animated image of that as well.
 ## Day 17 - Set and Forget

@@ -1,3 +1,7 @@
+<div style="text-align: center">
+<img src="status.png" alt="Status Screenshot" width="50%">
+</div>
+
 ## Day18 - Duet
 In this one you are presented with some odd assembly code and are tasked with determining its behaviour.  You could write an interpreter and run the code, but this is too slow particularly for part2.  Instead I reverse engineered the code, pulled the parameters from within it to produce the answers.  An interesting approach would be to write a code optimizer and run the optimized code.
 ## Day22 - Sporifica Virus

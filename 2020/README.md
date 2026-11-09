@@ -1,3 +1,7 @@
+<div style="text-align: center">
+<img src="status.png" alt="Status Screenshot" width="50%">
+</div>
+
 ## Day 22 - Crab Combat
 You are playing a fancied up game of War with a crab.  I would like to make my solution faster.
 ## Day 23 - Crab Cups

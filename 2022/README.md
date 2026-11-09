@@ -1,3 +1,7 @@
+<div style="text-align: center">
+<img src="status.png" alt="Status Screenshot" width="50%">
+</div>
+
 ## Day 11 - Monkey in the Middle
 
 In this one flying monkeys are stealing items from your pack and you must figure out which monkeys to chase in order to retrieve the most items.  The Simian type is supposed to be able to handle both parts but does not handle part 1 correctly.  Figure out if it can be made to handle part 1.
