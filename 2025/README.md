@@ -1,4 +1,4 @@
-![Alt Text](status.png)
+<img src="status.png" alt="Status Screenshot" width="75%">
 
 # Todo
 
