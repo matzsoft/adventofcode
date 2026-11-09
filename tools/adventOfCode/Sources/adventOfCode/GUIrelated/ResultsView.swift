@@ -63,14 +63,20 @@ struct SolutionItem: Identifiable {
     }
 }
 
+class WindowHolder {
+    weak var window: NSWindow?
+}
+
 struct ResultsView: View {
     let data: SolutionDisplayResults // Pass your analyzed data here
+    let windowHolder: WindowHolder
     
     @SwiftUI.State private var solutions: [SolutionItem] = []
     @SwiftUI.State private var sortOrder = [ KeyPathComparator( \SolutionItem.name ) ]
 
-    init( data: SolutionDisplayResults ) {
+    init( data: SolutionDisplayResults, windowHolder: WindowHolder ) {
         self.data = data
+        self.windowHolder = windowHolder
         _solutions = SwiftUI.State( initialValue: data.results.map { SolutionItem( result: $0 ) } )
     }
 
@@ -105,7 +111,13 @@ struct ResultsView: View {
             .fixedSize()
             HStack {
                 Spacer()
-                Button( "Close" ) { NSApp.terminate( nil ) }
+                Button( "Close" ) {
+                    if let window = windowHolder.window {
+                        captureWindowAndTerminate( window: window )
+                    } else {
+                        NSApp.terminate( nil )
+                    }
+                }
                 .keyboardShortcut( .defaultAction )
             }
         }
@@ -124,5 +136,41 @@ struct ResultsView: View {
     private func rowBackground( for index: Int ) -> Color {
         let colors = NSColor.alternatingContentBackgroundColors
         return Color( nsColor: colors[ index % colors.count ] )
+    }
+
+    @MainActor
+    private func captureWindowAndTerminate( window: NSWindow ) {
+        let currentDirectory = FileManager.default.currentDirectoryPath
+        let outputURL = URL( fileURLWithPath: currentDirectory ).appendingPathComponent( "status.png" )
+        
+        // 1. Target the window's core frame layer
+        guard let windowGraphicsFrameView = window.contentView?.superview else {
+            NSApp.terminate( nil )
+            return
+        }
+        
+        let frameBounds = windowGraphicsFrameView.bounds
+        
+        // 2. Generate a local bitmap container matching the full window context frame
+        guard let bitmapRep = windowGraphicsFrameView.bitmapImageRepForCachingDisplay( in: frameBounds ) else {
+            NSApp.terminate( nil )
+            return
+        }
+        
+        // 3. Directly cache the visual presentation data locally without querying the window server
+        windowGraphicsFrameView.cacheDisplay( in: frameBounds, to: bitmapRep )
+        
+        // 4. Convert to PNG data and save
+        if let pngData = bitmapRep.representation( using: .png, properties: [:] ) {
+            do {
+                try pngData.write( to: outputURL )
+                print( "Window captured successfully to: \(outputURL.path)" )
+            } catch {
+                print( "Failed to write image to disk: \(error.localizedDescription)" )
+            }
+        }
+        
+        // 5. Terminate the app instantly
+        NSApp.terminate( nil )
     }
 }

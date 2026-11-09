@@ -21,7 +21,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationDidFinishLaunching( _ notification: Notification ) {
         // Create the hosting container first so we can read its parameters
-        let hostingView = NSHostingView( rootView: ResultsView( data: data ) )
+        let windowHolder = WindowHolder()
+        let hostingView = NSHostingView( rootView: ResultsView( data: data, windowHolder: windowHolder ) )
         
         // 💡 Inform the hosting controller to push its ideal SwiftUI size limits up to AppKit
         hostingView.sizingOptions = [NSHostingSizingOptions.intrinsicContentSize, .minSize, .maxSize]
@@ -36,7 +37,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
-        
+        windowHolder.window = window
+
         window.title = "Advent of Code Status for \(data.year)"
         window.delegate = self
         window.contentView = hostingView
