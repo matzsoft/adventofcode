@@ -20,6 +20,8 @@ The **input** directory contains the problem data for each problem.  For example
 
 The folder for a problem, e.g. `day01`, will initially contain a Package.swift file and a Sources folder. The Sources folder will contain a main.swift file. These files can be modified to provide the solution to the problem. For example some problems require access to an external library. This will require modifications to Package.swift.
 
+Each year directory also contains two additional files: `result.json` and `status.png`. The `result.json` file contains information about the status of each problem solution. The `status.png` file is an image of a table showing the data from `result.json`. For an explanation of the table content see the top level `README.md` file.
+
 #### Problem and Test Data
 
 The format of the problem and test data is the same.  They consist of a header, a separator, and the problem data from the Advent of Code website.
