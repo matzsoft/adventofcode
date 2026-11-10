@@ -55,6 +55,7 @@ func part1e( input: AOCinput ) -> String {
 }
 
 
+// Not used - too slow - Takes 27 minutes to run.
 func part2( input: AOCinput ) -> String {
     let device = WristDevice( assembly: input.lines )
     let targetRegister = device.memory[28].a
@@ -94,8 +95,8 @@ func part2e( input: AOCinput ) -> String {
 
 try print( projectInfo() )
 try runTests( part1: part1 )
-try runTests( part2: part2e, label: "Emulator" )
-try solve( part1: part1 )
-try solve( part1: part1e, label: "Emulator" )
-try solve( part2: part2e, label: "Emulator" )
+try runTests( part2: part2e )
+try solve( part1: part1, label: "Slow" )
+try solve( part1: part1e )
+try solve( part2: part2e )
 //try solve( part2: part2 )      // Takes 27 minutes to run.

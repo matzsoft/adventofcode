@@ -234,7 +234,7 @@ func part1( input: AOCinput ) -> String {
     let armies = parse( input: input )
     
     if let victor = try! battle( armies: armies ) {
-        print( "Part1: victory by \(victor.name)." )
+        print( "Victory by \(victor.name)." )
         return "\(victor.groups.reduce( 0, { $0 + $1.unitCount } ))"
     }
 
