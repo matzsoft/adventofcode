@@ -13,7 +13,7 @@ Columns 2 and 3 are the run times for Part 1 and Part 2. The background of the c
 - A yellow background is for a correct solution that takes more than 1 second but less than 10 seconds to run.
 - A red background shows a correct solution that takes more than 10 seconds to run.
 
-The 4th and 5th columns show the overall status of the tests for Part 1 and Part 2. Then symbols in the columns mean:
+The 4th and 5th columns show the overall status of the tests for Part 1 and Part 2. The symbols in the columns mean:
 - ✅ = All tests passed.
 - ❌ = Some tests failed.
 - ⚠️ = There are no tests for this part of this problem.
