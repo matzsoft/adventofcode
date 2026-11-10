@@ -17,6 +17,13 @@ extension AdventOfCode {
         )
         
         func run() throws -> Void {
+            let fileManager = FileManager.default
+            let year = URL( fileURLWithPath: fileManager.currentDirectoryPath ).lastPathComponent
+            let currentYear = Calendar.current.component( .year, from: .now )
+            guard let year = Int( year ), 2015 <= year && year <= currentYear else {
+                throw ValidationError( "Must be run from a valid year directory." )
+            }
+            
             let resultsURL = URL( fileURLWithPath: "result.json" )
             let tracked  = try shell( "git", "ls-files", "." )
             let mainSwift = "Sources/main.swift"
@@ -24,7 +31,7 @@ extension AdventOfCode {
                 .filter { tracked.contains( $0 ) }
                 .map { String( $0.prefix( while: { $0 != "/" } ) ) }
             
-            if !FileManager.default.fileExists( atPath: resultsURL.path() ) {
+            if !fileManager.fileExists( atPath: resultsURL.path() ) {
                 
                 let results = try packages.map { Result( solution: try getSolution( package: $0 ) ) }
                 let jsonData = try JSONEncoder().encode( results )
