@@ -48,7 +48,7 @@ func getModificationDate( atPath path: String ) throws -> Date {
 }
 
 
-struct Result: Codable {
+struct Result: Codable, Equatable {
     enum Test: Int, Codable { case none, good, bad }
     
     let name:   String

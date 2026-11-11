@@ -52,8 +52,10 @@ extension AdventOfCode {
                         return Result( solution: try getSolution( package: package ) )
                     }
                 }
-                let jsonData = try JSONEncoder().encode( newResults )
-                try jsonData.write( to: resultsURL )
+                if newResults != oldResults {
+                    let jsonData = try JSONEncoder().encode( newResults )
+                    try jsonData.write( to: resultsURL )
+                }
 
             }
         }
