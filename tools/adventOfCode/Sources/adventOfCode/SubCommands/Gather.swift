@@ -48,7 +48,10 @@ extension AdventOfCode {
                     if oldDate < mainDate {
                         return Result( solution: try getSolution( package: package ) )
                     } else {
-                        if let oldResult = oldResults.first( where: { $0.name == package } ) { return oldResult }
+                        if let oldResult = oldResults.first( where: { $0.name == package } ) {
+                            print( "\(package) - Already up to date." )
+                            return oldResult
+                        }
                         return Result( solution: try getSolution( package: package ) )
                     }
                 }
@@ -87,5 +90,6 @@ func getSolution( package: String ) throws -> String {
         throw RuntimeError( "Can't change directory to .." )
     }
     
+    print( "\(package) - Updated." )
     return solution
 }
