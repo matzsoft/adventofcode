@@ -110,15 +110,27 @@ struct ResultsView: View {
             }
             .fixedSize()
             HStack {
+                Button( "Save" ) { if let window = windowHolder.window { captureWindow( window: window ) } }
+                    .keyboardShortcut( "s", modifiers: [ .command ] )
+                
                 Spacer()
-                Button( "Close" ) {
-                    if let window = windowHolder.window {
-                        captureWindowAndTerminate( window: window )
-                    } else {
-                        NSApp.terminate( nil )
-                    }
-                }
-                .keyboardShortcut( .defaultAction )
+                
+                // NOTE: The hidden buttons are just for extra keyboard shorhcuts.
+                // They are before the Close button for proper layout.
+                Button( "" ) { NSApp.terminate( nil ) }
+                    .keyboardShortcut( .cancelAction )
+                    .hidden()
+                
+                Button( "" ) { NSApp.terminate( nil ) }
+                    .keyboardShortcut( "w", modifiers: [ .command ] )
+                    .hidden()
+                
+                Button( "" ) { NSApp.terminate( nil ) }
+                    .keyboardShortcut( "q", modifiers: [ .command ] )
+                    .hidden()
+
+                Button( "Close" ) { NSApp.terminate( nil ) }
+                    .keyboardShortcut( .defaultAction )
             }
         }
         .padding( 20 )
@@ -139,23 +151,17 @@ struct ResultsView: View {
     }
 
     @MainActor
-    private func captureWindowAndTerminate( window: NSWindow ) {
+    private func captureWindow( window: NSWindow ) {
         let currentDirectory = FileManager.default.currentDirectoryPath
         let outputURL = URL( fileURLWithPath: currentDirectory ).appendingPathComponent( "status.png" )
         
         // 1. Target the window's core frame layer
-        guard let windowGraphicsFrameView = window.contentView?.superview else {
-            NSApp.terminate( nil )
-            return
-        }
+        guard let windowGraphicsFrameView = window.contentView?.superview else { return }
         
         let frameBounds = windowGraphicsFrameView.bounds
         
         // 2. Generate a local bitmap container matching the full window context frame
-        guard let bitmapRep = windowGraphicsFrameView.bitmapImageRepForCachingDisplay( in: frameBounds ) else {
-            NSApp.terminate( nil )
-            return
-        }
+        guard let bitmapRep = windowGraphicsFrameView.bitmapImageRepForCachingDisplay( in: frameBounds ) else { return }
         
         // 3. Directly cache the visual presentation data locally without querying the window server
         windowGraphicsFrameView.cacheDisplay( in: frameBounds, to: bitmapRep )
@@ -169,8 +175,5 @@ struct ResultsView: View {
                 print( "Failed to write image to disk: \(error.localizedDescription)" )
             }
         }
-        
-        // 5. Terminate the app instantly
-        NSApp.terminate( nil )
     }
 }
