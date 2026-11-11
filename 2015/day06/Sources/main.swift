@@ -126,7 +126,7 @@ struct Image {
         let url = URL( fileURLWithPath: path )
         let topEnd = image.flatMap { $0 }.max()!
         let pixels = image.flatMap { $0.map { cell -> PixelData in
-            let grey = UInt8( CGFloat( cell ) / CGFloat( topEnd ) * 255 )
+            let grey = topEnd == 0 ? UInt8( 0 ) : UInt8( CGFloat( cell ) / CGFloat( topEnd ) * 255 )
             return PixelData( r: grey, g: grey, b: grey )
         } }
         let cgImage = imageFromARGB32Bitmap( pixels: pixels, width: image[0].count, height: image.count )
