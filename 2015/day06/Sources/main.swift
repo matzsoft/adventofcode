@@ -138,10 +138,8 @@ struct Image {
 }
 
 
-func constructFilePath( name: String ) throws -> String {
+func constructFilePath( project: String, name: String ) throws -> String {
     let outputDirectory = try findDirectory( name: "output" )
-    let project = URL( fileURLWithPath: #filePath ).deletingLastPathComponent().lastPathComponent
-    
     return "\(outputDirectory)/\(project)-\(name).png"
 }
 
@@ -159,7 +157,7 @@ func part1( input: AOCinput ) -> String {
         image.basic( action: instruction )
     }
     
-    try! image.write( toPath: constructFilePath( name: "part1" ) )
+    try! image.write( toPath: constructFilePath( project: input.filename, name: "part1" ) )
     return "\( image.count )"
 }
 
@@ -172,7 +170,7 @@ func part2( input: AOCinput ) -> String {
         image.advanced( action: instruction )
     }
     
-    try! image.write( toPath: constructFilePath( name: "part2" ) )
+    try! image.write( toPath: constructFilePath( project: input.filename, name: "part2" ) )
     return "\( image.count )"
 }
 
