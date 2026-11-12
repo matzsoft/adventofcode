@@ -19,12 +19,11 @@ import MATZMiscSwiftLibrary
 // sieve solution.
 func part1( input: AOCinput ) -> String {
     let target = ( Int( input.line )! + 9 ) / 10         // Factor out the 10 presents per house.
-    let limit = target / 4
-    var sieve = Array(repeating: 1, count: limit + 1 )
+    var sieve = Array(repeating: 1, count: target + 1 )
     
-    for i in 2 ... limit {
+    for i in 2 ... target {
         if sieve[i] + i >= target { return "\(i)" }
-        for j in stride( from: i, through: limit, by: i ) {
+        for j in stride( from: i, through: target, by: i ) {
             sieve[j] += i
         }
     }
