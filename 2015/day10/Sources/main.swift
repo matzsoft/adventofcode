@@ -39,14 +39,22 @@ func rounds( initial: String, rounds: Int ) -> String {
 }
 
 
+func parse( input: AOCinput ) -> ( Int, Int ) {
+    let words = input.extras[0].split( separator: "," ).map { Int( $0 )! }
+    return ( words[0], words[1] )
+}
+
+
 func part1( input: AOCinput ) -> String {
-    let result = rounds( initial: input.line, rounds: 40 )
+    let ( roundsCount, _ ) = parse( input: input )
+    let result = rounds( initial: input.line, rounds: roundsCount )
     return "\( result.count )"
 }
 
 
 func part2( input: AOCinput ) -> String {
-    let result = rounds( initial: input.line, rounds: 50 )
+    let ( _, roundsCount ) = parse( input: input )
+    let result = rounds( initial: input.line, rounds: roundsCount )
     return "\( result.count )"
 }
 
