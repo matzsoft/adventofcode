@@ -59,13 +59,18 @@ struct Instruction {
 
 struct Circuit {
     let wiring: [ String : Instruction ]
+    let primary: String
+    let secondary: String
     var values = [ String : UInt16 ]()
     
-    init( lines: [String] ) throws {
-        wiring = try lines.reduce( into: [ String : Instruction ]() ) { dict, line in
+    init( input: AOCinput ) throws {
+        let words = input.extras[0].split( separator: "," ).map { String( $0 ) }
+        wiring = try input.lines.reduce( into: [ String : Instruction ]() ) { dict, line in
             let instruction = try Instruction( line: line )
             dict[instruction.destination] = instruction
         }
+        primary = words[0]
+        secondary = words[1]
     }
     
     mutating func reset() -> Void {
@@ -105,24 +110,24 @@ struct Circuit {
 
 
 func parse( input: AOCinput ) -> Circuit {
-    return try! Circuit( lines: input.lines )
+    return try! Circuit( input: input )
 }
 
 
 func part1( input: AOCinput ) -> String {
     var circuit = parse( input: input )
     
-    return "\( try! circuit.nodeValue( name: "a" ) )"
+    return "\( try! circuit.nodeValue( name: circuit.primary ) )"
 }
 
 
 func part2( input: AOCinput ) -> String {
     var circuit = parse( input: input )
-    let part1 = try! circuit.nodeValue( name: "a" )
+    let part1 = try! circuit.nodeValue( name: circuit.primary )
     
     circuit.reset()
-    circuit.overide( name: "b", value: part1 )
-    return "\( try! circuit.nodeValue( name: "a" ) )"
+    circuit.overide( name: circuit.secondary, value: part1 )
+    return "\( try! circuit.nodeValue( name: circuit.primary ) )"
 }
 
 
