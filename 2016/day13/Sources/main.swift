@@ -171,9 +171,11 @@ let startPoint = Point2D( x: 1, y: 1 )
 
 @MainActor func part1( input: AOCinput ) -> String {
     let favorite = parse( input: input )
+    let coordinates = input.extras[0].split( separator: "," ).map { Int( $0 )! }
+    let target = Point2D(x: coordinates[0], y: coordinates[1] )
     let floor = Floor( width: 70, height: 70, favorite: favorite )
     
-    return "\(floor.findDistance( start: startPoint, end: Point2D( x: 31, y: 39 ) )!)"
+    return "\(floor.findDistance( start: startPoint, end: target )!)"
 }
 
 
