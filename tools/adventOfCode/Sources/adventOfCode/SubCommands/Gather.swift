@@ -33,9 +33,7 @@ extension AdventOfCode {
             
             let ( resultsDate, oldResults ) = try initResults( resultsURL: resultsURL )
             let newResults = try packages.map { package in
-                let mainDate = try getModificationDate( atPath: "\(package)/\(mainSwift)" )
-                
-                if resultsDate < mainDate {
+                if try needsUpdate( package: package, resultsDate: resultsDate ) {
                     return Result( solution: try getSolution( package: package ) )
                 } else {
                     if let oldResult = oldResults.first( where: { $0.name == package } ) {
@@ -77,7 +75,7 @@ func needsUpdate( package: String, resultsDate: Date ) throws -> Bool {
 
 
 func needsUpdate( path: String, resultsDate: Date ) throws -> Bool {
-    return try getModificationDate( atPath: path ) <= resultsDate
+    return try getModificationDate( atPath: path ) >= resultsDate
 }
 
 
