@@ -141,7 +141,8 @@ func parse( input: AOCinput ) -> String {
 
 func part1( input: AOCinput ) -> String {
     let initial = parse( input: input )
-    let disk = Disk( initial: initial, length: 272 )
+    let length = Int( input.extras[0] )!
+    let disk = Disk( initial: initial, length: length )
 
     return disk.checksum
 }

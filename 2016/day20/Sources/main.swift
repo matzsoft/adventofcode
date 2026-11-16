@@ -77,13 +77,14 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let original = parse( input: input )
+    let limit = Int( input.extras[0] )!
     let sorted = sortMerge( original: original )
     var count = sorted[0].low
 
     for i in 0 ..< sorted.count - 1 {
         count += sorted[ i + 1 ].low - sorted[i].high - 1
     }
-    count += Int( UInt32.max ) - sorted.last!.high
+    count += limit - sorted.last!.high
 
     return "\(count)"
 }
