@@ -1,5 +1,6 @@
 ghfacdbe
 fhgcdaeb
+abcdefgh
 --------------------
 rotate based on position of letter d
 move position 1 to position 6

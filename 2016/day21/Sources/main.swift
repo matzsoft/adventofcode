@@ -243,7 +243,8 @@ func parse( input: AOCinput ) -> [Operation] {
 
 func part1( input: AOCinput ) -> String {
     let operations = parse( input: input )
-    let result = operations.reduce( "abcdefgh", { $1.forward( unscrambled: $0 ) } )
+    let input = input.extras[0]
+    let result = operations.reduce( input, { $1.forward( unscrambled: $0 ) } )
     return "\(result)"
 }
 
