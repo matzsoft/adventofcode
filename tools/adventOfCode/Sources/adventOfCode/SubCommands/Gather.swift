@@ -31,38 +31,53 @@ extension AdventOfCode {
                 .filter { tracked.contains( $0 ) }
                 .map { String( $0.prefix( while: { $0 != "/" } ) ) }
             
-            if !fileManager.fileExists( atPath: resultsURL.path() ) {
+            let ( resultsDate, oldResults ) = try initResults( resultsURL: resultsURL )
+            let newResults = try packages.map { package in
+                let mainDate = try getModificationDate( atPath: "\(package)/\(mainSwift)" )
                 
-                let results = try packages.map { Result( solution: try getSolution( package: $0 ) ) }
-                let jsonData = try JSONEncoder().encode( results )
-                try jsonData.write( to: resultsURL )
-
-            } else {
-                
-                let oldJson = try Data( contentsOf: resultsURL )
-                let oldDate = try getModificationDate( atPath: resultsURL.path() )
-                let oldResults = try JSONDecoder().decode( [Result].self, from: oldJson )
-                let newResults = try packages.map { package in
-                    let mainDate = try getModificationDate( atPath: "\(package)/\(mainSwift)" )
-                    
-                    if oldDate < mainDate {
-                        return Result( solution: try getSolution( package: package ) )
-                    } else {
-                        if let oldResult = oldResults.first( where: { $0.name == package } ) {
-                            print( "\(package) - Already up to date." )
-                            return oldResult
-                        }
-                        return Result( solution: try getSolution( package: package ) )
+                if resultsDate < mainDate {
+                    return Result( solution: try getSolution( package: package ) )
+                } else {
+                    if let oldResult = oldResults.first( where: { $0.name == package } ) {
+                        print( "\(package) - Already up to date." )
+                        return oldResult
                     }
+                    return Result( solution: try getSolution( package: package ) )
                 }
-                if newResults != oldResults {
-                    let jsonData = try JSONEncoder().encode( newResults )
-                    try jsonData.write( to: resultsURL )
-                }
-
+            }
+            if newResults != oldResults {
+                let jsonData = try JSONEncoder().encode( newResults )
+                try jsonData.write( to: resultsURL )
             }
         }
     }
+}
+
+
+func initResults( resultsURL: URL ) throws -> ( Date, [Result] ) {
+    guard FileManager.default.fileExists( atPath: resultsURL.path() ) else { return ( Date.distantPast, [] ) }
+
+    let json = try Data( contentsOf: resultsURL )
+    let date = try getModificationDate( atPath: resultsURL.path() )
+    let results = try JSONDecoder().decode( [Result].self, from: json )
+    return ( date, results )
+}
+
+
+func needsUpdate( package: String, resultsDate: Date ) throws -> Bool {
+    if try needsUpdate( path: "\(package)/Sources/main.swift", resultsDate: resultsDate ) { return true }
+    if try needsUpdate( path: "input/\(package).txt", resultsDate: resultsDate ) { return true }
+    
+    for test in glob( pattern: "testfiles/\(package)*.txt" ) {
+        if try needsUpdate( path: test, resultsDate: resultsDate ) { return true }
+    }
+    
+    return false
+}
+
+
+func needsUpdate( path: String, resultsDate: Date ) throws -> Bool {
+    return try getModificationDate( atPath: path ) <= resultsDate
 }
 
 
