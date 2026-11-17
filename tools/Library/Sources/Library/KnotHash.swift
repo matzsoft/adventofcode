@@ -20,21 +20,21 @@ public class KnotHash {
     ///
     /// Only used in 2017 day 10.
     /// - Parameter lengths: An array of integers ranging from 0 to 255.
-    public init( lengths: [Int] ) {
-        list = ( 0 ... 255 ).map { $0 }
+    public init( lengths: [Int], limit: Int ) {
+        self.list = ( 0 ..< limit ).map { $0 }
         self.lengths = lengths
-        current = 0
-        skip = 0
+        self.current = 0
+        self.skip = 0
     }
     
     /// Normal KnotHash init.
     /// - Parameter input: A character string to hash.  The lengths are taken from the
     /// ASCII value of each character.
     public init( input: String ) {
-        list = ( 0 ... 255 ).map { $0 }
-        lengths = input.map { Int( $0.unicodeScalars.first!.value ) } + KnotHash.extraLengths
-        current = 0
-        skip = 0
+        self.list = ( 0 ..< 256 ).map { $0 }
+        self.lengths = input.map { Int( $0.unicodeScalars.first!.value ) } + KnotHash.extraLengths
+        self.current = 0
+        self.skip = 0
     }
 
     

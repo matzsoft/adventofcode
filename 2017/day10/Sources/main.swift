@@ -14,7 +14,9 @@ import MATZMiscSwiftLibrary
 
 
 func part1( input: AOCinput ) -> String {
-    let knot = KnotHash( lengths: input.line.split( separator: "," ).map { Int( $0 )! } )
+    let lengths = input.line.split( separator: "," ).map { Int( $0 )! }
+    let limit = Int( input.extras[0] )!
+    let knot = KnotHash( lengths: lengths, limit: limit )
 
     knot.oneRound()
     return "\(knot.list[0] * knot.list[1])"
