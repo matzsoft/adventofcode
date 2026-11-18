@@ -46,6 +46,7 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     let coordinates = parse( input: input )
+    let threshold = Int( input.extras[0] )!
     let bounds = Rect2D( points: coordinates )
     let grid = ( bounds.min.y ... bounds.max.y ).map { y in
         ( bounds.min.x ... bounds.max.x ).map { ( x ) -> Int in
@@ -54,7 +55,7 @@ func part2( input: AOCinput ) -> String {
             return distances.reduce( 0, + )
         }
     }
-    return "\(grid.flatMap { $0 }.filter { $0 < 10000 }.count)"
+    return "\(grid.flatMap { $0 }.filter { $0 < threshold }.count)"
 }
 
 
@@ -88,6 +89,7 @@ func part3( input: AOCinput ) -> String {
 
 func part4( input: AOCinput ) -> String {
     let coordinates = parse( input: input )
+    let threshold = Int( input.extras[0] )!
     let bounds = Rect2D( points: coordinates )
     var size = 0
     
@@ -95,7 +97,7 @@ func part4( input: AOCinput ) -> String {
         for x in ( bounds.min.x ... bounds.max.x ) {
             let distance = coordinates.map { $0.distance( other: Point2D( x: x, y: y ) ) }.reduce( 0, + )
             
-            if distance < 10000 { size += 1 }
+            if distance < threshold { size += 1 }
         }
     }
 
