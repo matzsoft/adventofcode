@@ -318,9 +318,10 @@ func parse( input: AOCinput ) -> Image {
 
 func part1( input: AOCinput ) -> String {
     var image = parse( input: input )
+    let steps = Int( input.extras[0] )!
 
     //image.printIt()
-    ( 1 ... 5 ).forEach { _ in image.enhance()/*; image.printIt()*/ }
+    ( 1 ... steps ).forEach { _ in image.enhance()/*; image.printIt()*/ }
     return "\(image.countBits())"
 }
 
