@@ -13,8 +13,6 @@ import Library
 import MATZMiscSwiftLibrary
 
 let upperCaseA = Character("A").unicodeScalars.first!.value
-let baseDuration = 60
-let workerCount = 5
 
 class Node {
     let key: Substring
@@ -92,7 +90,7 @@ class Worker {
 }
 
 
-func taskDuration( _ task: Node ) -> Int {
+func taskDuration( _ task: Node, baseDuration: Int ) -> Int {
     let offset = Int( Character( String( task.key ) ).unicodeScalars.first!.value - upperCaseA )
     
     return baseDuration + offset + 1
@@ -118,6 +116,9 @@ func completeTasks( busyWorkers: [Worker], nodes: [Substring : Node], time: Int 
 
 func part2( input: AOCinput ) -> String {
     var nodes = parse( input: input )
+    let numbers = input.extras[0].split( separator: "," )
+    let baseDuration = Int( numbers[0] )!
+    let workerCount = Int( numbers[1] )!
     let workers = ( 1 ... workerCount ).map { Worker(id: $0) }
     var time = 0
 
@@ -138,7 +139,7 @@ func part2( input: AOCinput ) -> String {
                 
                 // print( "Worker \(worker.id) assigned task \(task.key) at time \(time)" )
                 worker.task = task
-                worker.busyUntil = time + taskDuration( task )
+                worker.busyUntil = time + taskDuration( task, baseDuration: baseDuration )
                 nodes.removeValue( forKey: task.key )
             }
         }
