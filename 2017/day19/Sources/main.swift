@@ -1,4 +1,4 @@
-//
+
 //         FILE: main.swift
 //  DESCRIPTION: day19 - A Series of Tubes
 //        NOTES: ---
@@ -29,8 +29,8 @@ class Network {
     }
     
     subscript( point: Point2D ) -> Character {
-        guard 0 <= point.x && point.x < map[point.y].count else { return " " }
         guard 0 <= point.y && point.y < map.count else { return " " }
+        guard 0 <= point.x && point.x < map[point.y].count else { return " " }
 
         return map[point.y][point.x]
     }

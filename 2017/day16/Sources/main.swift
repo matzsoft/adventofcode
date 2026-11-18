@@ -13,9 +13,6 @@ import Library
 import MATZMiscSwiftLibrary
 
 class Choreography {
-    let ASCIIa = "a".unicodeScalars.first!.value
-    let ASCIIp = "p".unicodeScalars.first!.value
-    
     enum DanceMove {
         case spin( Int )
         case exchange( Int, Int )
@@ -26,9 +23,9 @@ class Choreography {
     let moves: [DanceMove]
     var toString: String { String( dancers ) }
     
-    init( input: String ) throws {
-        dancers = ( ASCIIa ... ASCIIp ).map { Character( UnicodeScalar( $0 )! ) }
-        moves = try input.split(separator: ",").map { ( move ) in
+    init( input: String, dancers: String ) throws {
+        self.dancers = Array( dancers )
+        moves = try input.split( separator: "," ).map { move in
             guard let type = move.first else {
                 throw RuntimeError( "Empty dance move." )
             }
@@ -39,11 +36,11 @@ class Choreography {
             case "s":
                 return DanceMove.spin( Int( move[index...] )! )
             case "x":
-                let words = move[index...].split(separator: "/")
+                let words = move[index...].split( separator: "/" )
                 
                 return DanceMove.exchange( Int( words[0] )!, Int( words[1] )! )
             case "p":
-                let words = move[index...].split(separator: "/")
+                let words = move[index...].split( separator: "/" )
                 let first = Character( String( words[0] ) )
                 let last = Character( String( words[1] ) )
                 
@@ -75,7 +72,7 @@ class Choreography {
 
 
 func parse( input: AOCinput ) -> Choreography {
-    return try! Choreography( input: input.line )
+    return try! Choreography( input: input.line, dancers: input.extras[0] )
 }
 
 
