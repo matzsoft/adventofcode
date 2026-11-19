@@ -5,8 +5,6 @@
 ## Day 13 - Care Package
 This is the Breakout game implemented in Intcode.  My solution provides animation of part2, if run in a terminal that supports VT100 emulation.  It would be nice to produce an animated image of that as well.
 
-Additionally, the animation output interferes with `adventOfCode gather`, meaning no results in the status output for part2. It would be nice to decouple the calculation of the results from the animation to prevent this and to record a better time.
-
 ## Day 17 - Set and Forget
 This is the one where the droid has to navigate the scaffolding. For part2, I analyzed my input and detected the patterns by hand.  I would like to implement a version that programmatically detects the patterns.
 

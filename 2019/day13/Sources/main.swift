@@ -93,29 +93,35 @@ struct ArcadeCabinet {
         return map.reduce( 0, { $0 + $1.filter( { $0 == type } ).count } )
     }
     
-    mutating func play() throws -> Int {
+    mutating func play( display: Bool = false ) throws -> Int {
         computer.inputs = [ ( ballPos.x - paddlePos.x ).signum() ]
         while !computerHalted {
             while let ( position, type ) = try move() {
                 map[position.y][position.x] = type
-                Terminal.move( to: position )
+                if display { Terminal.move( to: position ) }
                 switch type {
                 case .ball:
-                    print( type.asString(), separator: "", terminator: "" )
                     computer.inputs = [ ( ballPos.x - paddlePos.x ).signum() ]
-                    usleep( 25000 )
-                    fflush(stdout)
+                    if display {
+                        print( type.asString(), separator: "", terminator: "" )
+                        usleep( 25000 )
+                        fflush(stdout)
+                    }
                 case .paddle:
-                    print( type.asString(), separator: "", terminator: "" )
+                    if display { print( type.asString(), separator: "", terminator: "" ) }
                 case .empty:
-                    print( type.asString(), separator: "", terminator: "" )
+                    if display { print( type.asString(), separator: "", terminator: "" ) }
                 default:
-                    Terminal.move( to: Point2D( x: 0, y: height + 2 ) )
-                    print( "Unexpected \(type) at \(position)" )
+                    if display {
+                        Terminal.move( to: Point2D( x: 0, y: height + 2 ) )
+                        print( "Unexpected \(type) at \(position)" )
+                    }
                 }
             }
-            Terminal.move(to: Point2D( x: 0, y: height ) )
-            print( "Score: \(score)" )
+            if display {
+                Terminal.move(to: Point2D( x: 0, y: height ) )
+                print( "Score: \(score)" )
+            }
         }
         
         return score
@@ -149,13 +155,20 @@ func part1( input: AOCinput ) -> String {
 
 func part2( input: AOCinput ) -> String {
     var cabinet = parse( input: input )
+    let finalScore = try! cabinet.play()
+
+    return "\(finalScore)"
+}
+
+func part3( input: AOCinput ) -> String {
+    var cabinet = parse( input: input )
     
     Terminal.clearScreen()
     Terminal.move( to: Point2D(x: 0, y: 0 ) )
     print( cabinet.asString )
     print( "Score: \(cabinet.score)" )
 
-    let finalScore = try! cabinet.play()
+    let finalScore = try! cabinet.play( display: true )
 
     Terminal.move(to: Point2D( x: 0, y: cabinet.height + 2 ) )
     return "\(finalScore)"
@@ -167,3 +180,4 @@ try runTests( part1: part1 )
 try runTests( part2: part2 )
 try solve( part1: part1 )
 try solve( part2: part2 )
+try solve( part2: part3, label: "Display" )
